@@ -5,7 +5,13 @@
   <groupId>org.example</groupId>
   <artifactId>catmq</artifactId>
   <version>1.0-SNAPSHOT</version>
-  <packaging>jar</packaging>
+  <modules>
+    <module>broker</module>
+    <module>client</module>
+    <module>controller</module>
+    <module>base</module>
+  </modules>
+  <packaging>pom</packaging>
 
   <name>catmq</name>
   <url>http://maven.apache.org</url>
