@@ -1,25 +1,8 @@
-/*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package org.catmq.remoting.netty;
 
 import io.netty.channel.Channel;
 import lombok.Data;
 import org.catmq.remoting.InvokeCallback;
-import org.catmq.remoting.common.SemaphoreReleaseOnlyOnce;
 import org.catmq.remoting.protocol.RemotingCommand;
 
 import java.util.concurrent.CountDownLatch;
@@ -36,27 +19,22 @@ public class ResponseFuture {
     private final long beginTimestamp = System.currentTimeMillis();
     private final CountDownLatch countDownLatch = new CountDownLatch(1);
 
-    private final SemaphoreReleaseOnlyOnce once;
-
     private final AtomicBoolean executeCallbackOnlyOnce = new AtomicBoolean(false);
     private volatile RemotingCommand responseCommand;
     private volatile boolean sendRequestOK = true;
     private volatile Throwable cause;
     private volatile boolean interrupted = false;
 
-    public ResponseFuture(Channel channel, int opaque, long timeoutMillis, InvokeCallback invokeCallback,
-                          SemaphoreReleaseOnlyOnce once) {
-        this(channel, opaque, null, timeoutMillis, invokeCallback, once);
+    public ResponseFuture(Channel channel, int opaque, long timeoutMillis, InvokeCallback invokeCallback) {
+        this(channel, opaque, null, timeoutMillis, invokeCallback);
     }
 
-    public ResponseFuture(Channel channel, int opaque, RemotingCommand request, long timeoutMillis, InvokeCallback invokeCallback,
-                          SemaphoreReleaseOnlyOnce once) {
+    public ResponseFuture(Channel channel, int opaque, RemotingCommand request, long timeoutMillis, InvokeCallback invokeCallback) {
         this.channel = channel;
         this.opaque = opaque;
         this.request = request;
         this.timeoutMillis = timeoutMillis;
         this.invokeCallback = invokeCallback;
-        this.once = once;
     }
 
     public void executeInvokeCallback() {
@@ -70,12 +48,6 @@ public class ResponseFuture {
     public void interrupt() {
         interrupted = true;
         executeInvokeCallback();
-    }
-
-    public void release() {
-        if (this.once != null) {
-            this.once.release();
-        }
     }
 
     public boolean isTimeout() {
@@ -92,4 +64,5 @@ public class ResponseFuture {
         this.responseCommand = responseCommand;
         this.countDownLatch.countDown();
     }
+    
 }
