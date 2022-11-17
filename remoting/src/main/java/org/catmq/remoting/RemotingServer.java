@@ -47,6 +47,6 @@ public interface RemotingServer extends RemotingService {
                      final InvokeCallback invokeCallback) throws Exception;
 
     void invokeOneway(final Channel channel, final RemotingCommand request, final long timeoutMillis)
-        throws Exception;
+            throws Exception;
 
 }

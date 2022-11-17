@@ -11,7 +11,9 @@ import org.catmq.remoting.protocol.RemotingCommand;
 import org.catmq.remoting.protocol.RemotingSysResponseCode;
 
 import java.net.SocketAddress;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -288,34 +290,6 @@ public abstract class NettyRemotingAbstract {
      * netty event-loop thread.
      */
     public abstract ExecutorService getCallbackExecutor();
-
-    /**
-     * <p>
-     * This method is periodically invoked to scan and expire deprecated request.
-     * </p>
-     */
-    public void scanResponseTable() {
-        final List<ResponseFuture> rfList = new LinkedList<>();
-        Iterator<Entry<Integer, ResponseFuture>> it = this.responseTable.entrySet().iterator();
-        while (it.hasNext()) {
-            Entry<Integer, ResponseFuture> next = it.next();
-            ResponseFuture rep = next.getValue();
-
-            if ((rep.getBeginTimestamp() + rep.getTimeoutMillis() + 1000) <= System.currentTimeMillis()) {
-                it.remove();
-                rfList.add(rep);
-                log.warning("remove timeout request, " + rep);
-            }
-        }
-
-        for (ResponseFuture rf : rfList) {
-            try {
-                executeInvokeCallback(rf);
-            } catch (Throwable e) {
-                log.warning("scanResponseTable, operationComplete Exception " + e);
-            }
-        }
-    }
 
     public RemotingCommand invokeSyncImpl(final Channel channel, final RemotingCommand request,
                                           final long timeoutMillis)

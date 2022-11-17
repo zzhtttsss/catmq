@@ -37,7 +37,7 @@ public interface RemotingClient extends RemotingService {
                      final InvokeCallback invokeCallback) throws Exception;
 
     void invokeOneway(final String addr, final RemotingCommand request, final long timeoutMillis)
-        throws Exception;
+            throws Exception;
 
     void registerProcessor(final int requestCode, final NettyRequestProcessor processor,
                            final ExecutorService executor);
