@@ -48,7 +48,7 @@ public class RemotingCommand {
     private static final String BOOLEAN_CANONICAL_NAME_1 = Boolean.class.getCanonicalName();
     private static final String BOOLEAN_CANONICAL_NAME_2 = boolean.class.getCanonicalName();
     private static final Map<Class<? extends CommandCustomHeader>, Field[]> CLASS_HASH_MAP = new HashMap<>();
-    private static final AtomicInteger requestId = new AtomicInteger(0);
+    private static AtomicInteger REQUEST_ID = new AtomicInteger(0);
 
     /**
      * Request: OperationCode
@@ -61,7 +61,7 @@ public class RemotingCommand {
      * on the same connection
      * Response: the same as Request
      */
-    private int opaque = requestId.getAndIncrement();
+    private int requestId = REQUEST_ID.getAndIncrement();
     /**
      * Request：Normal RPC or Oneway RPC
      * Response：the same as Request
@@ -124,7 +124,8 @@ public class RemotingCommand {
         if (classHeader != null) {
             try {
                 cmd.customHeader = classHeader.getDeclaredConstructor().newInstance();
-            } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+            } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
+                     NoSuchMethodException e) {
                 return null;
             }
         }
@@ -178,12 +179,6 @@ public class RemotingCommand {
         return RemotingSerializable.decode(headerData, RemotingCommand.class);
     }
 
-
-    public static int createNewRequestId() {
-        return requestId.getAndIncrement();
-    }
-
-
     public void markResponseType() {
         int bits = 1 << RPC_TYPE;
         this.flag |= bits;
@@ -207,7 +202,8 @@ public class RemotingCommand {
         CommandCustomHeader objectHeader;
         try {
             objectHeader = classHeader.getDeclaredConstructor().newInstance();
-        } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
+                 NoSuchMethodException e) {
             return null;
         }
 

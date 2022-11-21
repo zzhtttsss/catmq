@@ -1,56 +1,32 @@
 package org.catmq;
 
-import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.EventLoopGroup;
-import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.SocketChannel;
-import io.netty.channel.socket.nio.NioSocketChannel;
-import org.catmq.remoting.netty.NettyDecoder;
-import org.catmq.remoting.netty.NettyEncoder;
+import org.catmq.remoting.netty.NettyClient;
 import org.catmq.remoting.protocol.RemotingCommand;
-
-import java.net.InetSocketAddress;
 
 public class Consumer {
 
-    EventLoopGroup group;
+    NettyClient client = new NettyClient();
 
-    public void connect() {
-        Bootstrap client = new Bootstrap();
-        group = new NioEventLoopGroup();
-        client.group(group)
-                .channel(NioSocketChannel.class)
-                .remoteAddress(new InetSocketAddress("localhost", 8080))
-                .handler(new ChannelInitializer<SocketChannel>() {
-                    @Override
-                    protected void initChannel(SocketChannel ch) throws Exception {
-                        ch.pipeline()
-                                .addLast("decoder", new NettyDecoder())
-                                .addLast("encoder", new NettyEncoder())
-                                .addLast(new SimpleClientHandler());
-                    }
-                });
-        try {
-            ChannelFuture channelFuture = client.connect().sync();
-            Channel channel = channelFuture.channel();
-            System.out.println("-------" + channel.localAddress() + "--------");
-            System.out.println("---------Send a cmd----------");
-            RemotingCommand request = RemotingCommand.createRequestCommand(88, null);
-            channel.writeAndFlush(request);
-            channel.closeFuture().sync();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } finally {
-            group.shutdownGracefully();
-        }
+    public static void main(String[] args) throws Exception {
+        Consumer consumer = new Consumer();
+        consumer.client.start();
+        // nothing echo
+        RemotingCommand command = RemotingCommand.createRequestCommand(88, null);
+        System.out.println("oneway id " + command.getRequestId());
+        consumer.client.invokeOneway("127.0.0.1:8888", command, 5000);
+        // sync call
+        command = RemotingCommand.createRequestCommand(89, null);
+        System.out.println("sync id " + command.getRequestId());
+        RemotingCommand response = consumer.client.invokeSync("127.0.0.1:8888", command, 5000);
+        System.out.println(response.getRemark());
+        // async call
+        command = RemotingCommand.createRequestCommand(90, null);
+        System.out.println("async id " + command.getRequestId());
+        consumer.client.invokeAsync("127.0.0.1:8888", command, 5000, future -> {
+            if (future.isSendRequestOK()) {
+                System.out.println("send done");
+            }
+        });
 
-
-    }
-
-    public static void main(String[] args) {
-        new Consumer().connect();
     }
 }

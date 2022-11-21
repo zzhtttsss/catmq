@@ -19,6 +19,14 @@ package org.catmq.remoting;
 
 import org.catmq.remoting.netty.ResponseFuture;
 
+/**
+ * @author BYL
+ */
 public interface InvokeCallback {
+    /**
+     * when responseFuture finishes, this function will be called
+     *
+     * @param responseFuture the async response
+     */
     void operationComplete(final ResponseFuture responseFuture);
 }

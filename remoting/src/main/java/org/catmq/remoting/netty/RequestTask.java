@@ -30,20 +30,25 @@ public class RequestTask implements Runnable {
 
     @Override
     public boolean equals(final Object o) {
-        if (this == o)
+        if (this == o) {
             return true;
-        if (!(o instanceof RequestTask))
+        }
+        if (!(o instanceof RequestTask)) {
             return false;
+        }
 
         final RequestTask that = (RequestTask) o;
 
-        if (getCreateTimestamp() != that.getCreateTimestamp())
+        if (getCreateTimestamp() != that.getCreateTimestamp()) {
             return false;
-        if (isStopRun() != that.isStopRun())
+        }
+        if (isStopRun() != that.isStopRun()) {
             return false;
-        if (!Objects.equals(channel, that.channel))
+        }
+        if (!Objects.equals(channel, that.channel)) {
             return false;
-        return request != null ? request.getOpaque() == that.request.getOpaque() : that.request == null;
+        }
+        return request != null ? request.getRequestId() == that.request.getRequestId() : that.request == null;
 
     }
 
@@ -61,13 +66,14 @@ public class RequestTask implements Runnable {
 
     @Override
     public void run() {
-        if (!this.stopRun)
+        if (!this.stopRun) {
             this.runnable.run();
+        }
     }
 
     public void returnResponse(int code, String remark) {
         final RemotingCommand response = RemotingCommand.createResponseCommand(code, remark);
-        response.setOpaque(request.getOpaque());
+        response.setRequestId(request.getRequestId());
         this.channel.writeAndFlush(response);
     }
 }

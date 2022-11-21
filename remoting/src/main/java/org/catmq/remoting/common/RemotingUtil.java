@@ -4,116 +4,19 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 
-import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Method;
-import java.net.*;
-import java.nio.channels.Selector;
+import java.net.Inet6Address;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.nio.channels.SocketChannel;
-import java.nio.channels.spi.SelectorProvider;
-import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.logging.Logger;
 
+/**
+ * @author BYL
+ */
 public class RemotingUtil {
-    public static final String OS_NAME = System.getProperty("os.name");
     private static final Logger log = Logger.getLogger(RemotingUtil.class.getCanonicalName());
-    private static boolean isLinuxPlatform = false;
-    private static boolean isWindowsPlatform = false;
-
-    static {
-        if (OS_NAME != null && OS_NAME.toLowerCase().contains("linux")) {
-            isLinuxPlatform = true;
-        }
-
-        if (OS_NAME != null && OS_NAME.toLowerCase().contains("windows")) {
-            isWindowsPlatform = true;
-        }
-    }
-
-    public static boolean isWindowsPlatform() {
-        return isWindowsPlatform;
-    }
-
-    public static Selector openSelector() throws IOException {
-        Selector result = null;
-
-        if (isLinuxPlatform()) {
-            try {
-                final Class<?> providerClazz = Class.forName("sun.nio.ch.EPollSelectorProvider");
-                try {
-                    final Method method = providerClazz.getMethod("provider");
-                    final SelectorProvider selectorProvider = (SelectorProvider) method.invoke(null);
-                    if (selectorProvider != null) {
-                        result = selectorProvider.openSelector();
-                    }
-                } catch (final Exception e) {
-                    log.warning("Open ePoll Selector for linux platform exception " + e);
-                }
-            } catch (final Exception e) {
-                // ignore
-            }
-        }
-
-        if (result == null) {
-            result = Selector.open();
-        }
-
-        return result;
-    }
-
-    public static boolean isLinuxPlatform() {
-        return isLinuxPlatform;
-    }
-
-    public static String getLocalAddress() {
-        try {
-            // Traversal Network interface to get the first non-loopback and non-private address
-            Enumeration<NetworkInterface> enumeration = NetworkInterface.getNetworkInterfaces();
-            ArrayList<String> ipv4Result = new ArrayList<>();
-            ArrayList<String> ipv6Result = new ArrayList<>();
-            while (enumeration.hasMoreElements()) {
-                final NetworkInterface networkInterface = enumeration.nextElement();
-                if (isBridge(networkInterface)) {
-                    continue;
-                }
-
-                final Enumeration<InetAddress> en = networkInterface.getInetAddresses();
-                while (en.hasMoreElements()) {
-                    final InetAddress address = en.nextElement();
-                    if (!address.isLoopbackAddress()) {
-                        if (address instanceof Inet6Address) {
-                            ipv6Result.add(normalizeHostAddress(address));
-                        } else {
-                            ipv4Result.add(normalizeHostAddress(address));
-                        }
-                    }
-                }
-            }
-
-            // prefer ipv4
-            if (!ipv4Result.isEmpty()) {
-                for (String ip : ipv4Result) {
-                    if (ip.startsWith("127.0") || ip.startsWith("192.168")) {
-                        continue;
-                    }
-
-                    return ip;
-                }
-
-                return ipv4Result.get(ipv4Result.size() - 1);
-            } else if (!ipv6Result.isEmpty()) {
-                return ipv6Result.get(0);
-            }
-            //If failed to find,fall back to localhost
-            final InetAddress localHost = InetAddress.getLocalHost();
-            return normalizeHostAddress(localHost);
-        } catch (Exception e) {
-            log.warning("Failed to obtain local address " + e);
-        }
-
-        return null;
-    }
 
     public static String normalizeHostAddress(final InetAddress localHost) {
         if (localHost instanceof Inet6Address) {
@@ -127,8 +30,7 @@ public class RemotingUtil {
         int split = addr.lastIndexOf(":");
         String host = addr.substring(0, split);
         String port = addr.substring(split + 1);
-        InetSocketAddress isa = new InetSocketAddress(host, Integer.parseInt(port));
-        return isa;
+        return new InetSocketAddress(host, Integer.parseInt(port));
     }
 
     public static String socketAddress2String(final SocketAddress addr) {
@@ -144,18 +46,6 @@ public class RemotingUtil {
         return socketAddress2String(string2SocketAddress(addr));
     }
 
-    private static boolean isBridge(NetworkInterface networkInterface) {
-        try {
-            if (isLinuxPlatform()) {
-                String interfaceName = networkInterface.getName();
-                File file = new File("/sys/class/net/" + interfaceName + "/bridge");
-                return file.exists();
-            }
-        } catch (SecurityException e) {
-            //Ignore
-        }
-        return false;
-    }
 
     public static SocketChannel connect(SocketAddress remote) {
         return connect(remote, 1000 * 5);
@@ -198,5 +88,4 @@ public class RemotingUtil {
             });
         }
     }
-
 }
