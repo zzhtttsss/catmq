@@ -64,5 +64,5 @@ public class ResponseFuture {
         this.responseCommand = responseCommand;
         this.countDownLatch.countDown();
     }
-    
+
 }

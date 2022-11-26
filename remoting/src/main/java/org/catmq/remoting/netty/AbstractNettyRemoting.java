@@ -11,9 +11,7 @@ import org.catmq.remoting.protocol.RemotingCommand;
 import org.catmq.remoting.protocol.RemotingSysResponseCode;
 
 import java.net.SocketAddress;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
@@ -309,7 +307,6 @@ public abstract class AbstractNettyRemoting {
                     responseFuture.setSendRequestOK(true);
                     return;
                 }
-
                 responseFuture.setSendRequestOK(false);
                 responseTable.remove(requestId);
                 responseFuture.setCause(f.cause());
@@ -318,7 +315,7 @@ public abstract class AbstractNettyRemoting {
             });
 
             RemotingCommand responseCommand = responseFuture.waitResponse(timeoutMillis);
-            if (null == responseCommand) {
+            if (responseCommand == null) {
                 throw new Exception("Not receiving response from " + RemotingHelper.parseSocketAddressAddr(addr));
             }
 
@@ -379,5 +376,28 @@ public abstract class AbstractNettyRemoting {
             log.warning("write send a request command to channel <" + channel.remoteAddress() + "> failed.");
         }
 
+    }
+
+    /**
+     * Scan the responseTable to delete expired requests
+     */
+    public void scanResponseTable() {
+        final List<ResponseFuture> rfList = new LinkedList<>();
+        Iterator<Map.Entry<Integer, ResponseFuture>> it = this.responseTable.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry<Integer, ResponseFuture> next = it.next();
+            ResponseFuture rep = next.getValue();
+            if ((rep.getBeginTimestamp() + rep.getTimeoutMillis()) <= System.currentTimeMillis()) {
+                it.remove();
+                rfList.add(rep);
+            }
+        }
+        for (ResponseFuture rf : rfList) {
+            try {
+                executeInvokeCallback(rf);
+            } catch (Throwable e) {
+                log.warning("scanResponseTable, operationComplete Exception " + e);
+            }
+        }
     }
 }

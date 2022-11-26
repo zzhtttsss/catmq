@@ -14,6 +14,7 @@ import org.catmq.remoting.common.ThreadFactoryWithIndex;
 import org.catmq.remoting.protocol.RemotingCommand;
 
 import java.util.List;
+import java.util.TimerTask;
 import java.util.concurrent.*;
 import java.util.logging.Logger;
 
@@ -24,6 +25,8 @@ public class NettyClient extends AbstractNettyRemoting implements RemotingClient
     private final Logger log = Logger.getLogger(NettyClient.class.getCanonicalName());
     private final Bootstrap bootstrap;
     private final EventLoopGroup eventLoopGroupWorker;
+
+    private final ScheduledThreadPoolExecutor timerExecutor;
     /**
      * all threads will be put into publicExecutor
      */
@@ -44,6 +47,8 @@ public class NettyClient extends AbstractNettyRemoting implements RemotingClient
                 new ThreadFactoryWithIndex("NettyClientSelector_"));
         this.publicExecutor = new ThreadPoolExecutor(4, 4, 0L,
                 TimeUnit.SECONDS, new LinkedBlockingQueue<>(), new ThreadFactoryWithIndex("publicThread_"));
+        this.timerExecutor = new ScheduledThreadPoolExecutor(1,
+                new ThreadFactoryWithIndex("NettyClientTimerThread_"));
 
     }
 
@@ -65,7 +70,16 @@ public class NettyClient extends AbstractNettyRemoting implements RemotingClient
                 });
         this.callbackExecutor = new ThreadPoolExecutor(3, 3, 0L, TimeUnit.MILLISECONDS,
                 new LinkedBlockingQueue<>(), new ThreadFactoryWithIndex("CallbackThread_"));
-
+        this.timerExecutor.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                try {
+                    NettyClient.this.scanResponseTable();
+                } catch (Exception e) {
+                    log.warning("scanResponseTable exception");
+                }
+            }
+        }, 1000 * 3, 1000, TimeUnit.MILLISECONDS);
     }
 
     @Override
@@ -82,6 +96,11 @@ public class NettyClient extends AbstractNettyRemoting implements RemotingClient
             this.publicExecutor.shutdown();
         } catch (Exception e) {
             log.warning("NettyClient publicExecutor shutdown exception, " + e);
+        }
+        try {
+            this.timerExecutor.shutdown();
+        } catch (Exception e) {
+            log.warning("NettyClient timerExecutor shutdown exception, " + e);
         }
     }
 
