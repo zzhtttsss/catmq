@@ -9,7 +9,7 @@ import io.netty.handler.timeout.IdleStateHandler;
 import org.catmq.remoting.InvokeCallback;
 import org.catmq.remoting.RemotingServer;
 import org.catmq.remoting.common.Pair;
-import org.catmq.remoting.common.RemotingHelper;
+import org.catmq.remoting.common.RemotingUtil;
 import org.catmq.remoting.common.ThreadFactoryWithIndex;
 import org.catmq.remoting.protocol.RemotingCommand;
 
@@ -124,7 +124,7 @@ public class NettyServer extends AbstractNettyRemoting implements RemotingServer
 
         @Override
         public void channelActive(ChannelHandlerContext ctx) throws Exception {
-            String s = RemotingHelper.parseChannelRemoteAddr(ctx.channel());
+            String s = RemotingUtil.parseChannelRemoteAddr(ctx.channel());
             log.info(String.format("A new channel %s is active\n", s));
         }
     }

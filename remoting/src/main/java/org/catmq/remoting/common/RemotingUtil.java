@@ -4,12 +4,8 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 
-import java.io.IOException;
-import java.net.Inet6Address;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.nio.channels.SocketChannel;
 import java.util.logging.Logger;
 
 /**
@@ -17,14 +13,6 @@ import java.util.logging.Logger;
  */
 public class RemotingUtil {
     private static final Logger log = Logger.getLogger(RemotingUtil.class.getCanonicalName());
-
-    public static String normalizeHostAddress(final InetAddress localHost) {
-        if (localHost instanceof Inet6Address) {
-            return "[" + localHost.getHostAddress() + "]";
-        } else {
-            return localHost.getHostAddress();
-        }
-    }
 
     public static SocketAddress string2SocketAddress(final String addr) {
         int split = addr.lastIndexOf(":");
@@ -34,48 +22,13 @@ public class RemotingUtil {
     }
 
     public static String socketAddress2String(final SocketAddress addr) {
-        StringBuilder sb = new StringBuilder();
         InetSocketAddress inetSocketAddress = (InetSocketAddress) addr;
-        sb.append(inetSocketAddress.getAddress().getHostAddress());
-        sb.append(":");
-        sb.append(inetSocketAddress.getPort());
-        return sb.toString();
-    }
-
-    public static String convert2IpString(final String addr) {
-        return socketAddress2String(string2SocketAddress(addr));
-    }
-
-
-    public static SocketChannel connect(SocketAddress remote) {
-        return connect(remote, 1000 * 5);
-    }
-
-    public static SocketChannel connect(SocketAddress remote, final int timeoutMillis) {
-        SocketChannel sc = null;
-        try {
-            sc = SocketChannel.open();
-            sc.configureBlocking(true);
-            sc.socket().setSoLinger(false, -1);
-            sc.socket().setTcpNoDelay(true);
-            sc.socket().connect(remote, timeoutMillis);
-            sc.configureBlocking(false);
-            return sc;
-        } catch (Exception e) {
-            if (sc != null) {
-                try {
-                    sc.close();
-                } catch (IOException e1) {
-                    e1.printStackTrace();
-                }
-            }
-        }
-
-        return null;
+        return inetSocketAddress.getAddress().getHostAddress() + ":" +
+                inetSocketAddress.getPort();
     }
 
     public static void closeChannel(Channel channel) {
-        final String addrRemote = RemotingHelper.parseChannelRemoteAddr(channel);
+        final String addrRemote = parseChannelRemoteAddr(channel);
         if ("".equals(addrRemote)) {
             channel.close();
         } else {
@@ -87,5 +40,21 @@ public class RemotingUtil {
                 }
             });
         }
+    }
+
+    public static String parseChannelRemoteAddr(final Channel channel) {
+        SocketAddress remote = channel.remoteAddress();
+        if (remote != null) {
+            return RemotingUtil.socketAddress2String(remote);
+        }
+        return "";
+    }
+
+    public static String parseChannelLocalAddr(final Channel channel) {
+        SocketAddress remote = channel.localAddress();
+        if (remote != null) {
+            return RemotingUtil.socketAddress2String(remote);
+        }
+        return "";
     }
 }

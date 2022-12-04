@@ -6,7 +6,7 @@ import io.netty.channel.ChannelHandlerContext;
 import org.catmq.remoting.InvokeCallback;
 import org.catmq.remoting.RPCHook;
 import org.catmq.remoting.common.Pair;
-import org.catmq.remoting.common.RemotingHelper;
+import org.catmq.remoting.common.RemotingUtil;
 import org.catmq.remoting.protocol.RemotingCommand;
 import org.catmq.remoting.protocol.RemotingSysResponseCode;
 
@@ -28,7 +28,7 @@ public abstract class AbstractNettyRemoting {
     /**
      * This map caches all ongoing requests whose key is requestId number
      */
-    protected final ConcurrentMap<Integer, ResponseFuture> responseTable =
+    public ConcurrentMap<Integer, ResponseFuture> responseTable =
             new ConcurrentHashMap<>(256);
 
     /**
@@ -137,7 +137,7 @@ public abstract class AbstractNettyRemoting {
             pair.getObject2().submit(requestTask);
         } catch (RejectedExecutionException e) {
             if ((System.currentTimeMillis() % 10000) == 0) {
-                log.warning(RemotingHelper.parseChannelRemoteAddr(ctx.channel())
+                log.warning(RemotingUtil.parseChannelRemoteAddr(ctx.channel())
                         + ", too many requests and system thread pool busy, RejectedExecutionException "
                         + pair.getObject2().toString()
                         + " request code: " + cmd.getCode());
@@ -158,7 +158,7 @@ public abstract class AbstractNettyRemoting {
             RemotingCommand response;
 
             try {
-                String remoteAddr = RemotingHelper.parseChannelRemoteAddr(ctx.channel());
+                String remoteAddr = RemotingUtil.parseChannelRemoteAddr(ctx.channel());
                 try {
                     doBeforeRpcHooks(remoteAddr, cmd);
                 } catch (Exception e) {
@@ -228,7 +228,7 @@ public abstract class AbstractNettyRemoting {
                 responseFuture.putResponse(cmd);
             }
         } else {
-            log.warning("receive response, but not matched any request, " + RemotingHelper.parseChannelRemoteAddr(ctx.channel()));
+            log.warning("receive response, but not matched any request, " + RemotingUtil.parseChannelRemoteAddr(ctx.channel()));
             log.warning(cmd.toString());
         }
     }
@@ -316,7 +316,7 @@ public abstract class AbstractNettyRemoting {
 
             RemotingCommand responseCommand = responseFuture.waitResponse(timeoutMillis);
             if (responseCommand == null) {
-                throw new Exception("Not receiving response from " + RemotingHelper.parseSocketAddressAddr(addr));
+                throw new Exception("Not receiving response from " + RemotingUtil.socketAddress2String(addr));
             }
 
             return responseCommand;
@@ -343,10 +343,10 @@ public abstract class AbstractNettyRemoting {
                     return;
                 }
                 requestFail(requestId);
-                log.warning(String.format("send a request command to channel <%s> failed.", RemotingHelper.parseChannelRemoteAddr(channel)));
+                log.warning(String.format("send a request command to channel <%s> failed.", RemotingUtil.parseChannelRemoteAddr(channel)));
             });
         } catch (Exception e) {
-            log.warning("send a request command to channel <" + RemotingHelper.parseChannelRemoteAddr(channel) + "> Exception " + e);
+            log.warning("send a request command to channel <" + RemotingUtil.parseChannelRemoteAddr(channel) + "> Exception " + e);
         }
 
     }

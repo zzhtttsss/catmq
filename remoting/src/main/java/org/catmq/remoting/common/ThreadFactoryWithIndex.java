@@ -3,6 +3,9 @@ package org.catmq.remoting.common;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * @author BYL
+ */
 public class ThreadFactoryWithIndex implements ThreadFactory {
     private final String namePrefix;
     private final AtomicInteger threadIndex = new AtomicInteger(0);

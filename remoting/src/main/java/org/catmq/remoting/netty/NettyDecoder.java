@@ -3,14 +3,16 @@ package org.catmq.remoting.netty;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
-import org.catmq.remoting.common.RemotingHelper;
 import org.catmq.remoting.common.RemotingUtil;
 import org.catmq.remoting.protocol.RemotingCommand;
 
 import java.util.logging.Logger;
 
+/**
+ * @author BYL
+ */
 public class NettyDecoder extends LengthFieldBasedFrameDecoder {
-    private static final Logger log = Logger.getLogger(RemotingHelper.ROCKETMQ_REMOTING);
+    private static final Logger log = Logger.getLogger(NettyDecoder.class.getCanonicalName());
 
     public NettyDecoder() {
         super(16777216, 0, 4, 0, 4);
@@ -26,7 +28,7 @@ public class NettyDecoder extends LengthFieldBasedFrameDecoder {
             }
             return RemotingCommand.decode(frame);
         } catch (Exception e) {
-            log.warning("decode exception, " + RemotingHelper.parseChannelRemoteAddr(ctx.channel()));
+            log.warning("decode exception, " + RemotingUtil.parseChannelRemoteAddr(ctx.channel()));
             RemotingUtil.closeChannel(ctx.channel());
         } finally {
             if (null != frame) {
