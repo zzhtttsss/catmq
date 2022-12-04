@@ -9,7 +9,7 @@ import io.netty.handler.timeout.IdleStateHandler;
 import org.catmq.remoting.InvokeCallback;
 import org.catmq.remoting.RemotingClient;
 import org.catmq.remoting.common.Pair;
-import org.catmq.remoting.common.RemotingHelper;
+import org.catmq.remoting.common.RemotingUtil;
 import org.catmq.remoting.common.ThreadFactoryWithIndex;
 import org.catmq.remoting.protocol.RemotingCommand;
 
@@ -70,7 +70,7 @@ public class NettyClient extends AbstractNettyRemoting implements RemotingClient
                 });
         this.callbackExecutor = new ThreadPoolExecutor(3, 3, 0L, TimeUnit.MILLISECONDS,
                 new LinkedBlockingQueue<>(), new ThreadFactoryWithIndex("CallbackThread_"));
-        this.timerExecutor.scheduleAtFixedRate(new TimerTask() {
+        this.timerExecutor.scheduleWithFixedDelay(new TimerTask() {
             @Override
             public void run() {
                 try {
@@ -115,21 +115,21 @@ public class NettyClient extends AbstractNettyRemoting implements RemotingClient
         final Channel channel = this.getOrCreateChannel(addr);
         if (channel != null && channel.isActive()) {
             try {
-                doBeforeRpcHooks(addr, request);
+                this.doBeforeRpcHooks(addr, request);
                 long costTime = System.currentTimeMillis() - beginStartTime;
                 if (timeoutMillis < costTime) {
                     throw new Exception("invokeSync call the addr[" + addr + "] timeout");
                 }
                 RemotingCommand response = this.invokeSyncImpl(channel, request, timeoutMillis - costTime);
-                doAfterRpcHooks(RemotingHelper.parseChannelRemoteAddr(channel), request, response);
+                this.doAfterRpcHooks(addr, request, response);
                 return response;
             } catch (Exception e) {
                 log.warning("invokeSync: send request exception, so close the channel " + addr);
-                this.closeChannel(channel, addr);
+                RemotingUtil.closeChannel(channel);
                 throw e;
             }
         } else {
-            this.closeChannel(channel, addr);
+            RemotingUtil.closeChannel(channel);
             throw new Exception(addr);
         }
     }
@@ -140,7 +140,7 @@ public class NettyClient extends AbstractNettyRemoting implements RemotingClient
         final Channel channel = this.getOrCreateChannel(addr);
         if (channel != null && channel.isActive()) {
             try {
-                doBeforeRpcHooks(addr, request);
+                this.doBeforeRpcHooks(addr, request);
                 long costTime = System.currentTimeMillis() - beginStartTime;
                 if (timeoutMillis < costTime) {
                     throw new Exception("invokeAsync call the addr[" + addr + "] timeout");
@@ -148,11 +148,11 @@ public class NettyClient extends AbstractNettyRemoting implements RemotingClient
                 this.invokeAsyncImpl(channel, request, timeoutMillis - costTime, new InvokeCallbackWrapper(invokeCallback, addr));
             } catch (Exception e) {
                 log.warning("invokeAsync: send request exception, so close the channel " + addr);
-                this.closeChannel(channel, addr);
+                RemotingUtil.closeChannel(channel);
                 throw e;
             }
         } else {
-            this.closeChannel(channel, addr);
+            RemotingUtil.closeChannel(channel);
             throw new Exception(addr);
         }
     }
@@ -162,11 +162,11 @@ public class NettyClient extends AbstractNettyRemoting implements RemotingClient
         Channel channel = getOrCreateChannel(addr);
         if (channel != null && channel.isActive()) {
             try {
-                doBeforeRpcHooks(addr, request);
+                this.doBeforeRpcHooks(addr, request);
                 this.invokeOnewayImpl(channel, request, timeoutMillis);
             } catch (Exception e) {
                 log.warning("invokeOneway: send request exception, so close the channel " + addr);
-                this.closeChannel(channel, addr);
+                RemotingUtil.closeChannel(channel);
                 throw e;
             }
         } else {
@@ -200,21 +200,8 @@ public class NettyClient extends AbstractNettyRemoting implements RemotingClient
     public void closeChannels(List<String> addrList) {
         addrList.forEach(addr -> {
             Channel channel = channelTables.get(addr);
-            this.closeChannel(channel, addr);
+            RemotingUtil.closeChannel(channel);
         });
-    }
-
-    private void closeChannel(Channel channel, String addr) {
-        if (channel != null) {
-            channel.closeFuture().addListener(new ChannelFutureListener() {
-                @Override
-                public void operationComplete(ChannelFuture future) throws Exception {
-                    log.info(String.format("closeChannel: close the connection to remote address[%s] result: %s\n"
-                            , addr, future.isSuccess()));
-                    channelTables.remove(addr);
-                }
-            });
-        }
     }
 
     private Channel getOrCreateChannel(final String addr) throws InterruptedException {
@@ -222,7 +209,7 @@ public class NettyClient extends AbstractNettyRemoting implements RemotingClient
         if (cw != null) {
             return cw;
         }
-        ChannelFuture future = this.bootstrap.connect(RemotingHelper.string2SocketAddress(addr)).sync();
+        ChannelFuture future = this.bootstrap.connect(RemotingUtil.string2SocketAddress(addr)).sync();
         this.channelTables.put(addr, future.channel());
         return future.channel();
     }
