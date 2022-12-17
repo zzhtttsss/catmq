@@ -11,6 +11,7 @@
         <module>base</module>
         <module>remoting</module>
         <module>storer</module>
+        <module>connect</module>
     </modules>
     <packaging>pom</packaging>
 
