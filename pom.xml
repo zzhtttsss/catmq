@@ -8,9 +8,9 @@
     <modules>
         <module>broker</module>
         <module>client</module>
-        <module>controller</module>
         <module>base</module>
         <module>remoting</module>
+        <module>storer</module>
     </modules>
     <packaging>pom</packaging>
 
