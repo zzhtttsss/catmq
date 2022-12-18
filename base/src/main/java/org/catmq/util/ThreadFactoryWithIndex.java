@@ -1,4 +1,4 @@
-package org.catmq.remoting.common;
+package org.catmq.util;
 
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
