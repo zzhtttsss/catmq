@@ -23,6 +23,8 @@
         <fastjson2.version>2.0.19</fastjson2.version>
         <lombok.version>1.18.24</lombok.version>
         <mockito.version>4.9.0</mockito.version>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
     </properties>
 
     <dependencies>
