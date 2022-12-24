@@ -23,7 +23,7 @@ public class ThreadPoolMonitor {
     private static volatile long jstackPeriodTime = 60000;
     private static volatile long jstackTime = System.currentTimeMillis();
 
-    public static void config(InternalLogger jstackLoggerConfig, InternalLogger waterMarkLoggerConfig,
+    public static void config(Logger jstackLoggerConfig, Logger waterMarkLoggerConfig,
                               boolean enablePrintJstack, long jstackPeriodTimeConfig, long threadPoolStatusPeriodTimeConfig) {
         jstackLogger = jstackLoggerConfig;
         waterMarkLogger = waterMarkLoggerConfig;
@@ -91,7 +91,7 @@ public class ThreadPoolMonitor {
                     if (monitor.needPrintJstack(threadPoolWrapper.getThreadPoolExecutor(), value) &&
                             System.currentTimeMillis() - jstackTime > jstackPeriodTime) {
                         jstackTime = System.currentTimeMillis();
-                        jstackLogger.warn("jstack start\n{}", UtilAll.jstack());
+                        jstackLogger.warn("jstack start\n");
                     }
                 }
             }

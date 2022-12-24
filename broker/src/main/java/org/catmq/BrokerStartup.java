@@ -5,6 +5,8 @@ import io.grpc.InsecureServerCredentials;
 import io.grpc.Server;
 import io.grpc.protobuf.services.ChannelzService;
 import io.grpc.protobuf.services.ProtoReflectionService;
+import org.catmq.context.ContextInterceptor;
+
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
@@ -22,6 +24,7 @@ public class BrokerStartup {
                 .addService(new BrokerServer())
                 .addService(ChannelzService.newInstance(100))
                 .addService(ProtoReflectionService.newInstance())
+                .intercept(new ContextInterceptor())
                 .build()
                 .start();
 
