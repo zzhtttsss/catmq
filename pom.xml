@@ -23,6 +23,7 @@
         <fastjson2.version>2.0.19</fastjson2.version>
         <lombok.version>1.18.24</lombok.version>
         <mockito.version>4.9.0</mockito.version>
+        <logback.version>1.4.5</logback.version>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
     </properties>
@@ -55,6 +56,17 @@
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
             <version>${mockito.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-services</artifactId>
+            <version>1.51.0</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>${logback.version}</version>
         </dependency>
 
     </dependencies>

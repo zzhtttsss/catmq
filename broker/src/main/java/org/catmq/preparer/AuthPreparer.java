@@ -1,13 +1,13 @@
 package org.catmq.preparer;
 
-import org.catmq.context.Context;
+import org.catmq.context.RequestContext;
 
 public class AuthPreparer implements Preparer {
 
     public static final String AUTH_PREPARER = "AuthPreparer";
 
     @Override
-    public Context prepare(Context ctx) {
+    public RequestContext prepare(RequestContext ctx) {
         ctx.testField = ctx.testField + " AuthPreparer";
         return ctx;
     }

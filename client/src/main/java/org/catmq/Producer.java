@@ -1,9 +1,9 @@
 package org.catmq;
 
 import io.grpc.*;
-import org.catmq.protocol.produce.ProduceServiceGrpc;
-import org.catmq.protocol.produce.SendMessage2BrokerReply;
-import org.catmq.protocol.produce.SendMessage2BrokerRequest;
+import org.catmq.protocol.service.BrokerServiceGrpc;
+import org.catmq.protocol.service.SendMessage2BrokerReply;
+import org.catmq.protocol.service.SendMessage2BrokerRequest;
 import org.catmq.util.StringUtil;
 
 import java.util.concurrent.TimeUnit;
@@ -14,20 +14,20 @@ public class Producer {
 
     private static final Logger logger = Logger.getLogger(Producer.class.getName());
 
-    private final ProduceServiceGrpc.ProduceServiceBlockingStub blockingStub;
+    private final BrokerServiceGrpc.BrokerServiceBlockingStub blockingStub;
     /** Construct client for accessing HelloWorld server using the existing channel. */
     public Producer(Channel channel) {
         // 'channel' here is a Channel, not a ManagedChannel, so it is not this code's responsibility to
         // shut it down.
 
         // Passing Channels to code makes code easier to test and makes it easier to reuse Channels.
-        blockingStub = ProduceServiceGrpc.newBlockingStub(channel);
+        blockingStub = BrokerServiceGrpc.newBlockingStub(channel);
     }
 
     public void sendMessage2Broker(String topic, String message) {
         logger.info(StringUtil.concatString("Will try to send message to broker, topic: ", topic, ", message: ", message));
         SendMessage2BrokerRequest request = SendMessage2BrokerRequest.newBuilder()
-                .setTopic(topic).setMessage(message).build();
+                .setMessage(message).build();
         SendMessage2BrokerReply response;
         try {
             response = blockingStub.sendMessage2Broker(request);

@@ -1,8 +1,8 @@
 package org.catmq.processor;
 
-import org.catmq.context.Context;
+import org.catmq.context.RequestContext;
 
-public interface Processor {
+public interface Processor<V, T> {
 
-    Context process(Context ctx);
+    T process(RequestContext ctx, V request);
 }

@@ -1,8 +1,7 @@
 package org.catmq.finisher;
 
-import org.catmq.context.Context;
-import org.checkerframework.checker.units.qual.C;
+import org.catmq.context.RequestContext;
 
 public interface Finisher {
-    Context finish(Context ctx);
+    RequestContext finish(RequestContext ctx);
 }

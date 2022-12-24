@@ -1,8 +1,8 @@
 package org.catmq.preparer;
 
-import org.catmq.context.Context;
+import org.catmq.context.RequestContext;
 
 public interface Preparer {
-    Context prepare(Context ctx);
+    RequestContext prepare(RequestContext ctx);
 
 }
