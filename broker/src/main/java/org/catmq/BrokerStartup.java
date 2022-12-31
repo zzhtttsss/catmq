@@ -6,6 +6,7 @@ import io.grpc.Server;
 import io.grpc.protobuf.services.ChannelzService;
 import io.grpc.protobuf.services.ProtoReflectionService;
 import org.catmq.context.ContextInterceptor;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
@@ -13,7 +14,7 @@ import java.util.logging.Logger;
 
 public class BrokerStartup {
 
-    private static final Logger logger = Logger.getLogger(BrokerStartup.class.getName());
+    private static final org.slf4j.Logger logger = LoggerFactory.getLogger(BrokerStartup.class);
 
     private static Server server;
 

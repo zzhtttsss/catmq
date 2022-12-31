@@ -1,6 +1,7 @@
 package org.catmq.finisher;
 
 import org.catmq.context.RequestContext;
+import org.catmq.preparer.ExamplePreparer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -9,8 +10,18 @@ public class ExampleFinisher implements Finisher {
     public static final String EXAMPLE_FINISHER = "ExampleFinisher";
 
     @Override
-    public RequestContext finish(RequestContext ctx) {
+    public void finish(RequestContext ctx) {
         logger.info("ExampleFinisher");
-        return ctx;
+    }
+
+    public enum ExampleFinisherEnum {
+        INSTANCE;
+        private final ExampleFinisher exampleFinisher;
+        ExampleFinisherEnum() {
+            exampleFinisher = new ExampleFinisher();
+        }
+        public ExampleFinisher getInstance() {
+            return exampleFinisher;
+        }
     }
 }

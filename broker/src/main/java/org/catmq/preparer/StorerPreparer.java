@@ -4,7 +4,17 @@ import org.catmq.context.RequestContext;
 
 public class StorerPreparer implements Preparer {
     @Override
-    public RequestContext prepare(RequestContext ctx) {
-        return ctx;
+    public void prepare(RequestContext ctx) {
+    }
+
+    public enum StorerPreparerEnum {
+        INSTANCE;
+        private final StorerPreparer storerPreparer;
+        StorerPreparerEnum() {
+            storerPreparer = new StorerPreparer();
+        }
+        public StorerPreparer getInstance() {
+            return storerPreparer;
+        }
     }
 }
