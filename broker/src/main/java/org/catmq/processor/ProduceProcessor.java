@@ -2,6 +2,7 @@ package org.catmq.processor;
 
 import lombok.extern.slf4j.Slf4j;
 import org.catmq.context.RequestContext;
+import org.catmq.grpc.ResponseBuilder;
 import org.catmq.protocol.service.SendMessage2BrokerRequest;
 import org.catmq.protocol.service.SendMessage2BrokerResponse;
 
