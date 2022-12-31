@@ -17,11 +17,19 @@ public class BrokerInfo implements ISerialization {
     private String brokerName;
     @NonNull
     private String brokerIp;
-    @NonNull
     private int brokerPort;
+    @NonNull
+    private String zkAddress;
 
     @Override
     public byte[] toBytes() {
         return JSON.toJSONBytes(this);
+    }
+
+    public BrokerInfo(@NonNull String brokerId, String brokerName, @NonNull String brokerIp, int brokerPort) {
+        this.brokerId = brokerId;
+        this.brokerName = brokerName;
+        this.brokerIp = brokerIp;
+        this.brokerPort = brokerPort;
     }
 }

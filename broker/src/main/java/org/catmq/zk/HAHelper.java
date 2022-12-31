@@ -1,4 +1,4 @@
-package org.catmq.broker.zk;
+package org.catmq.zk;
 
 import org.catmq.broker.BrokerInfo;
 import org.catmq.entity.ISerialization;
@@ -12,7 +12,7 @@ import org.slf4j.Logger;
 public class HAHelper {
     private static final Logger log = org.slf4j.LoggerFactory.getLogger(HAHelper.class);
 
-    public static void handleDeadBroker(BaseZooKeeper bzk, String name) {
+    public static void handleDeadBroker(BrokerZooKeeper bzk, String name) {
         log.warn("{} gets dead broker {}. Start to transfer....",
                 bzk.getBroker().brokerInfo.getBrokerName(), name);
         String path = "/broker/" + name;

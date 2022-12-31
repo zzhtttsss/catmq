@@ -62,6 +62,14 @@
             <artifactId>protobuf-java</artifactId>
             <version>3.21.8</version>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/org.apache.curator/curator-test -->
+        <dependency>
+            <groupId>org.apache.curator</groupId>
+            <artifactId>curator-test</artifactId>
+            <version>${curator.version}</version>
+            <scope>test</scope>
+        </dependency>
+
 
     </dependencies>
 </project>
