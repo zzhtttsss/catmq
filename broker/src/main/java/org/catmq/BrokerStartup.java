@@ -5,16 +5,15 @@ import io.grpc.InsecureServerCredentials;
 import io.grpc.Server;
 import io.grpc.protobuf.services.ChannelzService;
 import io.grpc.protobuf.services.ProtoReflectionService;
+import lombok.extern.slf4j.Slf4j;
 import org.catmq.context.ContextInterceptor;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
 
+@Slf4j
 public class BrokerStartup {
 
-    private static final org.slf4j.Logger logger = LoggerFactory.getLogger(BrokerStartup.class);
 
     private static Server server;
 
@@ -29,7 +28,7 @@ public class BrokerStartup {
                 .build()
                 .start();
 
-        logger.info("Server started, listening on " + port);
+        log.info("Server started, listening on " + port);
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {

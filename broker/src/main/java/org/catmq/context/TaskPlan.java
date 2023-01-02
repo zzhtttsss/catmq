@@ -14,9 +14,8 @@ public record TaskPlan<V, T>(Preparer[] preparers, Processor<V, T> processor, Fi
 
     public static final TaskPlan<SendMessage2BrokerRequest, SendMessage2BrokerResponse> SEND_MESSAGE_2_BROKER_TASK_PLAN =
             new TaskPlan<>(new Preparer[]{StorerPreparer.StorerPreparerEnum.INSTANCE.getInstance(),
-                    ExamplePreparer.ExamplePreparerEnum.INSTANCE.getInstance()},
+                    ExamplePreparer.ExamplePreparerEnum.INSTANCE.getInstance(), ctx -> System.out.println("aaaaaaaaa") },
                     ProduceProcessor.ProduceProcessorEnum.INSTANCE.getInstance(),
                     new Finisher[]{ExampleFinisher.ExampleFinisherEnum.INSTANCE.getInstance()});
-
 
 }

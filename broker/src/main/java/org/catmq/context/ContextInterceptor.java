@@ -2,12 +2,10 @@ package org.catmq.context;
 
 import io.grpc.*;
 import io.grpc.Context;
-import org.catmq.thread.ThreadPoolMonitor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class ContextInterceptor implements ServerInterceptor {
-    private static final Logger logger = LoggerFactory.getLogger(ContextInterceptor.class);
 
     @Override
     public <R, W> ServerCall.Listener<R> interceptCall(
@@ -15,7 +13,7 @@ public class ContextInterceptor implements ServerInterceptor {
             Metadata headers,
             ServerCallHandler<R, W> next
     ) {
-        logger.info(headers.toString());
+        log.info(headers.toString());
         io.grpc.Context context = Context.current().withValue(InterceptorConstants.METADATA, headers);
         return Contexts.interceptCall(context, call, headers, next);
     }

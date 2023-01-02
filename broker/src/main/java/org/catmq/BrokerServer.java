@@ -3,6 +3,7 @@ package org.catmq;
 import io.grpc.Context;
 import io.grpc.Metadata;
 import io.grpc.stub.StreamObserver;
+import lombok.extern.slf4j.Slf4j;
 import org.catmq.context.InterceptorConstants;
 import org.catmq.context.RequestContext;
 import org.catmq.context.TaskPlan;
@@ -16,17 +17,14 @@ import org.catmq.protocol.service.BrokerServiceGrpc;
 import org.catmq.protocol.service.SendMessage2BrokerRequest;
 import org.catmq.protocol.service.SendMessage2BrokerResponse;
 import org.catmq.thread.ThreadPoolMonitor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.*;
 import java.util.function.Function;
 
 import static org.catmq.util.StringUtil.defaultString;
 
+@Slf4j
 public class BrokerServer extends BrokerServiceGrpc.BrokerServiceImplBase {
-
-    private static final Logger logger = LoggerFactory.getLogger(BrokerStartup.class.getName());
 
     protected ThreadPoolExecutor producerThreadPoolExecutor;
 
@@ -153,7 +151,7 @@ public class BrokerServer extends BrokerServiceGrpc.BrokerServiceImplBase {
                     GrpcTask grpcTask = (GrpcTask) r;
                     writeResponse(grpcTask.ctx, grpcTask.request, grpcTask.statusResponseCreator.apply(flowLimitStatus()), grpcTask.streamObserver, null, null);
                 } catch (Throwable t) {
-                    logger.warn("write rejected error response failed", t);
+                    log.warn("write rejected error response failed", t);
                 }
             }
         }

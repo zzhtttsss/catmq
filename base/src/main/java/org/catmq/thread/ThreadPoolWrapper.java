@@ -2,10 +2,14 @@ package org.catmq.thread;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.List;
 import java.util.concurrent.ThreadPoolExecutor;
 
+@Getter
+@Setter
 public class ThreadPoolWrapper {
     private String name;
     private ThreadPoolExecutor threadPoolExecutor;
@@ -57,29 +61,6 @@ public class ThreadPoolWrapper {
         return new ThreadPoolWrapper.ThreadPoolWrapperBuilder();
     }
 
-    public String getName() {
-        return this.name;
-    }
-
-    public ThreadPoolExecutor getThreadPoolExecutor() {
-        return this.threadPoolExecutor;
-    }
-
-    public List<ThreadPoolStatusMonitor> getStatusPrinters() {
-        return this.statusPrinters;
-    }
-
-    public void setName(final String name) {
-        this.name = name;
-    }
-
-    public void setThreadPoolExecutor(final ThreadPoolExecutor threadPoolExecutor) {
-        this.threadPoolExecutor = threadPoolExecutor;
-    }
-
-    public void setStatusPrinters(final List<ThreadPoolStatusMonitor> statusPrinters) {
-        this.statusPrinters = statusPrinters;
-    }
 
     @Override
     public boolean equals(Object o) {
