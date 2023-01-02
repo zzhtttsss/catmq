@@ -1,11 +1,14 @@
 package org.catmq.zk;
 
+import cn.hutool.core.util.StrUtil;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.zookeeper.CreateMode;
 import org.catmq.Broker;
 import org.catmq.command.BooleanError;
+import org.catmq.constant.FileConstant;
+import org.catmq.constant.ZkConstant;
 import org.catmq.zk.balance.ILoadBalance;
-import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -15,9 +18,8 @@ import java.util.Optional;
 /**
  * @author BYL
  */
+@Slf4j
 public class BrokerZooKeeper extends BaseZookeeper {
-    private final Logger log = org.slf4j.LoggerFactory.getLogger(BrokerZooKeeper.class);
-
     @Getter
     private final Broker broker;
     @Getter
@@ -43,7 +45,7 @@ public class BrokerZooKeeper extends BaseZookeeper {
     public String getOptimalConnection() {
         String target = this.balanceStrategy.getOptimalConnection();
         if (target == null) {
-            return this.broker.brokerInfo.getBrokerIp() + ":" + this.broker.brokerInfo.getBrokerPort();
+            return this.broker.brokerInfo.getBrokerIp() + FileConstant.Colon + this.broker.brokerInfo.getBrokerPort();
         }
         return target;
     }
@@ -76,15 +78,15 @@ public class BrokerZooKeeper extends BaseZookeeper {
     /**
      * This method is used to get all broker paths from zookeeper.
      *
-     * @param isNotTmp true: get all broker paths from zookeeper,
-     *                 false: get all broker paths from tmp directory.
+     * @param isTmp true: get all broker paths from zookeeper,
+     *              false: get all broker paths from tmp directory.
      * @return List<String> broker paths
      */
-    public List<String> getAllBrokerPaths(boolean isNotTmp) {
+    public List<String> getAllBrokerPaths(boolean isTmp) {
         List<String> empty = new ArrayList<>();
-        String path = "/broker";
-        if (!isNotTmp) {
-            path = "/broker/tmp";
+        String path = ZkConstant.BROKER_ROOT_PATH;
+        if (isTmp) {
+            path = ZkConstant.TMP_BROKER_PATH;
         }
         try {
             return Optional.ofNullable(super.client.getChildren().forPath(path)).orElse(empty);
@@ -108,14 +110,14 @@ public class BrokerZooKeeper extends BaseZookeeper {
             this.client.create()
                     .creatingParentsIfNeeded()
                     .withMode(CreateMode.EPHEMERAL)
-                    .forPath("/broker/tmp/" + this.broker.brokerInfo.getBrokerName());
+                    .forPath(StrUtil.concat(true, ZkConstant.TMP_BROKER_PATH, FileConstant.LEFT_SLASH, this.broker.brokerInfo.getBrokerName()));
         } catch (Exception e) {
             e.printStackTrace();
             return BooleanError.fail(e.getMessage());
         }
         return BooleanError.ok();
     }
-    
+
     public BrokerZooKeeper(String host, Broker broker, ILoadBalance balanceStrategy) throws IOException {
         super(host);
         this.broker = broker;

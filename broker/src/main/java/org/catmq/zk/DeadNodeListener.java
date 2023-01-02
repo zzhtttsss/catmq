@@ -1,16 +1,15 @@
 package org.catmq.zk;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.curator.framework.recipes.cache.ChildData;
 import org.apache.curator.framework.recipes.cache.CuratorCacheListener;
 import org.catmq.broker.BrokerInfo;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * @author BYL
  */
+@Slf4j
 public class DeadNodeListener implements CuratorCacheListener {
-    Logger log = LoggerFactory.getLogger(DeadNodeListener.class);
 
     private final ZkMutexLock lock;
 

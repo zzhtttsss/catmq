@@ -1,16 +1,16 @@
 package org.catmq.zk;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.ExponentialBackoffRetry;
-import org.slf4j.Logger;
 
 /**
  * @author BYL
  */
+@Slf4j
 public abstract class BaseZookeeper {
-    protected final Logger log = org.slf4j.LoggerFactory.getLogger(BaseZookeeper.class);
     public final CuratorFramework client;
 
     /**
