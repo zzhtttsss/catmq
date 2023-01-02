@@ -8,9 +8,9 @@
     <modules>
         <module>broker</module>
         <module>client</module>
-        <module>controller</module>
         <module>base</module>
         <module>remoting</module>
+        <module>storer</module>
     </modules>
     <packaging>pom</packaging>
 
@@ -26,6 +26,9 @@
         <hutool.version>5.8.10</hutool.version>
         <zookeeper.version>3.8.0</zookeeper.version>
         <curator.version>5.4.0</curator.version>
+        <logback.version>1.4.5</logback.version>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
     </properties>
 
     <dependencies>
@@ -89,6 +92,17 @@
             <version>2.0.3</version>
         </dependency>
 
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-services</artifactId>
+            <version>1.51.0</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>${logback.version}</version>
+        </dependency>
 
     </dependencies>
 </project>
