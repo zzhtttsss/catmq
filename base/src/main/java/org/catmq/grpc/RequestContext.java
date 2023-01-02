@@ -1,4 +1,4 @@
-package org.catmq.context;
+package org.catmq.grpc;
 
 import java.util.HashMap;
 import java.util.Map;

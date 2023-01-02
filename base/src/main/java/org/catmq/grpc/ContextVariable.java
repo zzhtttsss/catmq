@@ -1,4 +1,4 @@
-package org.catmq.context;
+package org.catmq.grpc;
 
 public class ContextVariable {
     public static final String REMOTE_ADDRESS = "remote-address";

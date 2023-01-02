@@ -1,46 +1,40 @@
-package org.catmq;
-
 import io.grpc.Context;
 import io.grpc.Metadata;
 import io.grpc.stub.StreamObserver;
-import org.catmq.context.TaskPlan;
-import org.catmq.finisher.Finisher;
+import lombok.extern.slf4j.Slf4j;
 import org.catmq.grpc.InterceptorConstants;
 import org.catmq.grpc.RequestContext;
 import org.catmq.grpc.ResponseBuilder;
 import org.catmq.grpc.ResponseWriter;
-import org.catmq.preparer.Preparer;
 import org.catmq.protocol.definition.Code;
 import org.catmq.protocol.definition.Status;
-import org.catmq.protocol.service.BrokerServiceGrpc;
-import org.catmq.protocol.service.SendMessage2BrokerRequest;
-import org.catmq.protocol.service.SendMessage2BrokerResponse;
+import org.catmq.protocol.service.*;
 import org.catmq.thread.ThreadPoolMonitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.RejectedExecutionHandler;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 import static org.catmq.util.StringUtil.defaultString;
 
-
-public class BrokerServer extends BrokerServiceGrpc.BrokerServiceImplBase {
-
-    private static final Logger logger = LoggerFactory.getLogger(BrokerStartup.class.getName());
-
+@Slf4j
+public class StorerServer extends StorerServiceGrpc.StorerServiceImplBase {
     protected ThreadPoolExecutor producerThreadPoolExecutor;
 
-    public BrokerServer() {
-        BrokerConfig config = BrokerConfig.BrokerConfigEnum.INSTANCE.getInstance();
-        this.producerThreadPoolExecutor = ThreadPoolMonitor.createAndMonitor(
-                config.getGrpcProducerThreadPoolNums(),
-                config.getGrpcProducerThreadPoolNums(),
-                1,
-                TimeUnit.MINUTES,
-                "GrpcProducerThreadPool",
-                config.getGrpcProducerThreadQueueCapacity()
-        );
+    public StorerServer() {
+//        BrokerConfig config = BrokerConfig.BrokerConfigEnum.INSTANCE.getInstance();
+//        this.producerThreadPoolExecutor = ThreadPoolMonitor.createAndMonitor(
+//                config.getGrpcProducerThreadPoolNums(),
+//                config.getGrpcProducerThreadPoolNums(),
+//                1,
+//                TimeUnit.MINUTES,
+//                "GrpcProducerThreadPool",
+//                config.getGrpcProducerThreadQueueCapacity()
+//        );
         this.init();
     }
 
@@ -50,14 +44,8 @@ public class BrokerServer extends BrokerServiceGrpc.BrokerServiceImplBase {
     }
 
     @Override
-    public void sendMessage2Broker(SendMessage2BrokerRequest request, StreamObserver<SendMessage2BrokerResponse> responseObserver) {
-        Function<Status, SendMessage2BrokerResponse> statusResponseCreator = status -> SendMessage2BrokerResponse.newBuilder().setStatus(status).build();
-        RequestContext ctx = createContext();
-        try {
-            this.producerThreadPoolExecutor.submit(new GrpcTask<>(ctx, request, TaskPlan.SEND_MESSAGE_2_BROKER_TASK_PLAN, responseObserver, statusResponseCreator));
-        } catch (Throwable t) {
-            writeResponse(ctx, request, null, responseObserver, t, statusResponseCreator);
-        }
+    public void sendMessage2Storer(SendMessage2StorerRequest request, StreamObserver<SendMessage2StorerResponse> responseObserver) {
+
     }
 
     protected <V, T> void writeResponse(RequestContext context, V request, T response, StreamObserver<T> responseObserver,
@@ -119,18 +107,6 @@ public class BrokerServer extends BrokerServiceGrpc.BrokerServiceImplBase {
 
         public CompletableFuture<T> execute(RequestContext ctx, V request, TaskPlan<V, T> taskPlan){
             CompletableFuture<T> future = new CompletableFuture<>();
-            try {
-                for (Preparer p: taskPlan.preparers()) {
-                    p.prepare(ctx);
-                }
-                T response = taskPlan.processor().process(ctx, request);
-                for (Finisher f: taskPlan.finishers()) {
-                    f.finish(ctx);
-                }
-                future.complete(response);
-            } catch (Throwable t) {
-                future.completeExceptionally(t);
-            }
             return future;
         }
 
@@ -154,7 +130,7 @@ public class BrokerServer extends BrokerServiceGrpc.BrokerServiceImplBase {
                     GrpcTask grpcTask = (GrpcTask) r;
                     writeResponse(grpcTask.ctx, grpcTask.request, grpcTask.statusResponseCreator.apply(flowLimitStatus()), grpcTask.streamObserver, null, null);
                 } catch (Throwable t) {
-                    logger.warn("write rejected error response failed", t);
+                    log.warn("write rejected error response failed", t);
                 }
             }
         }

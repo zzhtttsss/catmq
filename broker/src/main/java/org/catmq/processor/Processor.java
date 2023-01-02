@@ -1,6 +1,6 @@
 package org.catmq.processor;
 
-import org.catmq.context.RequestContext;
+import org.catmq.grpc.RequestContext;
 
 public interface Processor<V, T> {
 
