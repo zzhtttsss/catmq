@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+option java_generic_services = true;
+option java_multiple_files = true;
+option java_package = "org.catmq.protocol.service";
+option java_generate_equals_and_hash = true;
+option java_string_check_utf8 = true;
+import "definition.proto";
+
+message SendMessage2BrokerRequest {
+
+  string message = 1;
+}
+
+message SendMessage2BrokerResponse {
+  bool ack = 1;
+  string res = 2;
+  Status status = 3;
+}
+
+message GetMessageFromBrokerRequest {
+  string message = 1;
+}
+
+message GetMessageFromBrokerResponse {
+  bool ack = 1;
+  string res = 2;
+  Status status = 3;
+}
+
+service BrokerService{
+  rpc SendMessage2Broker (SendMessage2BrokerRequest) returns (SendMessage2BrokerResponse) {}
+  rpc GetMessageFromBroker (GetMessageFromBrokerRequest) returns (GetMessageFromBrokerResponse) {}
+}
+
