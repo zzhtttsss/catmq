@@ -10,8 +10,8 @@ import org.catmq.remoting.InvokeCallback;
 import org.catmq.remoting.RemotingClient;
 import org.catmq.remoting.common.Pair;
 import org.catmq.remoting.common.RemotingUtil;
-import org.catmq.remoting.common.ThreadFactoryWithIndex;
 import org.catmq.remoting.protocol.RemotingCommand;
+import org.catmq.thread.ThreadFactoryWithIndex;
 
 import java.util.List;
 import java.util.TimerTask;

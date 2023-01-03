@@ -17,4 +17,8 @@ public class FileConstant {
     public static final long MB = 1024 * KB;
 
     public static final long COMMIT_LOG_SIZE = MB;
+
+    public static final String LEFT_SLASH = "/";
+
+    public static final String Colon = ":";
 }

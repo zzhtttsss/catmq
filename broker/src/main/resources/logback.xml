@@ -13,26 +13,28 @@ configuration 子节点为 appender、logger、root
     <!--用于区分不同应用程序的记录-->
     <contextName>broker</contextName>
     <!--日志文件所在目录，如果是tomcat，如下写法日志文件会在则为${TOMCAT_HOME}/bin/logs/目录下-->
-    <property name="LOG_HOME" value="logs"/>
+    <property name="LOG_HOME" value="logs/app.log"/>
+
+    <property name="CONSOLE_LOG_PATTERN"
+              value="%yellow(%date{yyyy-MM-dd HH:mm:ss}) |%highlight(%-5level) |%blue(%thread) |%blue(%file:%line) |%green(%logger) |%cyan(%msg%n)"/>
+
 
     <!--控制台-->
-    <appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
+    <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <!--格式化输出：%d表示日期，%thread表示线程名，%-5level：级别从左显示5个字符宽度 %logger输出日志的logger名 %msg：日志消息，%n是换行符 -->
-            <pattern>[%d{yyyy-MM-dd HH:mm:ss.SSS}] [%thread] %-5level %logger{36} : %msg%n</pattern>
+            <pattern>${CONSOLE_LOG_PATTERN}</pattern>
             <!--解决乱码问题-->
             <charset>UTF-8</charset>
         </encoder>
     </appender>
 
-    <!--滚动文件-->
     <appender name="infoLog" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <!-- ThresholdFilter:临界值过滤器，过滤掉 TRACE 和 DEBUG 级别的日志 -->
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
             <level>info</level>
         </filter>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>${LOG_HOME}/log.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <fileNamePattern>logs/info.%d{yyyy-MM-dd}.log</fileNamePattern>
             <maxHistory>30</maxHistory><!--保存最近30天的日志-->
         </rollingPolicy>
         <encoder>
@@ -41,20 +43,16 @@ configuration 子节点为 appender、logger、root
         </encoder>
     </appender>
 
-    <!--滚动文件-->
-    <appender name="errorLog" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <appender name="errorLog" class="ch.qos.logback.core.FileAppender">
         <!-- ThresholdFilter:临界值过滤器，过滤掉 TRACE 和 DEBUG 级别的日志 -->
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
             <level>error</level>
         </filter>
-        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>${LOG_HOME}/error.%d{yyyy-MM-dd}.log</fileNamePattern>
-            <maxHistory>30</maxHistory><!--保存最近30天的日志-->
-        </rollingPolicy>
         <encoder>
             <charset>UTF-8</charset>
             <pattern>[%d{yyyy-MM-dd HH:mm:ss.SSS}] [%thread] %-5level %logger{36} : %msg%n</pattern>
         </encoder>
+        <file>logs/error.log</file>
     </appender>
 
     <!--将日志输出到logstack-->
@@ -70,10 +68,10 @@ configuration 子节点为 appender、logger、root
     <!--root是所有logger的祖先，均继承root，如果某一个自定义的logger没有指定level，就会寻找
     父logger看有没有指定级别，直到找到root。-->
     <root level="debug">
-        <appender-ref ref="stdout"/>
+        <appender-ref ref="console"/>
         <appender-ref ref="infoLog"/>
         <appender-ref ref="errorLog"/>
-        <appender-ref ref="logstash"/>
+        <!--<appender-ref ref="logstash"/>-->
     </root>
 
     <!--为某个包单独配置logger
