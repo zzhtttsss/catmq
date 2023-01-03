@@ -30,6 +30,9 @@ configuration 子节点为 appender、logger、root
     </appender>
 
     <appender name="infoLog" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>info</level>
+        </filter>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <fileNamePattern>logs/info.%d{yyyy-MM-dd}.log</fileNamePattern>
             <maxHistory>30</maxHistory><!--保存最近30天的日志-->
