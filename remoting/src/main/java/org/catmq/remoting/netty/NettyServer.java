@@ -11,7 +11,7 @@ import org.catmq.remoting.RemotingServer;
 import org.catmq.remoting.common.Pair;
 import org.catmq.remoting.common.RemotingUtil;
 import org.catmq.remoting.protocol.RemotingCommand;
-import org.catmq.util.ThreadFactoryWithIndex;
+import org.catmq.thread.ThreadFactoryWithIndex;
 
 import java.net.InetSocketAddress;
 import java.util.concurrent.ExecutorService;

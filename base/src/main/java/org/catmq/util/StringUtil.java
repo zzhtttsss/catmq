@@ -17,13 +17,15 @@ public class StringUtil {
         return true;
     }
 
-    public static String concatString(String... strings) {
+    public static String concatString(CharSequence... strings) {
+
         StringBuilder sb = new StringBuilder();
-        for (String str : strings) {
+        for (CharSequence str : strings) {
             sb.append(str);
         }
         return sb.toString();
     }
+
 
     public static String defaultString(final String str) {
         return defaultString(str, EMPTY_STRING);

@@ -1,8 +1,8 @@
 package org.catmq.broker.zk;
 
 import org.apache.curator.test.TestingServer;
-import org.catmq.Broker;
 import org.catmq.broker.BrokerInfo;
+import org.catmq.broker.BrokerServer;
 import org.catmq.command.BooleanError;
 import org.catmq.zk.BrokerZooKeeper;
 import org.catmq.zk.balance.ILoadBalance;
@@ -32,7 +32,7 @@ public class BrokerZooKeeperTest {
 
 
     private BrokerZooKeeper createFakeZk(BrokerInfo info) throws IOException {
-        Broker broker = Mockito.mock(Broker.class);
+        BrokerServer broker = Mockito.mock(BrokerServer.class);
         ILoadBalance loadBalance = Mockito.mock(ILoadBalance.class);
         Mockito.when(loadBalance.registerConnection(info)).thenReturn(BooleanError.ok());
         broker.brokerInfo = info;

@@ -1,4 +1,4 @@
-package org.catmq;
+package org.catmq.broker;
 
 import io.grpc.Context;
 import io.grpc.Metadata;
@@ -16,7 +16,9 @@ import org.catmq.protocol.definition.Status;
 import org.catmq.protocol.service.BrokerServiceGrpc;
 import org.catmq.protocol.service.SendMessage2BrokerRequest;
 import org.catmq.protocol.service.SendMessage2BrokerResponse;
+import org.catmq.thread.ThreadFactoryWithIndex;
 import org.catmq.thread.ThreadPoolMonitor;
+import org.catmq.zk.BrokerZooKeeper;
 
 import java.util.concurrent.*;
 import java.util.function.Function;
@@ -25,6 +27,10 @@ import static org.catmq.util.StringUtil.defaultString;
 
 @Slf4j
 public class BrokerServer extends BrokerServiceGrpc.BrokerServiceImplBase {
+
+    public BrokerInfo brokerInfo;
+    protected BrokerZooKeeper bzk;
+    private ScheduledExecutorService timeExecutor;
 
     protected ThreadPoolExecutor producerThreadPoolExecutor;
 
@@ -38,12 +44,21 @@ public class BrokerServer extends BrokerServiceGrpc.BrokerServiceImplBase {
                 "GrpcProducerThreadPool",
                 config.getGrpcProducerThreadQueueCapacity()
         );
+        this.brokerInfo = new BrokerInfo(config.getBrokerId(), config.getBrokerName(),
+                config.getBrokerIp(), config.getBrokerPort(), "127.0.0.1:2181");
+        this.bzk = new BrokerZooKeeper("127.0.0.1:2181", this, null);
+        this.timeExecutor = new ScheduledThreadPoolExecutor(4,
+                new ThreadFactoryWithIndex("BrokerTimerThread_"));
         this.init();
     }
 
     protected void init() {
         GrpcTaskRejectedExecutionHandler rejectedExecutionHandler = new GrpcTaskRejectedExecutionHandler();
         this.producerThreadPoolExecutor.setRejectedExecutionHandler(rejectedExecutionHandler);
+
+        this.bzk.register2Zk();
+        log.info("BrokerServer init success");
+
     }
 
     @Override
@@ -114,14 +129,14 @@ public class BrokerServer extends BrokerServiceGrpc.BrokerServiceImplBase {
 
         }
 
-        public CompletableFuture<T> execute(RequestContext ctx, V request, TaskPlan<V, T> taskPlan){
+        public CompletableFuture<T> execute(RequestContext ctx, V request, TaskPlan<V, T> taskPlan) {
             CompletableFuture<T> future = new CompletableFuture<>();
             try {
-                for (Preparer p: taskPlan.preparers()) {
+                for (Preparer p : taskPlan.preparers()) {
                     p.prepare(ctx);
                 }
                 T response = taskPlan.processor().process(ctx, request);
-                for (Finisher f: taskPlan.finishers()) {
+                for (Finisher f : taskPlan.finishers()) {
                     f.finish(ctx);
                 }
                 future.complete(response);

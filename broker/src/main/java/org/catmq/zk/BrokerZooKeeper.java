@@ -1,16 +1,15 @@
 package org.catmq.zk;
 
-import cn.hutool.core.util.StrUtil;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.zookeeper.CreateMode;
-import org.catmq.Broker;
+import org.catmq.broker.BrokerServer;
 import org.catmq.command.BooleanError;
 import org.catmq.constant.FileConstant;
 import org.catmq.constant.ZkConstant;
+import org.catmq.util.StringUtil;
 import org.catmq.zk.balance.ILoadBalance;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -21,7 +20,7 @@ import java.util.Optional;
 @Slf4j
 public class BrokerZooKeeper extends BaseZookeeper {
     @Getter
-    private final Broker broker;
+    private final BrokerServer broker;
     @Getter
     private final String brokerPath;
 
@@ -34,11 +33,14 @@ public class BrokerZooKeeper extends BaseZookeeper {
             log.error("Register broker info to zk failed. {}", res.getError());
             System.exit(-1);
         }
-        res = this.balanceStrategy.registerConnection(this.broker.brokerInfo);
-        if (!res.isSuccess()) {
-            log.error("Register broker address to zk failed. {}", res.getError());
-            System.exit(-1);
+        if (this.balanceStrategy != null) {
+            res = this.balanceStrategy.registerConnection(this.broker.brokerInfo);
+            if (!res.isSuccess()) {
+                log.error("Register broker address to zk failed. {}", res.getError());
+                System.exit(-1);
+            }
         }
+
     }
 
     @Override
@@ -110,7 +112,7 @@ public class BrokerZooKeeper extends BaseZookeeper {
             this.client.create()
                     .creatingParentsIfNeeded()
                     .withMode(CreateMode.EPHEMERAL)
-                    .forPath(StrUtil.concat(true, ZkConstant.TMP_BROKER_PATH, FileConstant.LEFT_SLASH, this.broker.brokerInfo.getBrokerName()));
+                    .forPath(StringUtil.concatString(ZkConstant.TMP_BROKER_PATH, FileConstant.LEFT_SLASH, this.broker.brokerInfo.getBrokerName()));
         } catch (Exception e) {
             e.printStackTrace();
             return BooleanError.fail(e.getMessage());
@@ -118,7 +120,7 @@ public class BrokerZooKeeper extends BaseZookeeper {
         return BooleanError.ok();
     }
 
-    public BrokerZooKeeper(String host, Broker broker, ILoadBalance balanceStrategy) throws IOException {
+    public BrokerZooKeeper(String host, BrokerServer broker, ILoadBalance balanceStrategy) {
         super(host);
         this.broker = broker;
         this.brokerPath = String.format("/broker/%s", this.broker.brokerInfo.getBrokerName());

@@ -1,4 +1,4 @@
-package org.catmq.util;
+package org.catmq.thread;
 
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;

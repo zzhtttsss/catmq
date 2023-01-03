@@ -6,6 +6,8 @@ import io.grpc.Server;
 import io.grpc.protobuf.services.ChannelzService;
 import io.grpc.protobuf.services.ProtoReflectionService;
 import lombok.extern.slf4j.Slf4j;
+import org.catmq.broker.BrokerConfig;
+import org.catmq.broker.BrokerServer;
 import org.catmq.context.ContextInterceptor;
 
 import java.io.IOException;
@@ -13,13 +15,14 @@ import java.util.concurrent.TimeUnit;
 
 @Slf4j
 public class BrokerStartup {
-
-
     private static Server server;
 
     public static void start() throws IOException {
+        // read config first
+        BrokerConfig config = BrokerConfig.BrokerConfigEnum.INSTANCE.getInstance();
+        config.readConfig("/broker.properties");
         /* The port on which the server should run */
-        int port = 5432;
+        int port = config.getBrokerPort();
         server = Grpc.newServerBuilderForPort(port, InsecureServerCredentials.create())
                 .addService(new BrokerServer())
                 .addService(ChannelzService.newInstance(100))

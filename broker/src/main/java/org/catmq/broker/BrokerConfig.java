@@ -1,21 +1,28 @@
 package org.catmq.broker;
 
+import lombok.Getter;
+import lombok.Setter;
+import org.catmq.constant.ConfigConstant;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 import java.util.UUID;
 
-/**
- * @author BYL
- */
+import static org.catmq.util.ConfigUtil.PROCESSOR_NUMBER;
+
+@Setter
+@Getter
 public class BrokerConfig {
 
-    public final String BROKER_ID = UUID.randomUUID().toString();
-    public String BROKER_NAME;
-    public final String BROKER_IP;
-    public final int BROKER_PORT;
+    private String brokerId = UUID.randomUUID().toString();
+    private String brokerName;
+    private String brokerIp;
+    private int brokerPort = 5432;
+    private int grpcProducerThreadQueueCapacity = 10000;
+    private int grpcProducerThreadPoolNums = PROCESSOR_NUMBER;
 
-    public BrokerConfig(String configPath) {
+    public void readConfig(String configPath) {
         InputStream stream = this.getClass().getResourceAsStream(configPath);
         if (stream == null) {
             throw new RuntimeException("broker.properties not found");
@@ -26,8 +33,30 @@ public class BrokerConfig {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        BROKER_NAME = properties.getProperty("broker.name", "default");
-        BROKER_IP = properties.getProperty("broker.ip", "127.0.0.1");
-        BROKER_PORT = Integer.parseInt(properties.getProperty("broker.port", "8888"));
+        brokerName = properties.getProperty(ConfigConstant.BROKER_NAME, "default");
+        brokerIp = properties.getProperty(ConfigConstant.BROKER_IP, "127.0.0.1");
+        brokerPort = Integer.parseInt(properties.getProperty(ConfigConstant.BROKER_PORT, String.valueOf(brokerPort)));
+        grpcProducerThreadQueueCapacity = Integer.parseInt(properties.getProperty(ConfigConstant.GRPC_PRODUCER_THREAD_QUEUE_CAPACITY, String.valueOf(grpcProducerThreadQueueCapacity)));
+        grpcProducerThreadPoolNums = Integer.parseInt(properties.getProperty(ConfigConstant.GRPC_PRODUCER_THREAD_POOL_NUMS, String.valueOf(grpcProducerThreadPoolNums)));
+    }
+
+    private BrokerConfig() {
+    }
+    
+    public enum BrokerConfigEnum {
+        /**
+         * Singleton
+         */
+        INSTANCE;
+        private final BrokerConfig brokerConfig;
+
+
+        BrokerConfigEnum() {
+            brokerConfig = new BrokerConfig();
+        }
+
+        public BrokerConfig getInstance() {
+            return brokerConfig;
+        }
     }
 }
