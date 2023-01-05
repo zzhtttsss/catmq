@@ -73,12 +73,12 @@
             <groupId>org.apache.curator</groupId>
             <artifactId>curator-recipes</artifactId>
             <version>${curator.version}</version>
-            <exclusions>
+            <!--<exclusions>
                 <exclusion>
                     <groupId>org.apache.zookeeper</groupId>
                     <artifactId>zookeeper</artifactId>
                 </exclusion>
-            </exclusions>
+            </exclusions>-->
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/org.apache.zookeeper/zookeeper -->
