@@ -18,7 +18,7 @@ public class StorerStartup {
         /* The port on which the server should run */
         int port = 5432;
         server = Grpc.newServerBuilderForPort(port, InsecureServerCredentials.create())
-//                .addService(new BrokerServer())
+                .addService(new StorerServer())
                 .addService(ChannelzService.newInstance(100))
                 .addService(ProtoReflectionService.newInstance())
                 .intercept(new ContextInterceptor())

@@ -34,4 +34,5 @@ public class StringUtil {
     public static String defaultString(final String str, final String defaultStr) {
         return str == null ? defaultStr : str;
     }
+
 }

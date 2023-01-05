@@ -9,19 +9,16 @@ import org.catmq.grpc.ResponseWriter;
 import org.catmq.protocol.definition.Code;
 import org.catmq.protocol.definition.Status;
 import org.catmq.protocol.service.*;
-import org.catmq.thread.ThreadPoolMonitor;
 
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 import static org.catmq.util.StringUtil.defaultString;
 
 @Slf4j
 public class StorerServer extends StorerServiceGrpc.StorerServiceImplBase {
-    protected ThreadPoolExecutor producerThreadPoolExecutor;
+    protected ThreadPoolExecutor writeThreadPoolExecutor;
 
     public StorerServer() {
 //        BrokerConfig config = BrokerConfig.BrokerConfigEnum.INSTANCE.getInstance();
@@ -38,7 +35,7 @@ public class StorerServer extends StorerServiceGrpc.StorerServiceImplBase {
 
     protected void init() {
         GrpcTaskRejectedExecutionHandler rejectedExecutionHandler = new GrpcTaskRejectedExecutionHandler();
-        this.producerThreadPoolExecutor.setRejectedExecutionHandler(rejectedExecutionHandler);
+        this.writeThreadPoolExecutor.setRejectedExecutionHandler(rejectedExecutionHandler);
     }
 
     @Override
@@ -83,37 +80,37 @@ public class StorerServer extends StorerServiceGrpc.StorerServiceImplBase {
         return defaultString(headers.get(key));
     }
 
-    protected class GrpcTask<V, T> implements Runnable {
-
-        protected final RequestContext ctx;
-        protected final V request;
-
-        protected final TaskPlan<V, T> taskPlan;
-
-        protected final Function<Status, T> statusResponseCreator;
-        protected final StreamObserver<T> streamObserver;
-
-        public GrpcTask(RequestContext ctx, V request, TaskPlan<V, T> taskPlan, StreamObserver<T> streamObserver,
-                        Function<Status, T> statusResponseCreator) {
-            this.ctx = ctx;
-            this.taskPlan = taskPlan;
-            this.streamObserver = streamObserver;
-            this.request = request;
-            this.statusResponseCreator = statusResponseCreator;
-
-        }
-
-        public CompletableFuture<T> execute(RequestContext ctx, V request, TaskPlan<V, T> taskPlan){
-            CompletableFuture<T> future = new CompletableFuture<>();
-            return future;
-        }
-
-        @Override
-        public void run() {
-            execute(ctx, request, taskPlan)
-                    .whenComplete((response, throwable) -> writeResponse(ctx, request, response, streamObserver, throwable, statusResponseCreator));
-        }
-    }
+//    protected class GrpcTask<V, T> implements Runnable {
+//
+//        protected final RequestContext ctx;
+//        protected final V request;
+//
+//        protected final TaskPlan<V, T> taskPlan;
+//
+//        protected final Function<Status, T> statusResponseCreator;
+//        protected final StreamObserver<T> streamObserver;
+//
+//        public GrpcTask(RequestContext ctx, V request, TaskPlan<V, T> taskPlan, StreamObserver<T> streamObserver,
+//                        Function<Status, T> statusResponseCreator) {
+//            this.ctx = ctx;
+//            this.taskPlan = taskPlan;
+//            this.streamObserver = streamObserver;
+//            this.request = request;
+//            this.statusResponseCreator = statusResponseCreator;
+//
+//        }
+//
+//        public CompletableFuture<T> execute(RequestContext ctx, V request, TaskPlan<V, T> taskPlan){
+//            CompletableFuture<T> future = new CompletableFuture<>();
+//            return future;
+//        }
+//
+//        @Override
+//        public void run() {
+//            execute(ctx, request, taskPlan)
+//                    .whenComplete((response, throwable) -> writeResponse(ctx, request, response, streamObserver, throwable, statusResponseCreator));
+//        }
+//    }
 
     protected class GrpcTaskRejectedExecutionHandler implements RejectedExecutionHandler {
 
@@ -123,14 +120,14 @@ public class StorerServer extends StorerServiceGrpc.StorerServiceImplBase {
 
         @Override
         public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
-            if (r instanceof GrpcTask) {
-                try {
-                    GrpcTask grpcTask = (GrpcTask) r;
-                    writeResponse(grpcTask.ctx, grpcTask.request, grpcTask.statusResponseCreator.apply(flowLimitStatus()), grpcTask.streamObserver, null, null);
-                } catch (Throwable t) {
-                    log.warn("write rejected error response failed", t);
-                }
-            }
+//            if (r instanceof GrpcTask) {
+//                try {
+//                    GrpcTask grpcTask = (GrpcTask) r;
+//                    writeResponse(grpcTask.ctx, grpcTask.request, grpcTask.statusResponseCreator.apply(flowLimitStatus()), grpcTask.streamObserver, null, null);
+//                } catch (Throwable t) {
+//                    log.warn("write rejected error response failed", t);
+//                }
+//            }
         }
     }
 
