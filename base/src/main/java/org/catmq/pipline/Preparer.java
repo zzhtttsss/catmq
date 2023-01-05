@@ -1,4 +1,4 @@
-package org.catmq.preparer;
+package org.catmq.pipline;
 
 import org.catmq.grpc.RequestContext;
 

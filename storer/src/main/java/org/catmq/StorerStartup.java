@@ -1,3 +1,5 @@
+package org.catmq;
+
 import io.grpc.Grpc;
 import io.grpc.InsecureServerCredentials;
 import io.grpc.Server;
