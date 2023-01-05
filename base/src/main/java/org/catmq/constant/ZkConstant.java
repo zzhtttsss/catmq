@@ -6,4 +6,7 @@ public class ZkConstant {
 
     public static final String TMP_BROKER_PATH = "/broker/tmp";
 
+    public static final String BROKER_ADDRESS = "/address/broker";
+
+
 }

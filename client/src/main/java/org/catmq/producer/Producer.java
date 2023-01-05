@@ -1,45 +1,45 @@
-package org.catmq;
+package org.catmq.producer;
 
 import io.grpc.*;
 import io.grpc.stub.MetadataUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.catmq.protocol.service.BrokerServiceGrpc;
 import org.catmq.protocol.service.SendMessage2BrokerRequest;
 import org.catmq.protocol.service.SendMessage2BrokerResponse;
 import org.catmq.util.StringUtil;
 
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
+@Slf4j
 public class Producer {
 
-    private static final Logger logger = Logger.getLogger(Producer.class.getName());
-
     private final BrokerServiceGrpc.BrokerServiceBlockingStub blockingStub;
-    /** Construct client for accessing HelloWorld server using the existing channel. */
+
+    /**
+     * Construct client for accessing HelloWorld server using the existing channel.
+     */
     public Producer(Channel channel) {
         // 'channel' here is a Channel, not a ManagedChannel, so it is not this code's responsibility to
         // shut it down.
         Metadata metadata = new Metadata();
-        metadata.put( Metadata.Key.of("action", Metadata.ASCII_STRING_MARSHALLER), "sendMessage2Broker");
+        metadata.put(Metadata.Key.of("action", Metadata.ASCII_STRING_MARSHALLER), "sendMessage2Broker");
         Channel headChannel = ClientInterceptors.intercept(channel, MetadataUtils.newAttachHeadersInterceptor(metadata));
         // Passing Channels to code makes code easier to test and makes it easier to reuse Channels.
         blockingStub = BrokerServiceGrpc.newBlockingStub(headChannel);
     }
 
     public void sendMessage2Broker(String topic, String message) {
-        logger.info(StringUtil.concatString("Will try to send message to broker, topic: ", topic, ", message: ", message));
+        log.info(StringUtil.concatString("Will try to send message to broker, topic: ", topic, ", message: ", message));
         SendMessage2BrokerRequest request = SendMessage2BrokerRequest.newBuilder()
                 .setMessage(message).build();
         SendMessage2BrokerResponse response;
         try {
             response = blockingStub.sendMessage2Broker(request);
         } catch (StatusRuntimeException e) {
-            logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
+            log.warn("RPC failed: {}", e.getStatus());
             return;
         }
-        logger.info("ack: " + response.getAck() + " response: " + response.getRes() + " status msg: " + response.getStatus().getMessage() + " status code: " + response.getStatus().getCode().getNumber());
+        log.info("ack: " + response.getAck() + " response: " + response.getRes() + " status msg: " + response.getStatus().getMessage() + " status code: " + response.getStatus().getCode().getNumber());
     }
 
     public static void main(String[] args) throws Exception {
