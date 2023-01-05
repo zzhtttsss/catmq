@@ -1,10 +1,12 @@
 package org.catmq.zk.balance;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.CuratorCache;
 import org.apache.zookeeper.CreateMode;
 import org.catmq.broker.BrokerInfo;
 import org.catmq.command.BooleanError;
+import org.catmq.constant.FileConstant;
 import org.catmq.zk.DeadNodeListener;
 import org.catmq.zk.ZkUtil;
 
@@ -12,13 +14,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * @author BYL
- */
+@Slf4j
 public class LeastUsedStrategy implements ILoadBalance {
     @Override
     public BooleanError registerConnection(BrokerInfo info) {
         try (CuratorFramework client = ZkUtil.createClient(info.getZkAddress())) {
+            log.info("Register broker address to zk. {}", info.getBrokerIp() + FileConstant.Colon + info.getBrokerPort());
             client.create()
                     .creatingParentsIfNeeded()
                     .withMode(CreateMode.EPHEMERAL)
@@ -55,6 +56,9 @@ public class LeastUsedStrategy implements ILoadBalance {
                 e.printStackTrace();
                 return null;
             }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
         }
     }
 }
