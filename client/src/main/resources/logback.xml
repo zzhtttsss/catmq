@@ -11,9 +11,9 @@ configuration 子节点为 appender、logger、root
             -->
 <configuration scan="true" scanPeriod="60 seconds" debug="false">
     <!--用于区分不同应用程序的记录-->
-    <contextName>broker</contextName>
+    <contextName>client</contextName>
     <!--日志文件所在目录，如果是tomcat，如下写法日志文件会在则为${TOMCAT_HOME}/bin/logs/目录下-->
-    <property name="LOG_HOME" value="logs/app.log"/>
+    <property name="LOG_HOME" value="logs/client.log"/>
 
     <property name="CONSOLE_LOG_PATTERN"
               value="%yellow(%date{yyyy-MM-dd HH:mm:ss}) |%highlight(%-5level) |%blue(%thread) |%blue(%file:%line) |%green(%logger) |%cyan(%msg%n)"/>
@@ -37,7 +37,7 @@ configuration 子节点为 appender、logger、root
             <level>info</level>
         </filter>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>logs/broker.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <fileNamePattern>logs/client.%d{yyyy-MM-dd}.log</fileNamePattern>
             <maxHistory>30</maxHistory><!--保存最近30天的日志-->
         </rollingPolicy>
         <encoder>
@@ -55,7 +55,7 @@ configuration 子节点为 appender、logger、root
             <charset>UTF-8</charset>
             <pattern>[%d{yyyy-MM-dd HH:mm:ss.SSS}] [%thread] %-5level %logger{36} : %msg%n</pattern>
         </encoder>
-        <file>logs/brokerError.log</file>
+        <file>logs/clientError.log</file>
     </appender>
 
     <!--将日志输出到logstack-->

@@ -1,6 +1,6 @@
 package org.catmq.zk.balance;
 
-import org.catmq.broker.BrokerInfo;
+import org.catmq.broker.BrokerServer;
 import org.catmq.command.BooleanError;
 
 /**
@@ -11,9 +11,9 @@ public interface ILoadBalance {
     /**
      * This method is used to register some infos to support load balance.
      *
-     * @param info broker info.
+     * @param server broker info.
      */
-    BooleanError registerConnection(BrokerInfo info);
+    BooleanError registerConnection(BrokerServer server);
 
     /**
      * This method is used to get the optimal client.

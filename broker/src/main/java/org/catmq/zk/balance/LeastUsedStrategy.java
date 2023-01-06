@@ -5,6 +5,7 @@ import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.CuratorCache;
 import org.apache.zookeeper.CreateMode;
 import org.catmq.broker.BrokerInfo;
+import org.catmq.broker.BrokerServer;
 import org.catmq.command.BooleanError;
 import org.catmq.constant.FileConstant;
 import org.catmq.zk.DeadNodeListener;
@@ -17,9 +18,11 @@ import java.util.Map;
 @Slf4j
 public class LeastUsedStrategy implements ILoadBalance {
     @Override
-    public BooleanError registerConnection(BrokerInfo info) {
-        try (CuratorFramework client = ZkUtil.createClient(info.getZkAddress())) {
-            log.info("Register broker address to zk. {}", info.getBrokerIp() + FileConstant.Colon + info.getBrokerPort());
+    public BooleanError registerConnection(BrokerServer server) {
+        BrokerInfo info = server.brokerInfo;
+        CuratorFramework client = server.bzk.client;
+        log.info("Register broker address to zk. {}", info.getBrokerIp() + FileConstant.Colon + info.getBrokerPort());
+        try {
             client.create()
                     .creatingParentsIfNeeded()
                     .withMode(CreateMode.EPHEMERAL)
@@ -32,9 +35,10 @@ public class LeastUsedStrategy implements ILoadBalance {
             cc.listenable().addListener(new DeadNodeListener(info));
             cc.start();
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Register broker address to zk failed. {}", e.getMessage());
             return BooleanError.fail(e.getMessage());
         }
+
         return BooleanError.ok();
     }
 
