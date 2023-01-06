@@ -30,7 +30,7 @@ import static org.catmq.util.StringUtil.defaultString;
 public class BrokerServer extends BrokerServiceGrpc.BrokerServiceImplBase {
 
     public BrokerInfo brokerInfo;
-    protected BrokerZooKeeper bzk;
+    public BrokerZooKeeper bzk;
     private ScheduledExecutorService timeExecutor;
 
     protected ThreadPoolExecutor producerThreadPoolExecutor;

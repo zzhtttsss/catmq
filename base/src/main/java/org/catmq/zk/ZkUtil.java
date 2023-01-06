@@ -14,7 +14,7 @@ public class ZkUtil {
     public static CuratorFramework createClient(String zkAddress) throws InterruptedException {
         RetryPolicy policy = new RetryOneTime(1000);
         CuratorFramework cf = CuratorFrameworkFactory.newClient(zkAddress, policy);
-        cf.blockUntilConnected();
+        cf.start();
         return cf;
     }
 
