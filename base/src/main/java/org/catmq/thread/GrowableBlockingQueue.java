@@ -20,7 +20,7 @@ import java.util.concurrent.locks.StampedLock;
  *
  * <p>This queue only allows 1 consumer thread to dequeue items and multiple producer threads.
  */
-public class GrowableMpScArrayConsumerBlockingQueue<T> extends AbstractQueue<T> implements BlockingQueue<T> {
+public class GrowableBlockingQueue<T> extends AbstractQueue<T> implements BlockingQueue<T> {
 
     private final StampedLock headLock = new StampedLock();
     private final PaddedInt headIndex = new PaddedInt();
@@ -32,12 +32,12 @@ public class GrowableMpScArrayConsumerBlockingQueue<T> extends AbstractQueue<T> 
 
     private volatile Thread waitingConsumer;
 
-    public GrowableMpScArrayConsumerBlockingQueue() {
+    public GrowableBlockingQueue() {
         this(64);
     }
 
     @SuppressWarnings("unchecked")
-    public GrowableMpScArrayConsumerBlockingQueue(int initialCapacity) {
+    public GrowableBlockingQueue(int initialCapacity) {
         int capacity = MathUtil.findNextPositivePowerOfTwo(initialCapacity);
         data = (T[]) new Object[capacity];
     }

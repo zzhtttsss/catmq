@@ -55,7 +55,7 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Exe
         if (maxQueueCapacity > 0) {
             this.queue = new ArrayBlockingQueue<>(maxQueueCapacity);
         } else {
-            this.queue = new GrowableMpScArrayConsumerBlockingQueue<>();
+            this.queue = new GrowableBlockingQueue<>();
         }
         this.runner = tf.newThread(this);
         this.state = State.Running;
