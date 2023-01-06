@@ -34,7 +34,7 @@ public class BrokerZooKeeper extends BaseZookeeper {
             System.exit(-1);
         }
         if (this.balanceStrategy != null) {
-            res = this.balanceStrategy.registerConnection(this.broker.brokerInfo);
+            res = this.balanceStrategy.registerConnection(this.broker);
             if (!res.isSuccess()) {
                 log.error("Register broker address to zk failed. {}", res.getError());
                 System.exit(-1);

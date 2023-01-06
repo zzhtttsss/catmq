@@ -36,13 +36,13 @@ public class BrokerStartup {
             @Override
             public void run() {
                 // Use stderr here since the logger may have been reset by its JVM shutdown hook.
-                System.err.println("*** shutting down gRPC server since JVM is shutting down");
+                log.warn("*** shutting down gRPC server since JVM is shutting down");
                 try {
                     BrokerStartup.stop();
                 } catch (InterruptedException e) {
                     e.printStackTrace(System.err);
                 }
-                System.err.println("*** server shut down");
+                log.warn("*** server shut down");
             }
         });
     }

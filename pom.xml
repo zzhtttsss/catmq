@@ -28,6 +28,7 @@
         <curator.version>5.4.0</curator.version>
         <logback.version>1.4.5</logback.version>
         <guava.version>31.1-jre</guava.version>
+        <commons-cli.version>1.5.0</commons-cli.version>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
     </properties>
@@ -62,11 +63,11 @@
             <version>${mockito.version}</version>
         </dependency>
         <!-- tool class -->
-        <!--<dependency>
+        <dependency>
             <groupId>cn.hutool</groupId>
             <artifactId>hutool-all</artifactId>
             <version>${hutool.version}</version>
-        </dependency>-->
+        </dependency>
         <!-- https://mvnrepository.com/artifact/org.apache.curator/curator-recipes -->
         <dependency>
             <groupId>org.apache.curator</groupId>

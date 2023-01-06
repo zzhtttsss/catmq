@@ -1,7 +1,11 @@
 package org.catmq.util;
 
-public class StringUtil {
+import cn.hutool.core.util.StrUtil;
+import org.catmq.constant.FileConstant;
 
+import java.net.InetSocketAddress;
+
+public class StringUtil {
     public static final String EMPTY_STRING = "";
 
     public static boolean isBlank(String str) {
@@ -33,5 +37,17 @@ public class StringUtil {
 
     public static String defaultString(final String str, final String defaultStr) {
         return str == null ? defaultStr : str;
+    }
+
+    public static InetSocketAddress parseAddress(String address) {
+        if (address.contains(FileConstant.LEFT_SLASH)) {
+            address = address.substring(address.lastIndexOf(FileConstant.LEFT_SLASH) + 1);
+        }
+        String[] split = address.split(":");
+        return new InetSocketAddress(split[0], Integer.parseInt(split[1]));
+    }
+
+    public static boolean isEmpty(String str) {
+        return StrUtil.isEmpty(str);
     }
 }
