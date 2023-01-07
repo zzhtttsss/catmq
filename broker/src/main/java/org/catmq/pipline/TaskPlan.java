@@ -1,12 +1,9 @@
-package org.catmq;
+package org.catmq.pipline;
 
-import org.catmq.finisher.ExampleFinisher;
-import org.catmq.pipline.Finisher;
-import org.catmq.preparer.ExamplePreparer;
-import org.catmq.pipline.Preparer;
-import org.catmq.preparer.StorerPreparer;
-import org.catmq.pipline.Processor;
-import org.catmq.processor.ProduceProcessor;
+import org.catmq.pipline.finisher.ExampleFinisher;
+import org.catmq.pipline.preparer.ExamplePreparer;
+import org.catmq.pipline.preparer.StorerPreparer;
+import org.catmq.pipline.processor.ProduceProcessor;
 import org.catmq.protocol.service.SendMessage2BrokerRequest;
 import org.catmq.protocol.service.SendMessage2BrokerResponse;
 

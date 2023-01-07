@@ -1,7 +1,8 @@
-package org.catmq.preparer;
+package org.catmq.pipline.preparer;
 
 import lombok.extern.slf4j.Slf4j;
-import org.catmq.context.RequestContext;
+import org.catmq.grpc.RequestContext;
+import org.catmq.pipline.Preparer;
 
 @Slf4j
 public class StorerPreparer implements Preparer {

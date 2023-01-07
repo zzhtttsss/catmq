@@ -1,4 +1,4 @@
-package org.catmq.context;
+package org.catmq.grpc;
 
 import io.grpc.*;
 import io.grpc.Context;

@@ -1,14 +1,16 @@
-package org.catmq.preparer;
+package org.catmq.pipline.preparer;
 
-import lombok.extern.slf4j.Slf4j;
-import org.catmq.context.RequestContext;
+import org.catmq.grpc.RequestContext;
+import org.catmq.pipline.Preparer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-@Slf4j
 public class ExamplePreparer implements Preparer {
+    Logger logger = LoggerFactory.getLogger(ExamplePreparer.class);
     public static final String EXAMPLE_PREPARER = "ExamplePreparer";
 
     public void prepare(RequestContext ctx) {
-        log.info("ExamplePreparer");
+        logger.info("ExamplePreparer");
 
     }
 

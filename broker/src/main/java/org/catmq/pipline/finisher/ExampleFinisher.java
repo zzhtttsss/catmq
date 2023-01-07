@@ -1,7 +1,8 @@
-package org.catmq.finisher;
+package org.catmq.pipline.finisher;
 
 import lombok.extern.slf4j.Slf4j;
-import org.catmq.context.RequestContext;
+import org.catmq.grpc.RequestContext;
+import org.catmq.pipline.Finisher;
 
 @Slf4j
 public class ExampleFinisher implements Finisher {

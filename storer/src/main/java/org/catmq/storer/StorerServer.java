@@ -1,59 +1,73 @@
-package org.catmq;
+package org.catmq.storer;
 
 import io.grpc.Context;
 import io.grpc.Metadata;
 import io.grpc.stub.StreamObserver;
-import org.catmq.pipline.Finisher;
+import lombok.extern.slf4j.Slf4j;
+import org.catmq.pipline.TaskPlan;
 import org.catmq.grpc.InterceptorConstants;
 import org.catmq.grpc.RequestContext;
 import org.catmq.grpc.ResponseBuilder;
 import org.catmq.grpc.ResponseWriter;
-import org.catmq.pipline.Preparer;
 import org.catmq.protocol.definition.Code;
 import org.catmq.protocol.definition.Status;
-import org.catmq.protocol.service.BrokerServiceGrpc;
-import org.catmq.protocol.service.SendMessage2BrokerRequest;
-import org.catmq.protocol.service.SendMessage2BrokerResponse;
-import org.catmq.thread.ThreadPoolMonitor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.catmq.protocol.service.*;
+import org.catmq.thread.OrderedExecutor;
 
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
+import static org.catmq.storer.StorerConfig.*;
+import static org.catmq.thread.OrderedExecutor.NO_TASK_LIMIT;
 import static org.catmq.util.StringUtil.defaultString;
 
+@Slf4j
+public class StorerServer extends StorerServiceGrpc.StorerServiceImplBase {
+    protected OrderedExecutor writeOrderedExecutor;
 
-public class BrokerServer extends BrokerServiceGrpc.BrokerServiceImplBase {
+    protected OrderedExecutor readThreadPoolExecutor;
 
-    private static final Logger logger = LoggerFactory.getLogger(BrokerStartup.class.getName());
 
-    protected ThreadPoolExecutor producerThreadPoolExecutor;
+    public StorerServer() {
+        StorerConfig config = StorerConfig.StorerConfigEnum.INSTANCE.getInstance();
+        writeOrderedExecutor = createExecutor(config.getWriteOrderedExecutorThreadNums(), WRITE_ORDERED_EXECUTOR_NAME,
+                NO_TASK_LIMIT);
+        readThreadPoolExecutor = createExecutor(config.getReadOrderedExecutorThreadNums(), READ_ORDERED_EXECUTOR_NAME,
+                NO_TASK_LIMIT);
 
-    public BrokerServer() {
-        BrokerConfig config = BrokerConfig.BrokerConfigEnum.INSTANCE.getInstance();
-        this.producerThreadPoolExecutor = ThreadPoolMonitor.createAndMonitor(
-                config.getGrpcProducerThreadPoolNums(),
-                config.getGrpcProducerThreadPoolNums(),
-                1,
-                TimeUnit.MINUTES,
-                "GrpcProducerThreadPool",
-                config.getGrpcProducerThreadQueueCapacity()
-        );
+
         this.init();
     }
 
     protected void init() {
-        GrpcTaskRejectedExecutionHandler rejectedExecutionHandler = new GrpcTaskRejectedExecutionHandler();
-        this.producerThreadPoolExecutor.setRejectedExecutionHandler(rejectedExecutionHandler);
+
+    }
+
+    private OrderedExecutor createExecutor(
+            int numThreads,
+            String nameFormat,
+            int maxTasksInQueue) {
+        if (numThreads <= 0) {
+            return null;
+        } else {
+            return OrderedExecutor.newBuilder()
+                    .numThreads(numThreads)
+                    .name(nameFormat)
+                    .traceTaskExecution(false)
+                    .preserveMdcForTaskExecution(false)
+                    .maxTasksInQueue(maxTasksInQueue)
+                    .enableThreadScopedMetrics(true)
+                    .build();
+        }
     }
 
     @Override
-    public void sendMessage2Broker(SendMessage2BrokerRequest request, StreamObserver<SendMessage2BrokerResponse> responseObserver) {
-        Function<Status, SendMessage2BrokerResponse> statusResponseCreator = status -> SendMessage2BrokerResponse.newBuilder().setStatus(status).build();
+    public void sendMessage2Storer(SendMessage2StorerRequest request, StreamObserver<SendMessage2StorerResponse> responseObserver) {
+        Function<Status, SendMessage2StorerResponse> statusResponseCreator = status -> SendMessage2StorerResponse.newBuilder().setStatus(status).build();
         RequestContext ctx = createContext();
         try {
-            this.producerThreadPoolExecutor.submit(new GrpcTask<>(ctx, request, TaskPlan.SEND_MESSAGE_2_BROKER_TASK_PLAN, responseObserver, statusResponseCreator));
+            this.writeOrderedExecutor.submit(new GrpcTask<>(ctx, request, TaskPlan.SEND_MESSAGE_2_STORER_TASK_PLAN,
+                    responseObserver, statusResponseCreator));
         } catch (Throwable t) {
             writeResponse(ctx, request, null, responseObserver, t, statusResponseCreator);
         }
@@ -118,18 +132,6 @@ public class BrokerServer extends BrokerServiceGrpc.BrokerServiceImplBase {
 
         public CompletableFuture<T> execute(RequestContext ctx, V request, TaskPlan<V, T> taskPlan){
             CompletableFuture<T> future = new CompletableFuture<>();
-            try {
-                for (Preparer p: taskPlan.preparers()) {
-                    p.prepare(ctx);
-                }
-                T response = taskPlan.processor().process(ctx, request);
-                for (Finisher f: taskPlan.finishers()) {
-                    f.finish(ctx);
-                }
-                future.complete(response);
-            } catch (Throwable t) {
-                future.completeExceptionally(t);
-            }
             return future;
         }
 
@@ -137,25 +139,6 @@ public class BrokerServer extends BrokerServiceGrpc.BrokerServiceImplBase {
         public void run() {
             execute(ctx, request, taskPlan)
                     .whenComplete((response, throwable) -> writeResponse(ctx, request, response, streamObserver, throwable, statusResponseCreator));
-        }
-    }
-
-    protected class GrpcTaskRejectedExecutionHandler implements RejectedExecutionHandler {
-
-        public GrpcTaskRejectedExecutionHandler() {
-
-        }
-
-        @Override
-        public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
-            if (r instanceof GrpcTask) {
-                try {
-                    GrpcTask grpcTask = (GrpcTask) r;
-                    writeResponse(grpcTask.ctx, grpcTask.request, grpcTask.statusResponseCreator.apply(flowLimitStatus()), grpcTask.streamObserver, null, null);
-                } catch (Throwable t) {
-                    logger.warn("write rejected error response failed", t);
-                }
-            }
         }
     }
 

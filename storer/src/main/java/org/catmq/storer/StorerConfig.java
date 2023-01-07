@@ -1,4 +1,4 @@
-package org.catmq;
+package org.catmq.storer;
 
 import lombok.Getter;
 import lombok.Setter;

@@ -1,4 +1,4 @@
-package org.catmq.finisher;
+package org.catmq.pipline.finisher;
 
 import org.catmq.grpc.RequestContext;
 import org.catmq.pipline.Finisher;

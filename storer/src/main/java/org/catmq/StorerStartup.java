@@ -7,6 +7,7 @@ import io.grpc.protobuf.services.ChannelzService;
 import io.grpc.protobuf.services.ProtoReflectionService;
 import lombok.extern.slf4j.Slf4j;
 import org.catmq.grpc.ContextInterceptor;
+import org.catmq.storer.StorerServer;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
