@@ -19,7 +19,6 @@ import org.catmq.protocol.service.SendMessage2BrokerResponse;
 import org.catmq.thread.ThreadFactoryWithIndex;
 import org.catmq.thread.ThreadPoolMonitor;
 import org.catmq.zk.BrokerZooKeeper;
-import org.catmq.zk.balance.LoadBalanceFactory;
 
 import java.util.concurrent.*;
 import java.util.function.Function;
@@ -47,7 +46,7 @@ public class BrokerServer extends BrokerServiceGrpc.BrokerServiceImplBase {
         );
         this.brokerInfo = new BrokerInfo(config.getBrokerId(), config.getBrokerName(),
                 config.getBrokerIp(), config.getBrokerPort(), "127.0.0.1:2181");
-        this.bzk = new BrokerZooKeeper("127.0.0.1:2181", this, LoadBalanceFactory.LEAST_USED.getStrategy());
+        this.bzk = new BrokerZooKeeper("127.0.0.1:2181", this);
         this.timeExecutor = new ScheduledThreadPoolExecutor(4,
                 new ThreadFactoryWithIndex("BrokerTimerThread_"));
         this.init();

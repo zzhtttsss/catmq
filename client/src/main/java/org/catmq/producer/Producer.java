@@ -16,6 +16,7 @@ public class Producer {
 
     private final BrokerServiceGrpc.BrokerServiceBlockingStub blockingStub;
 
+
     public void sendMessage2Broker(String topic, String message) {
         log.info(StringUtil.concatString("Will try to send message to broker, topic: ", topic, ", message: ", message));
         SendMessage2BrokerRequest request = SendMessage2BrokerRequest.newBuilder()

@@ -19,13 +19,6 @@ public abstract class BaseZookeeper {
     protected abstract void register2Zk();
 
     /**
-     * This method is used to get the client who has the minimum number of connections on ZooKeeper.
-     *
-     * @return the address of client like /address/broker/IP:PORT
-     */
-    protected abstract String getOptimalConnection();
-
-    /**
      * This method is used to close resources.
      */
     protected abstract void close();
