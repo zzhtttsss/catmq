@@ -5,18 +5,18 @@ import io.grpc.InsecureChannelCredentials;
 import io.grpc.ManagedChannel;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.cli.*;
-import org.apache.curator.framework.CuratorFramework;
 import org.catmq.constant.Command;
-import org.catmq.constant.FileConstant;
 import org.catmq.constant.SubCommand;
-import org.catmq.constant.ZkConstant;
 import org.catmq.producer.Producer;
 import org.catmq.producer.ProducerConfig;
+import org.catmq.producer.ProducerProxy;
 import org.catmq.util.StringUtil;
-import org.catmq.zk.ZkUtil;
 
 import java.net.InetSocketAddress;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Scanner;
 
 @Slf4j
 public class ProducerStartup {
@@ -24,7 +24,8 @@ public class ProducerStartup {
 
     public static void main(String[] args) throws Exception {
         initCommand();
-        Producer producer = initProducer();
+        ProducerProxy pp = new ProducerProxy(ProducerProxy.LoadBalanceEnum.LEAST_USED);
+        Producer producer = initProducer(pp);
 
         System.out.print(">");
         Scanner sc = new Scanner(System.in);
@@ -39,11 +40,11 @@ public class ProducerStartup {
 
     }
 
-    private static Producer initProducer() throws InterruptedException {
+    private static Producer initProducer(ProducerProxy pp) throws InterruptedException {
         ProducerConfig config = ProducerConfig.ProducerConfigEnum.INSTANCE.getInstance();
         config.readConfig("/producer.properties");
         InetSocketAddress brokerAddress = StringUtil.parseAddress(
-                getBrokerAddress(config.getZkAddress())
+                pp.selectBroker(config.getZkAddress())
                         .orElseThrow(() -> new RuntimeException("no broker address")));
         // Access a service running on the local machine on port 5432
         int port = brokerAddress.getPort();
@@ -164,33 +165,5 @@ public class ProducerStartup {
         HelpFormatter formatter = new HelpFormatter();
         COMMAND_MAP.forEach(formatter::printHelp);
         System.exit(1);
-    }
-
-    /**
-     * Get optimal broker address from zookeeper using the least used algorithm
-     *
-     * @param zkAddress zookeeper address
-     * @return broker address path like /address/broker/127.0.0.1:5432
-     */
-    private static Optional<String> getBrokerAddress(String zkAddress) {
-        try (CuratorFramework client = ZkUtil.createClient(zkAddress)) {
-            Map<String, Integer> map = new HashMap<>(4);
-
-            List<String> paths = client.getChildren().forPath(ZkConstant.BROKER_ADDRESS);
-            String addressDirectory = StringUtil.concatString(ZkConstant.BROKER_ADDRESS, FileConstant.LEFT_SLASH);
-            for (String path : paths) {
-                byte[] bytes = client.getData().forPath(StringUtil.concatString(addressDirectory, path));
-                map.put(path, Integer.parseInt(new String(bytes)));
-            }
-
-            return map.entrySet().stream()
-                    .min(Map.Entry.comparingByValue())
-                    .map(stringIntegerEntry -> addressDirectory + stringIntegerEntry.getKey())
-                    .orElseGet(() -> addressDirectory + paths.get(0))
-                    .describeConstable();
-        } catch (Exception e) {
-            e.printStackTrace();
-            return Optional.empty();
-        }
     }
 }
