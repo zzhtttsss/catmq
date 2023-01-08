@@ -14,11 +14,21 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 @Slf4j
 public class MessageLog {
 
     public static final int OS_PAGE_SIZE = 1024 * 4;
+
+    private static final int END_FILE_MIN_BLANK_LENGTH = 4 + 4;
+
+    protected static final AtomicIntegerFieldUpdater<MessageLog> WROTE_POSITION_UPDATER;
+
+    protected static final AtomicIntegerFieldUpdater<MessageLog> COMMITTED_POSITION_UPDATER;
+
+    protected static final AtomicIntegerFieldUpdater<MessageLog> FLUSHED_POSITION_UPDATER;
 
     private int flushLeastPagesWhenWarmMapedFile = 1024 / 4 * 16;
 
@@ -27,13 +37,21 @@ public class MessageLog {
 
     public File file;
 
+    @Getter
     public int fileSize;
 
+    @Getter
     public long offset;
 
     public FileChannel fileChannel;
 
     public MappedByteBuffer mappedByteBuffer;
+
+    static {
+        WROTE_POSITION_UPDATER = AtomicIntegerFieldUpdater.newUpdater(MessageLog.class, "wrotePosition");
+        COMMITTED_POSITION_UPDATER = AtomicIntegerFieldUpdater.newUpdater(MessageLog.class, "committedPosition");
+        FLUSHED_POSITION_UPDATER = AtomicIntegerFieldUpdater.newUpdater(MessageLog.class, "flushedPosition");
+    }
 
     public MessageLog(String fileName, int fileSize) throws IOException {
         this.file = new File(fileName);
@@ -60,7 +78,10 @@ public class MessageLog {
         }
     }
 
-    public void appendMessageEntry() {
+    public void appendMessageEntry(MessageEntry messageEntry) {
+        int currentPos = WROTE_POSITION_UPDATER.get(this);
+
+
 
     }
 
@@ -101,6 +122,10 @@ public class MessageLog {
                 System.currentTimeMillis() - beginTime);
 
         this.mlock();
+    }
+
+    public boolean isFull() {
+        return this.fileSize == WROTE_POSITION_UPDATER.get(this);
     }
 
     public void mlock() {
