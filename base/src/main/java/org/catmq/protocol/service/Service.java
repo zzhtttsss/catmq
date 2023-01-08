@@ -60,18 +60,19 @@ public final class Service {
       "\".\n\033GetMessageFromBrokerRequest\022\017\n\007messa" +
       "ge\030\001 \001(\t\"Q\n\034GetMessageFromBrokerResponse" +
       "\022\013\n\003ack\030\001 \001(\010\022\013\n\003res\030\002 \001(\t\022\027\n\006status\030\003 \001" +
-      "(\0132\007.Status\",\n\031SendMessage2StorerRequest" +
-      "\022\017\n\007message\030\001 \001(\t\"O\n\032SendMessage2StorerR" +
-      "esponse\022\013\n\003ack\030\001 \001(\010\022\013\n\003res\030\002 \001(\t\022\027\n\006sta" +
-      "tus\030\003 \001(\0132\007.Status2\267\001\n\rBrokerService\022O\n\022" +
-      "SendMessage2Broker\022\032.SendMessage2BrokerR" +
-      "equest\032\033.SendMessage2BrokerResponse\"\000\022U\n" +
-      "\024GetMessageFromBroker\022\034.GetMessageFromBr" +
-      "okerRequest\032\035.GetMessageFromBrokerRespon" +
-      "se\"\0002`\n\rStorerService\022O\n\022SendMessage2Sto" +
-      "rer\022\032.SendMessage2StorerRequest\032\033.SendMe" +
-      "ssage2StorerResponse\"\000B\'\n\032org.catmq.prot" +
-      "ocol.serviceP\001\210\001\001\240\001\001\330\001\001b\006proto3"
+      "(\0132\007.Status\"8\n\031SendMessage2StorerRequest" +
+      "\022\r\n\005msgId\030\002 \001(\t\022\014\n\004body\030\003 \001(\014\"O\n\032SendMes" +
+      "sage2StorerResponse\022\013\n\003ack\030\001 \001(\010\022\013\n\003res\030" +
+      "\002 \001(\t\022\027\n\006status\030\003 \001(\0132\007.Status2\267\001\n\rBroke" +
+      "rService\022O\n\022SendMessage2Broker\022\032.SendMes" +
+      "sage2BrokerRequest\032\033.SendMessage2BrokerR" +
+      "esponse\"\000\022U\n\024GetMessageFromBroker\022\034.GetM" +
+      "essageFromBrokerRequest\032\035.GetMessageFrom" +
+      "BrokerResponse\"\0002`\n\rStorerService\022O\n\022Sen" +
+      "dMessage2Storer\022\032.SendMessage2StorerRequ" +
+      "est\032\033.SendMessage2StorerResponse\"\000B\'\n\032or" +
+      "g.catmq.protocol.serviceP\001\210\001\001\240\001\001\330\001\001b\006pro" +
+      "to3"
     };
     descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
@@ -107,7 +108,7 @@ public final class Service {
     internal_static_SendMessage2StorerRequest_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_SendMessage2StorerRequest_descriptor,
-        new java.lang.String[] { "Message", });
+        new java.lang.String[] { "MsgId", "Body", });
     internal_static_SendMessage2StorerResponse_descriptor =
       getDescriptor().getMessageTypes().get(5);
     internal_static_SendMessage2StorerResponse_fieldAccessorTable = new

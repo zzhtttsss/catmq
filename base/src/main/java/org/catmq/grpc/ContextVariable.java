@@ -8,4 +8,6 @@ public class ContextVariable {
     public static final String CLIENT_VERSION = "client-version";
 //    public static final String REMAINING_MS = "remaining-ms";
     public static final String ACTION = "action";
+
+    public static final String CHUNK_ID = "chunk-id";
 }

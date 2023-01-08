@@ -15,14 +15,12 @@ public class MessageLogStorage {
 
     public final CopyOnWriteArrayList<MessageLog> messageLogs = new CopyOnWriteArrayList<>();
 
-
-
-
+    public final AllocateMessageLogService allocateMessageLogService;
 
     public MessageLogStorage() {
         // TODO read config
         this.path = "./messageLog/";
         this.maxMessageLogSize = GB;
-
+        allocateMessageLogService = new AllocateMessageLogService();
     }
 }

@@ -66,7 +66,7 @@ public class StorerServer extends StorerServiceGrpc.StorerServiceImplBase {
         Function<Status, SendMessage2StorerResponse> statusResponseCreator = status -> SendMessage2StorerResponse.newBuilder().setStatus(status).build();
         RequestContext ctx = createContext();
         try {
-            this.writeOrderedExecutor.submit(new GrpcTask<>(ctx, request, TaskPlan.SEND_MESSAGE_2_STORER_TASK_PLAN,
+            this.writeOrderedExecutor.executeOrdered(2L, new GrpcTask<>(ctx, request, TaskPlan.SEND_MESSAGE_2_STORER_TASK_PLAN,
                     responseObserver, statusResponseCreator));
         } catch (Throwable t) {
             writeResponse(ctx, request, null, responseObserver, t, statusResponseCreator);

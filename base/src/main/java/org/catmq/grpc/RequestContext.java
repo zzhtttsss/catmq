@@ -83,8 +83,17 @@ public class RequestContext {
         this.withVal(ContextVariable.ACTION, action);
         return this;
     }
-
     public String getAction() {
         return this.getVal(ContextVariable.ACTION);
     }
+
+    public long getChunkId() {
+        return Long.parseLong(this.getVal(ContextVariable.CHUNK_ID));
+    }
+
+    public RequestContext setChunkId(String chunkId) {
+        this.withVal(ContextVariable.CHUNK_ID, chunkId);
+        return this;
+    }
+
 }
