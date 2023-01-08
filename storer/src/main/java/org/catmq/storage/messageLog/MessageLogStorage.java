@@ -1,10 +1,9 @@
-package org.catmq.storage;
+package org.catmq.storage.messageLog;
 
 import lombok.extern.slf4j.Slf4j;
 import org.catmq.util.StringUtil;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import static org.catmq.constant.FileConstant.GB;

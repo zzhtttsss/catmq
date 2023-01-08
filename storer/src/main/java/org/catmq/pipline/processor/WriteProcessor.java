@@ -3,7 +3,7 @@ package org.catmq.pipline.processor;
 import org.catmq.grpc.RequestContext;
 import org.catmq.pipline.Processor;
 import org.catmq.protocol.service.*;
-import org.catmq.storage.MessageEntry;
+import org.catmq.storage.messageLog.MessageEntry;
 import org.catmq.storer.Storer;
 
 public class WriteProcessor implements Processor<SendMessage2StorerRequest, SendMessage2StorerResponse> {

@@ -1,4 +1,4 @@
-package org.catmq.storage;
+package org.catmq.storage.messageLog;
 
 import com.sun.jna.NativeLong;
 import com.sun.jna.Pointer;
@@ -14,7 +14,6 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 @Slf4j
@@ -23,6 +22,8 @@ public class MessageLog {
     public static final int OS_PAGE_SIZE = 1024 * 4;
 
     private static final int END_FILE_MIN_BLANK_LENGTH = 4 + 4;
+
+    public static final int LENGTH_OF_INT = 4;
 
     protected static final AtomicIntegerFieldUpdater<MessageLog> WROTE_POSITION_UPDATER;
 
@@ -33,19 +34,19 @@ public class MessageLog {
     private int flushLeastPagesWhenWarmMapedFile = 1024 / 4 * 16;
 
     @Getter
-    public String fileName;
+    private String fileName;
 
-    public File file;
-
-    @Getter
-    public int fileSize;
+    private File file;
 
     @Getter
-    public long offset;
+    private int fileSize;
 
-    public FileChannel fileChannel;
+    @Getter
+    private long offset;
 
-    public MappedByteBuffer mappedByteBuffer;
+    private FileChannel fileChannel;
+
+    private MappedByteBuffer mappedByteBuffer;
 
     static {
         WROTE_POSITION_UPDATER = AtomicIntegerFieldUpdater.newUpdater(MessageLog.class, "wrotePosition");
@@ -78,11 +79,21 @@ public class MessageLog {
         }
     }
 
-    public void appendMessageEntry(MessageEntry messageEntry) {
+    public boolean appendMessageEntry(MessageEntry messageEntry) {
         int currentPos = WROTE_POSITION_UPDATER.get(this);
+        if (messageEntry.message.length + END_FILE_MIN_BLANK_LENGTH > this.fileSize - currentPos) {
+            return false;
+        }
+        // TODO 目前只写入了消息体，没有加其他信息。
+        ByteBuffer byteBuffer = ByteBuffer.allocate(LENGTH_OF_INT + messageEntry.getLength());
+        byteBuffer.putInt(messageEntry.getLength());
+        byteBuffer.put(messageEntry.getMessage());
+        this.mappedByteBuffer.put(byteBuffer);
+        return true;
+    }
 
-
-
+    public void flush() {
+        this.mappedByteBuffer.force();
     }
 
     public void warmMappedFile() {

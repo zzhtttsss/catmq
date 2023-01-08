@@ -1,4 +1,4 @@
-package org.catmq.storage;
+package org.catmq.storage.chunk;
 
 import lombok.extern.slf4j.Slf4j;
 

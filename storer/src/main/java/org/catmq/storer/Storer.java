@@ -1,8 +1,8 @@
 package org.catmq.storer;
 
-import org.catmq.storage.ChunkStorage;
-import org.catmq.storage.FlushMessageEntryService;
-import org.catmq.storage.MessageLogStorage;
+import org.catmq.storage.chunk.ChunkStorage;
+import org.catmq.storage.messageLog.FlushMessageEntryService;
+import org.catmq.storage.messageLog.MessageLogStorage;
 
 public class Storer {
 

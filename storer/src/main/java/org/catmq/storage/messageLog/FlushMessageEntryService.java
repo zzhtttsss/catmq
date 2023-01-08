@@ -1,7 +1,8 @@
-package org.catmq.storage;
+package org.catmq.storage.messageLog;
 
 import lombok.extern.slf4j.Slf4j;
 import org.catmq.collection.RecyclableArrayList;
+import org.catmq.storage.ServiceThread;
 import org.catmq.storer.Storer;
 
 import java.util.concurrent.ArrayBlockingQueue;
@@ -10,6 +11,7 @@ import java.util.concurrent.BlockingQueue;
 @Slf4j
 public class FlushMessageEntryService extends ServiceThread {
 
+    public static final int BEGIN_OFFSET = 0;
 
     private final BlockingQueue<MessageEntry> blockingQueue;
 
@@ -39,9 +41,15 @@ public class FlushMessageEntryService extends ServiceThread {
                 MessageLog messageLog = Storer.STORER.messageLogStorage.getLatestMessageLog();
                 RecyclableArrayList<MessageEntry> currentMessageEntries = entryListRecycler.newInstance();
                 blockingQueue.drainTo(currentMessageEntries);
-                for (int i = 0; i < currentMessageEntries.size(); i++) {
-                    messageLog.appendMessageEntry(currentMessageEntries.get(i));
+                for (MessageEntry currentMessageEntry : currentMessageEntries) {
+                    if (!messageLog.appendMessageEntry(currentMessageEntry)) {
+                        // TODO 一批消息如果一部分在前一个messageLog中flush之后崩溃可能会出现消息重复。
+                        messageLog.flush();
+                        messageLog = Storer.STORER.messageLogStorage.getLastMessageLog(BEGIN_OFFSET);
+                    }
                 }
+                messageLog.flush();
+                lastFlushTime = System.currentTimeMillis();
             }
         }
     }
