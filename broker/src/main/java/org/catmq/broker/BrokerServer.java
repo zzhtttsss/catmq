@@ -101,7 +101,8 @@ public class BrokerServer extends BrokerServiceGrpc.BrokerServiceImplBase {
                 .setClientID(getValueFromMetadata(headers, InterceptorConstants.CLIENT_ID))
                 .setLanguage(getValueFromMetadata(headers, InterceptorConstants.LANGUAGE))
                 .setClientVersion(getValueFromMetadata(headers, InterceptorConstants.CLIENT_VERSION))
-                .setAction(getValueFromMetadata(headers, InterceptorConstants.RPC_NAME));
+                .setAction(getValueFromMetadata(headers, InterceptorConstants.RPC_NAME))
+                .setChunkId(getValueFromMetadata(headers, InterceptorConstants.CHUNK_ID));
         return context;
     }
 

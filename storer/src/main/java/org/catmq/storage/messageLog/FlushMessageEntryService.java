@@ -41,14 +41,18 @@ public class FlushMessageEntryService extends ServiceThread {
                 MessageLog messageLog = Storer.STORER.messageLogStorage.getLatestMessageLog();
                 RecyclableArrayList<MessageEntry> currentMessageEntries = entryListRecycler.newInstance();
                 blockingQueue.drainTo(currentMessageEntries);
-                for (MessageEntry currentMessageEntry : currentMessageEntries) {
-                    if (!messageLog.appendMessageEntry(currentMessageEntry)) {
+                for (MessageEntry me : currentMessageEntries) {
+                    if (!messageLog.appendMessageEntry(me)) {
                         // TODO 一批消息如果一部分在前一个messageLog中flush之后崩溃可能会出现消息重复。
                         messageLog.flush();
                         messageLog = Storer.STORER.messageLogStorage.getLastMessageLog(BEGIN_OFFSET);
                     }
                 }
                 messageLog.flush();
+                for (MessageEntry me : currentMessageEntries) {
+                    me.markFlushDone();
+                }
+                currentMessageEntries.recycle();
                 lastFlushTime = System.currentTimeMillis();
             }
         }

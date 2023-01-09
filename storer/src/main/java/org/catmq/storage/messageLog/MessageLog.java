@@ -81,7 +81,7 @@ public class MessageLog {
 
     public boolean appendMessageEntry(MessageEntry messageEntry) {
         int currentPos = WROTE_POSITION_UPDATER.get(this);
-        if (messageEntry.message.length + END_FILE_MIN_BLANK_LENGTH > this.fileSize - currentPos) {
+        if (messageEntry.getMessage().length + END_FILE_MIN_BLANK_LENGTH > this.fileSize - currentPos) {
             return false;
         }
         // TODO 目前只写入了消息体，没有加其他信息。
