@@ -2,6 +2,8 @@ package org.catmq.storage.messageLog;
 
 import com.sun.jna.NativeLong;
 import com.sun.jna.Pointer;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.catmq.util.CUtil;
@@ -79,21 +81,24 @@ public class MessageLog {
         }
     }
 
-    public boolean appendMessageEntry(MessageEntry messageEntry) {
+    public boolean appendMessageEntry(MessageEntry messageEntry, ByteBuf byteBuf) {
         int currentPos = WROTE_POSITION_UPDATER.get(this);
         if (messageEntry.getMessage().length + END_FILE_MIN_BLANK_LENGTH > this.fileSize - currentPos) {
             return false;
         }
         // TODO 目前只写入了消息体，没有加其他信息。
-        ByteBuffer byteBuffer = ByteBuffer.allocate(LENGTH_OF_INT + messageEntry.getLength());
-        byteBuffer.putInt(messageEntry.getLength());
-        byteBuffer.put(messageEntry.getMessage());
-        this.mappedByteBuffer.put(byteBuffer);
+        byteBuf.writeInt(messageEntry.getLength());
+        byteBuf.writeBytes(messageEntry.getMessage());
         return true;
     }
 
     public void flush() {
         this.mappedByteBuffer.force();
+    }
+
+    public void putAndFlush(ByteBuf byteBuf) {
+        this.mappedByteBuffer.put(byteBuf.nioBuffer());
+        flush();
     }
 
     public void warmMappedFile() {

@@ -4,6 +4,8 @@ import lombok.Getter;
 
 import java.util.concurrent.CountDownLatch;
 
+import static org.catmq.storage.messageLog.MessageLog.LENGTH_OF_INT;
+
 @Getter
 public class MessageEntry {
 
@@ -30,5 +32,9 @@ public class MessageEntry {
 
     public void markFlushDone() {
         this.waiter.countDown();
+    }
+
+    public int getTotalSize() {
+        return this.getLength() + LENGTH_OF_INT;
     }
 }

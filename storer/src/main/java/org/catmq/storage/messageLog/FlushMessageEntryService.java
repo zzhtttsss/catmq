@@ -1,5 +1,7 @@
 package org.catmq.storage.messageLog;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import lombok.extern.slf4j.Slf4j;
 import org.catmq.collection.RecyclableArrayList;
 import org.catmq.storage.ServiceThread;
@@ -7,6 +9,8 @@ import org.catmq.storer.Storer;
 
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+
+import static org.catmq.storage.messageLog.MessageLog.LENGTH_OF_INT;
 
 @Slf4j
 public class FlushMessageEntryService extends ServiceThread {
@@ -37,18 +41,24 @@ public class FlushMessageEntryService extends ServiceThread {
                 if (blockingQueue.isEmpty()) {
                     continue;
                 }
+
                 // TODO 向messageLog中写入entry，如果当前messageLog已满则从分配线程中获取到最新的messageLog再次写入。
                 MessageLog messageLog = Storer.STORER.messageLogStorage.getLatestMessageLog();
                 RecyclableArrayList<MessageEntry> currentMessageEntries = entryListRecycler.newInstance();
                 blockingQueue.drainTo(currentMessageEntries);
+
+                ByteBuf byteBuf = Unpooled.directBuffer();
                 for (MessageEntry me : currentMessageEntries) {
-                    if (!messageLog.appendMessageEntry(me)) {
+                    if (!messageLog.appendMessageEntry(me, byteBuf)) {
                         // TODO 一批消息如果一部分在前一个messageLog中flush之后崩溃可能会出现消息重复。
-                        messageLog.flush();
+                        // flush data to current MessageLog and change to next MessageLog.
+                        messageLog.putAndFlush(byteBuf);
+                        byteBuf.clear();
                         messageLog = Storer.STORER.messageLogStorage.getLastMessageLog(BEGIN_OFFSET);
                     }
                 }
-                messageLog.flush();
+
+                messageLog.putAndFlush(byteBuf);
                 for (MessageEntry me : currentMessageEntries) {
                     me.markFlushDone();
                 }

@@ -27,6 +27,7 @@ public class WriteProcessor implements Processor<SendMessage2StorerRequest, Send
     public SendMessage2StorerResponse process(RequestContext ctx, SendMessage2StorerRequest request) {
         Storer storer = Storer.STORER;
         MessageEntry messageEntry = new MessageEntry(request.getMsgId(), ctx.getChunkId(), request.getBody().toByteArray());
+
         storer.flushMessageEntryService.putMessageLogEntry2Queue(messageEntry);
         try {
             messageEntry.getWaiter().await();
