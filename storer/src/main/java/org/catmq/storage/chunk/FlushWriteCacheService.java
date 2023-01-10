@@ -7,10 +7,8 @@ import org.catmq.storage.ServiceThread;
 import org.catmq.util.StringUtil;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.concurrent.ArrayBlockingQueue;
 
@@ -49,17 +47,21 @@ public class FlushWriteCacheService extends ServiceThread {
         ByteBuf byteBuf;
         try {
             byteBuf = requestQueue.take();
-            File file = new File(StringUtil.concatString(this.partitionSegmentStorage.getPath(), File.separator,
-                    StringUtil.offset2FileName(this.offset)));
+            partitionSegmentStorage.flushLock.lock();
+            File file = new File(StringUtil.concatString(partitionSegmentStorage.getPath(), File.separator,
+                    StringUtil.offset2FileName(offset)));
             FileChannel fileChannel = new RandomAccessFile(file, "rw").getChannel();
             fileChannel.write(byteBuf.nioBuffer());
             fileChannel.force(true);
+            partitionSegmentStorage.clearFlushedCache();
         } catch (InterruptedException e) {
             log.warn(this.getServiceName() + " interrupted, possibly by shutdown.");
             this.hasException = true;
 //            return false;
         } catch (IOException e) {
             throw new RuntimeException(e);
+        } finally {
+            partitionSegmentStorage.flushLock.unlock();
         }
     }
 }

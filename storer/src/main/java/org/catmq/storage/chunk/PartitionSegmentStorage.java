@@ -8,6 +8,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.catmq.storage.messageLog.MessageEntry;
 
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.StampedLock;
 
 @Slf4j
 public class PartitionSegmentStorage {
@@ -28,10 +31,14 @@ public class PartitionSegmentStorage {
     @Getter
     private ReadCache readCache;
 
+    private final StampedLock writeCacheRotationLock = new StampedLock();
+
+    protected final ReentrantLock flushLock = new ReentrantLock();
+
+    private AtomicBoolean swaping = new AtomicBoolean(false);
+
     @Getter
     private final CopyOnWriteArrayList<PartitionSegment> partitionSegments;
-
-//    private CopyOnWriteArrayList<>
 
     public PartitionSegmentStorage() {
         this.path = "./segment/";
@@ -43,11 +50,21 @@ public class PartitionSegmentStorage {
     }
 
     public void appendEntry2WriteCache(MessageEntry messageEntry) {
-        boolean ok = this.writeCache4Append.appendEntry(messageEntry);
+        long stamp = writeCacheRotationLock.writeLock();
+        boolean ok = writeCache4Append.appendEntry(messageEntry);
         if (!ok) {
-            swapAndFlush();
+            // Only one thread can swap the cache.
+            if (swaping.compareAndSet(false, true)) {
+                swapAndFlush();
+            }
+            else {
+                while (swaping.get()) {
+                    // Blocking if other thread is swapping the cache.
+                }
+            }
+            this.writeCache4Append.appendEntry(messageEntry);
         }
-        this.writeCache4Append.appendEntry(messageEntry);
+        writeCacheRotationLock.unlockWrite(stamp);
     }
 
     public void swapAndFlush() {
@@ -58,9 +75,20 @@ public class PartitionSegmentStorage {
     }
 
     public void swapWriteCache() {
+        flushLock.lock();
         WriteCache temp = this.writeCache4Append;
         this.writeCache4Append = this.writeCache4Flush;
+        swaping.compareAndSet(true, false);
         this.writeCache4Flush = temp;
+        flushLock.unlock();
+    }
+
+    public void clearFlushedCache() {
+        writeCache4Flush.clear();
+    }
+
+    public boolean canSwap() {
+        return writeCache4Flush.isEmpty();
     }
 
 }

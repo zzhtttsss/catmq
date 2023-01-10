@@ -6,34 +6,39 @@ import org.catmq.storage.messageLog.MessageEntry;
 
 import java.util.LinkedHashMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class WriteCache {
 
     public final long maxCacheSize;
 
     @Getter
-    private long cacheSize;
+    private AtomicLong cacheSize;
 
     @Getter
-    private int entryNum;
+    private AtomicInteger entryNum;
 
     @Getter
     private final ConcurrentHashMap<Long, LinkedHashMap<String, MessageEntry>> cache = new ConcurrentHashMap<>();
 
     public WriteCache(long maxCacheSize) {
         this.maxCacheSize = maxCacheSize;
-        this.cacheSize = 0;
-        this.entryNum = 0;
+        this.cacheSize = new AtomicLong(0L);
+        this.entryNum = new AtomicInteger(0);
     }
 
+    /*
+    * There may cause some overflow of the cache depended on write threads num, but it is ok.
+    * */
     public boolean appendEntry(MessageEntry messageEntry) {
-        if (cacheSize + messageEntry.getTotalSize() > maxCacheSize) {
+        if (cacheSize.get() + messageEntry.getTotalSize() > maxCacheSize) {
             return false;
         }
 
         cache.getOrDefault(messageEntry.getSegmentId(), new LinkedHashMap<>()).put(messageEntry.getMsgId(), messageEntry);
-        cacheSize += messageEntry.getTotalSize();
-        entryNum++;
+        cacheSize.addAndGet(messageEntry.getTotalSize());
+        entryNum.incrementAndGet();
         return true;
     }
 
@@ -52,6 +57,16 @@ public class WriteCache {
                 byteBuf.writeBytes(messageEntry.getMessage());
             });
         });
+    }
+
+    public void clear() {
+        cache.clear();
+        cacheSize.set(0L);
+        entryNum.set(0);
+    }
+
+    public boolean isEmpty() {
+        return cacheSize.get() == 0L;
     }
 
 
