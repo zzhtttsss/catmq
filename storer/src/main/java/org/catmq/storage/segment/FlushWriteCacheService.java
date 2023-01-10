@@ -1,4 +1,4 @@
-package org.catmq.storage.chunk;
+package org.catmq.storage.segment;
 
 import io.netty.buffer.ByteBuf;
 import lombok.Getter;
@@ -55,7 +55,7 @@ public class FlushWriteCacheService extends ServiceThread {
             fileChannel.force(true);
             partitionSegmentStorage.clearFlushedCache();
         } catch (InterruptedException e) {
-            log.warn(this.getServiceName() + " interrupted, possibly by shutdown.");
+            log.warn("{} interrupted, possibly by shutdown.", this.getServiceName());
             this.hasException = true;
 //            return false;
         } catch (IOException e) {

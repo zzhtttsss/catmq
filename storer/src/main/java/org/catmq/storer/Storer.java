@@ -1,6 +1,6 @@
 package org.catmq.storer;
 
-import org.catmq.storage.chunk.PartitionSegmentStorage;
+import org.catmq.storage.segment.PartitionSegmentStorage;
 import org.catmq.storage.messageLog.FlushMessageEntryService;
 import org.catmq.storage.messageLog.MessageLogStorage;
 

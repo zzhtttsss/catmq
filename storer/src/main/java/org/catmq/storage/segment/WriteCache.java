@@ -1,4 +1,4 @@
-package org.catmq.storage.chunk;
+package org.catmq.storage.segment;
 
 import io.netty.buffer.ByteBuf;
 import lombok.Getter;
