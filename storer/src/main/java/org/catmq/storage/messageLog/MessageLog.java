@@ -87,8 +87,7 @@ public class MessageLog {
             return false;
         }
         // TODO 目前只写入了消息体，没有加其他信息。
-        byteBuf.writeInt(messageEntry.getLength());
-        byteBuf.writeBytes(messageEntry.getMessage());
+        messageEntry.dump2ByteBuf(byteBuf);
         return true;
     }
 

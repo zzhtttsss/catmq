@@ -28,9 +28,6 @@ public class WriteCache {
         this.entryNum = new AtomicInteger(0);
     }
 
-    /*
-    * There may cause some overflow of the cache depended on write threads num, but it is ok.
-    * */
     public boolean appendEntry(MessageEntry messageEntry) {
         if (cacheSize.get() + messageEntry.getTotalSize() > maxCacheSize) {
             return false;
@@ -53,8 +50,7 @@ public class WriteCache {
     public void dumpEntry2ByteBuf(ByteBuf byteBuf) {
         this.cache.forEach((segmentId, map) -> {
             map.forEach((msgId, messageEntry) -> {
-                byteBuf.writeInt(messageEntry.getLength());
-                byteBuf.writeBytes(messageEntry.getMessage());
+                messageEntry.dump2ByteBuf(byteBuf);
             });
         });
     }

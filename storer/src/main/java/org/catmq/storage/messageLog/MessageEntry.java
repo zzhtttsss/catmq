@@ -1,5 +1,6 @@
 package org.catmq.storage.messageLog;
 
+import io.netty.buffer.ByteBuf;
 import lombok.Getter;
 
 import java.util.concurrent.CountDownLatch;
@@ -36,5 +37,10 @@ public class MessageEntry {
 
     public int getTotalSize() {
         return this.getLength() + LENGTH_OF_INT;
+    }
+
+    public void dump2ByteBuf(ByteBuf byteBuf) {
+        byteBuf.writeInt(length);
+        byteBuf.writeBytes(message);
     }
 }
