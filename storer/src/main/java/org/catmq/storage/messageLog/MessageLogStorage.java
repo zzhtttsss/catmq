@@ -50,9 +50,9 @@ public class MessageLogStorage {
     }
 
     public MessageLog tryCreateMessageLog(long createOffset) {
-        String nextFilePath = this.path + File.separator + StringUtil.offset2FileName(createOffset);
-        String nextNextFilePath = this.path + File.separator + StringUtil.offset2FileName(createOffset
-                + this.maxMessageLogSize);
+        String nextFilePath = StringUtil.concatString(this.path, File.separator, StringUtil.offset2FileName(createOffset));
+        String nextNextFilePath = StringUtil.concatString(this.path, File.separator,
+                StringUtil.offset2FileName(createOffset + this.maxMessageLogSize));
         MessageLog messageLog = this.allocateMessageLogService.getNextMessageLog(nextFilePath,
                 nextNextFilePath, this.maxMessageLogSize);
         if (messageLog != null) {

@@ -1,14 +1,11 @@
 package org.catmq.storage.chunk;
 
-import io.netty.util.internal.PlatformDependent;
+import io.netty.buffer.ByteBuf;
 import lombok.Getter;
 import org.catmq.storage.messageLog.MessageEntry;
 
 import java.util.LinkedHashMap;
 import java.util.concurrent.ConcurrentHashMap;
-
-import static org.catmq.constant.FileConstant.MB;
-import static org.catmq.storage.messageLog.MessageLog.LENGTH_OF_INT;
 
 public class WriteCache {
 
@@ -29,14 +26,15 @@ public class WriteCache {
         this.entryNum = 0;
     }
 
-    public void addEntry(MessageEntry messageEntry) {
+    public boolean appendEntry(MessageEntry messageEntry) {
         if (cacheSize + messageEntry.getTotalSize() > maxCacheSize) {
-            return;
+            return false;
         }
 
-        cache.getOrDefault(messageEntry.getChunkId(), new LinkedHashMap<>()).put(messageEntry.getMsgId(), messageEntry);
+        cache.getOrDefault(messageEntry.getSegmentId(), new LinkedHashMap<>()).put(messageEntry.getMsgId(), messageEntry);
         cacheSize += messageEntry.getTotalSize();
         entryNum++;
+        return true;
     }
 
     public MessageEntry getEntry(long chunkId, String msgId) {
@@ -45,6 +43,15 @@ public class WriteCache {
             return map.get(msgId);
         }
         return null;
+    }
+
+    public void dumpEntry2ByteBuf(ByteBuf byteBuf) {
+        this.cache.forEach((segmentId, map) -> {
+            map.forEach((msgId, messageEntry) -> {
+                byteBuf.writeInt(messageEntry.getLength());
+                byteBuf.writeBytes(messageEntry.getMessage());
+            });
+        });
     }
 
 

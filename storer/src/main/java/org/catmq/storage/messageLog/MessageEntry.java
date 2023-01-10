@@ -16,16 +16,16 @@ public class MessageEntry {
 
     private final String msgId;
 
-    private final long chunkId;
+    private final long segmentId;
 
     private final byte[] message;
 
     private final CountDownLatch waiter = new CountDownLatch(WAIT_TIME);
 
 
-    public MessageEntry(String msgId, long chunkId, byte[] message) {
+    public MessageEntry(String msgId, long segmentId, byte[] message) {
         this.msgId = msgId;
-        this.chunkId = chunkId;
+        this.segmentId = segmentId;
         this.message = message;
         this.length = message.length;
     }

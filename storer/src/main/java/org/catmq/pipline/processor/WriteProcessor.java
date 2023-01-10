@@ -7,8 +7,6 @@ import org.catmq.protocol.service.*;
 import org.catmq.storage.messageLog.MessageEntry;
 import org.catmq.storer.Storer;
 
-import java.util.concurrent.CompletableFuture;
-
 @Slf4j
 public class WriteProcessor implements Processor<SendMessage2StorerRequest, SendMessage2StorerResponse> {
 
@@ -27,8 +25,8 @@ public class WriteProcessor implements Processor<SendMessage2StorerRequest, Send
     public SendMessage2StorerResponse process(RequestContext ctx, SendMessage2StorerRequest request) {
         Storer storer = Storer.STORER;
         MessageEntry messageEntry = new MessageEntry(request.getMsgId(), ctx.getChunkId(), request.getBody().toByteArray());
-
-        storer.flushMessageEntryService.putMessageLogEntry2Queue(messageEntry);
+        storer.partitionSegmentStorage.appendEntry2WriteCache(messageEntry);
+        storer.flushMessageEntryService.putMessageEntry2Queue(messageEntry);
         try {
             messageEntry.getWaiter().await();
         } catch (InterruptedException e) {

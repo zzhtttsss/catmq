@@ -13,13 +13,13 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class AllocateMessageLogService extends ServiceThread {
 
-    private ConcurrentHashMap<String, AllocateRequest> requestMap = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, AllocateRequest> requestMap = new ConcurrentHashMap<>();
 
-    private PriorityBlockingQueue<AllocateRequest> requestQueue = new PriorityBlockingQueue<>();
+    private final PriorityBlockingQueue<AllocateRequest> requestQueue = new PriorityBlockingQueue<>();
 
     private volatile boolean hasException = false;
 
-    private static int waitTimeOut = 1000 * 5;
+    private static final int waitTimeOut = 1000 * 5;
 
     public MessageLog getNextMessageLog(String nextFilePath, String nextNextFilePath, int fileSize) {
         AllocateRequest nextReq = new AllocateRequest(nextFilePath, fileSize);

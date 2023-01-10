@@ -10,8 +10,6 @@ import org.catmq.storer.Storer;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
-import static org.catmq.storage.messageLog.MessageLog.LENGTH_OF_INT;
-
 @Slf4j
 public class FlushMessageEntryService extends ServiceThread {
 
@@ -68,7 +66,7 @@ public class FlushMessageEntryService extends ServiceThread {
         }
     }
 
-    public void putMessageLogEntry2Queue(MessageEntry messageEntry) {
+    public void putMessageEntry2Queue(MessageEntry messageEntry) {
         try {
             blockingQueue.put(messageEntry);
         } catch (InterruptedException e) {

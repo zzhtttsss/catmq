@@ -1,13 +1,13 @@
 package org.catmq.storer;
 
-import org.catmq.storage.chunk.ChunkStorage;
+import org.catmq.storage.chunk.PartitionSegmentStorage;
 import org.catmq.storage.messageLog.FlushMessageEntryService;
 import org.catmq.storage.messageLog.MessageLogStorage;
 
 public class Storer {
 
     public final MessageLogStorage messageLogStorage;
-    public final ChunkStorage chunkStorage;
+    public final PartitionSegmentStorage partitionSegmentStorage;
 
     public final FlushMessageEntryService flushMessageEntryService;
 
@@ -15,7 +15,7 @@ public class Storer {
 
     private Storer() {
         messageLogStorage = new MessageLogStorage();
-        chunkStorage = new ChunkStorage();
+        partitionSegmentStorage = new PartitionSegmentStorage();
         flushMessageEntryService = new FlushMessageEntryService();
         flushMessageEntryService.start();
     }
