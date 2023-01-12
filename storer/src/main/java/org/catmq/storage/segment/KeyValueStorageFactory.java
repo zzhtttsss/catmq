@@ -11,7 +11,7 @@ public interface KeyValueStorageFactory {
      * Enum used to specify different config profiles in the underlying storage.
      */
     enum DbConfigType {
-        Default, // Used for default,command until or test case
+        Default, // Used for default,command util or test case
         LedgerMetadata, // Used for ledgers db, doesn't need particular configuration
         EntryLocation // Used for location index, lots of writes and much bigger dataset
     }

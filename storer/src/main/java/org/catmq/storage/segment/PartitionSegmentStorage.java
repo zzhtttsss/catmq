@@ -18,6 +18,9 @@ public class PartitionSegmentStorage {
     @Getter
     private final String path;
 
+    @Getter
+    private final EntryOffsetIndex entryOffsetIndex;
+
     private final FlushWriteCacheService flushWriteCacheService;
 
     public static final long MAX_CACHE_SIZE = (long) (0.25 * PlatformDependent.estimateMaxDirectMemory());
@@ -47,6 +50,7 @@ public class PartitionSegmentStorage {
         this.readCache = new ReadCache();
         this.partitionSegments = new CopyOnWriteArrayList<>();
         this.flushWriteCacheService = new FlushWriteCacheService(this);
+        entryOffsetIndex = new EntryOffsetIndex(KeyValueStorageRocksDB.factory, "");
     }
 
     public void appendEntry2WriteCache(MessageEntry messageEntry) {
@@ -67,11 +71,17 @@ public class PartitionSegmentStorage {
         writeCacheRotationLock.unlockWrite(stamp);
     }
 
+    public void dumpEntry2Index() {
+        this.writeCache4Flush.getCache().forEach((segmentId, map) -> {
+            map.forEach((msgId, messageEntry) -> {
+//                entryOffsetIndex.addLocation(segmentId, msgId, );
+            });
+        });
+    }
+
     public void swapAndFlush() {
         swapWriteCache();
-        ByteBuf byteBuf = Unpooled.directBuffer();
-        writeCache4Flush.dumpEntry2ByteBuf(byteBuf);
-        flushWriteCacheService.getRequestQueue().add(byteBuf);
+        flushWriteCacheService.getRequestQueue().add(writeCache4Flush);
     }
 
     public void swapWriteCache() {
@@ -85,10 +95,6 @@ public class PartitionSegmentStorage {
 
     public void clearFlushedCache() {
         writeCache4Flush.clear();
-    }
-
-    public boolean canSwap() {
-        return writeCache4Flush.isEmpty();
     }
 
 }

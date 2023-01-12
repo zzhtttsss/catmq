@@ -4,6 +4,7 @@ import io.netty.buffer.ByteBuf;
 import lombok.Getter;
 import org.catmq.storage.messageLog.MessageEntry;
 
+import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -17,14 +18,18 @@ public class WriteCache {
     private AtomicLong cacheSize;
 
     @Getter
+    private AtomicLong offset;
+
+    @Getter
     private AtomicInteger entryNum;
 
     @Getter
-    private final ConcurrentHashMap<Long, LinkedHashMap<String, MessageEntry>> cache = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Long, LinkedHashMap<Long, MessageEntry>> cache = new ConcurrentHashMap<>();
 
     public WriteCache(long maxCacheSize) {
         this.maxCacheSize = maxCacheSize;
         this.cacheSize = new AtomicLong(0L);
+        this.offset = new AtomicLong(0L);
         this.entryNum = new AtomicInteger(0);
     }
 
@@ -32,28 +37,23 @@ public class WriteCache {
         if (cacheSize.get() + messageEntry.getTotalSize() > maxCacheSize) {
             return false;
         }
-
-        cache.getOrDefault(messageEntry.getSegmentId(), new LinkedHashMap<>()).put(messageEntry.getMsgId(), messageEntry);
+        cache.getOrDefault(messageEntry.getSegmentId(), new LinkedHashMap<>()).put(messageEntry.getEntryId(), messageEntry);
         cacheSize.addAndGet(messageEntry.getTotalSize());
+        messageEntry.setOffset(offset.get());
+        offset.addAndGet(messageEntry.getTotalSize());
         entryNum.incrementAndGet();
         return true;
     }
 
     public MessageEntry getEntry(long chunkId, String msgId) {
-        LinkedHashMap<String, MessageEntry> map = this.cache.get(chunkId);
+        LinkedHashMap<Long, MessageEntry> map = this.cache.get(chunkId);
         if (map != null) {
             return map.get(msgId);
         }
         return null;
     }
 
-    public void dumpEntry2ByteBuf(ByteBuf byteBuf) {
-        this.cache.forEach((segmentId, map) -> {
-            map.forEach((msgId, messageEntry) -> {
-                messageEntry.dump2ByteBuf(byteBuf);
-            });
-        });
-    }
+
 
     public void clear() {
         cache.clear();
