@@ -1,11 +1,10 @@
 package org.catmq.broker.zk;
 
 import org.apache.curator.test.TestingServer;
+import org.catmq.broker.BrokerConfig;
 import org.catmq.broker.BrokerInfo;
 import org.catmq.broker.BrokerServer;
-import org.catmq.command.BooleanError;
 import org.catmq.zk.BrokerZooKeeper;
-import org.catmq.zk.balance.ILoadBalance;
 import org.junit.*;
 import org.mockito.Mockito;
 
@@ -15,15 +14,21 @@ import java.io.IOException;
 public class BrokerZooKeeperTest {
 
     static TestingServer server;
+    static BrokerConfig config;
 
     @BeforeClass
     public static void beforeClass() throws Exception {
         server = new TestingServer(2222);
+        config = BrokerConfig.BrokerConfigEnum.INSTANCE.getInstance();
+        config.setBrokerId("1");
+        config.setBrokerName("broker1");
+        config.setBrokerIp("185.25.12.2");
+        config.setBrokerPort(5464);
     }
 
     @Test
     public void testRegister2Zk() throws Exception {
-        BrokerZooKeeper bzk = createFakeZk(new BrokerInfo("id", "test", "1111", 1111));
+        BrokerZooKeeper bzk = createFakeZk(new BrokerInfo(config));
         bzk.register2Zk();
         Assert.assertNotNull(bzk.client.checkExists().forPath("/broker/" + bzk.getBroker().brokerInfo.getBrokerName()));
         Assert.assertNotNull(bzk.client.checkExists().forPath("/broker/tmp/" + bzk.getBroker().brokerInfo.getBrokerName()));
@@ -33,10 +38,8 @@ public class BrokerZooKeeperTest {
 
     private BrokerZooKeeper createFakeZk(BrokerInfo info) throws IOException {
         BrokerServer broker = Mockito.mock(BrokerServer.class);
-        ILoadBalance loadBalance = Mockito.mock(ILoadBalance.class);
-        Mockito.when(loadBalance.registerConnection(info)).thenReturn(BooleanError.ok());
         broker.brokerInfo = info;
-        return new BrokerZooKeeper(server.getConnectString(), broker, loadBalance);
+        return new BrokerZooKeeper(server.getConnectString(), broker);
     }
 
     @AfterClass

@@ -53,6 +53,29 @@ public class StringUtil {
         return StrUtil.isEmpty(str);
     }
 
+    /**
+     * Gets the substring after the last occurrence of a separator. The separator is not returned.
+     * <br><br>
+     * StringUtils.substringAfterLast("abc", "a")   = "bc"
+     * StringUtils.substringAfterLast("abcba", "b") = "a"
+     * StringUtils.substringAfterLast("abc", "c")   = ""
+     *
+     * @param str       input string
+     * @param separator separator
+     * @return substring after the last occurrence of the separator
+     */
+    public static String substringAfterLast(String str, String separator) {
+        if (isEmpty(str)) {
+            return str;
+        } else if (isEmpty(separator)) {
+            return "";
+        } else {
+            int pos = str.lastIndexOf(separator);
+            return pos != -1 && pos != str.length() - separator.length() ?
+                    str.substring(pos + separator.length()) : "";
+        }
+    }
+
     public static String offset2FileName(final long offset) {
         final NumberFormat nf = NumberFormat.getInstance();
         nf.setMinimumIntegerDigits(20);
