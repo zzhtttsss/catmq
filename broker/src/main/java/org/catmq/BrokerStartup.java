@@ -20,7 +20,7 @@ public class BrokerStartup {
     public static void start() throws IOException {
         // read config first
         BrokerConfig config = BrokerConfig.BrokerConfigEnum.INSTANCE.getInstance();
-        config.readConfig("/broker.properties");
+        //config.readConfig("/broker.properties");
         /* The port on which the server should run */
         int port = config.getBrokerPort();
         server = Grpc.newServerBuilderForPort(port, InsecureServerCredentials.create())

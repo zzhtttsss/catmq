@@ -1,9 +1,11 @@
 package org.catmq.broker;
 
+import cn.hutool.core.map.SafeConcurrentHashMap;
 import io.grpc.Context;
 import io.grpc.Metadata;
 import io.grpc.stub.StreamObserver;
 import lombok.extern.slf4j.Slf4j;
+import org.catmq.broker.topic.ITopic;
 import org.catmq.context.InterceptorConstants;
 import org.catmq.context.RequestContext;
 import org.catmq.context.TaskPlan;
@@ -13,9 +15,7 @@ import org.catmq.grpc.ResponseWriter;
 import org.catmq.preparer.Preparer;
 import org.catmq.protocol.definition.Code;
 import org.catmq.protocol.definition.Status;
-import org.catmq.protocol.service.BrokerServiceGrpc;
-import org.catmq.protocol.service.SendMessage2BrokerRequest;
-import org.catmq.protocol.service.SendMessage2BrokerResponse;
+import org.catmq.protocol.service.*;
 import org.catmq.thread.ThreadFactoryWithIndex;
 import org.catmq.thread.ThreadPoolMonitor;
 import org.catmq.zk.BrokerZooKeeper;
@@ -29,7 +29,10 @@ import static org.catmq.util.StringUtil.defaultString;
 public class BrokerServer extends BrokerServiceGrpc.BrokerServiceImplBase {
 
     public BrokerInfo brokerInfo;
-    public BrokerZooKeeper bzk;
+    public BrokerZooKeeper brokerZooKeeper;
+
+    private final ConcurrentHashMap<String, ITopic> topics;
+
     private ScheduledExecutorService timeExecutor;
 
     protected ThreadPoolExecutor producerThreadPoolExecutor;
@@ -44,9 +47,9 @@ public class BrokerServer extends BrokerServiceGrpc.BrokerServiceImplBase {
                 "GrpcProducerThreadPool",
                 config.getGrpcProducerThreadQueueCapacity()
         );
-        this.brokerInfo = new BrokerInfo(config.getBrokerId(), config.getBrokerName(),
-                config.getBrokerIp(), config.getBrokerPort(), "127.0.0.1:2181");
-        this.bzk = new BrokerZooKeeper("127.0.0.1:2181", this);
+        this.brokerInfo = new BrokerInfo(config);
+        this.brokerZooKeeper = new BrokerZooKeeper(config.getZkAddress(), this);
+        this.topics = new SafeConcurrentHashMap<>();
         this.timeExecutor = new ScheduledThreadPoolExecutor(4,
                 new ThreadFactoryWithIndex("BrokerTimerThread_"));
         this.init();
@@ -56,7 +59,7 @@ public class BrokerServer extends BrokerServiceGrpc.BrokerServiceImplBase {
         GrpcTaskRejectedExecutionHandler rejectedExecutionHandler = new GrpcTaskRejectedExecutionHandler();
         this.producerThreadPoolExecutor.setRejectedExecutionHandler(rejectedExecutionHandler);
 
-        this.bzk.register2Zk();
+        this.brokerZooKeeper.register2Zk();
         log.info("BrokerServer init success");
 
     }
@@ -70,6 +73,11 @@ public class BrokerServer extends BrokerServiceGrpc.BrokerServiceImplBase {
         } catch (Throwable t) {
             writeResponse(ctx, request, null, responseObserver, t, statusResponseCreator);
         }
+    }
+
+    @Override
+    public void createTopic(CreateTopicRequest request, StreamObserver<CreateTopicResponse> responseObserver) {
+        super.createTopic(request, responseObserver);
     }
 
     protected <V, T> void writeResponse(RequestContext context, V request, T response, StreamObserver<T> responseObserver,

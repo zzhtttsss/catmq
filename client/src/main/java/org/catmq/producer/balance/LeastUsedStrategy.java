@@ -20,8 +20,8 @@ public class LeastUsedStrategy implements ILoadBalance {
         try (CuratorFramework client = ZkUtil.createClient(zkAddress)) {
             Map<String, Integer> map = new HashMap<>(4);
 
-            List<String> paths = client.getChildren().forPath(ZkConstant.BROKER_ADDRESS);
-            String addressDirectory = StringUtil.concatString(ZkConstant.BROKER_ADDRESS, FileConstant.LEFT_SLASH);
+            List<String> paths = client.getChildren().forPath(ZkConstant.BROKER_ADDRESS_PATH);
+            String addressDirectory = StringUtil.concatString(ZkConstant.BROKER_ADDRESS_PATH, FileConstant.LEFT_SLASH);
             for (String path : paths) {
                 byte[] bytes = client.getData().forPath(StringUtil.concatString(addressDirectory, path));
                 map.put(path, Integer.parseInt(new String(bytes)));

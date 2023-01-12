@@ -20,5 +20,5 @@ public class FileConstant {
 
     public static final String LEFT_SLASH = "/";
 
-    public static final String Colon = ":";
+    public static final String COLON = ":";
 }

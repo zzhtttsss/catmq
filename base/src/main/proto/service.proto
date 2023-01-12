@@ -8,8 +8,8 @@ option java_string_check_utf8 = true;
 import "definition.proto";
 
 message SendMessage2BrokerRequest {
-
   string message = 1;
+  string topic = 2;
 }
 
 message SendMessage2BrokerResponse {
@@ -28,8 +28,19 @@ message GetMessageFromBrokerResponse {
   Status status = 3;
 }
 
+message CreateTopicRequest {
+  string topic = 1;
+}
+
+message CreateTopicResponse {
+  bool ack = 1;
+  string res = 2;
+  Status status = 3;
+}
+
 service BrokerService{
   rpc SendMessage2Broker (SendMessage2BrokerRequest) returns (SendMessage2BrokerResponse) {}
   rpc GetMessageFromBroker (GetMessageFromBrokerRequest) returns (GetMessageFromBrokerResponse) {}
+  rpc CreateTopic (CreateTopicRequest) returns (CreateTopicResponse) {}
 }
 

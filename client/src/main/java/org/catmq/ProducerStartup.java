@@ -37,15 +37,16 @@ public class ProducerStartup {
             executeCommand(line.split(" "), producer);
             System.out.print(">");
         }
+        producer.close();
 
     }
 
     private static Producer initProducer(ProducerProxy pp) throws InterruptedException {
         ProducerConfig config = ProducerConfig.ProducerConfigEnum.INSTANCE.getInstance();
-        config.readConfig("/producer.properties");
         InetSocketAddress brokerAddress = StringUtil.parseAddress(
                 pp.selectBroker(config.getZkAddress())
                         .orElseThrow(() -> new RuntimeException("no broker address")));
+        config.setBrokerAddress(brokerAddress);
         // Access a service running on the local machine on port 5432
         int port = brokerAddress.getPort();
         String target = brokerAddress.getHostName() + ":" + port;

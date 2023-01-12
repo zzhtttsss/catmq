@@ -1,32 +1,38 @@
 package org.catmq.producer;
 
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.catmq.constant.ConfigConstant;
+import org.catmq.constant.ZkConstant;
 
-import java.io.IOException;
+import java.io.FileInputStream;
 import java.io.InputStream;
+import java.net.InetSocketAddress;
+import java.nio.file.Path;
 import java.util.Properties;
 
 @Setter
 @Getter
-@RequiredArgsConstructor
+@Slf4j
 public class ProducerConfig {
     private String zkAddress;
+    /**
+     * broker ip and port without clusters which
+     * <strong>should be specified manually</strong>
+     */
+    private InetSocketAddress brokerAddress;
 
-    public void readConfig(String configPath) {
-        InputStream stream = this.getClass().getResourceAsStream(configPath);
-        if (stream == null) {
-            throw new RuntimeException("producer.properties not found");
-        }
+    private ProducerConfig() {
+        String filePath = Path.of(ConfigConstant.PRODUCER_CONFIG_PATH).toAbsolutePath().normalize().toString();
         Properties properties = new Properties();
-        try {
-            properties.load(stream);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        try (InputStream inputStream = new FileInputStream(filePath)) {
+            properties.load(inputStream);
+        } catch (Exception e) {
+            e.printStackTrace();
+            log.warn("read config failed, use default config");
         }
-        zkAddress = properties.getProperty(ConfigConstant.ZK_ADDRESS, "127.0.0.1:2181");
+        zkAddress = properties.getProperty(ConfigConstant.ZK_ADDRESS, ZkConstant.ZK_DEFAULT_ADDRESS);
     }
 
     public enum ProducerConfigEnum {
