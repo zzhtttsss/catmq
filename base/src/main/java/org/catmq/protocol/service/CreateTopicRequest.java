@@ -4,19 +4,18 @@
 package org.catmq.protocol.service;
 
 /**
- * Protobuf type {@code SendMessage2BrokerRequest}
+ * Protobuf type {@code CreateTopicRequest}
  */
-public final class SendMessage2BrokerRequest extends
+public final class CreateTopicRequest extends
     com.google.protobuf.GeneratedMessageV3 implements
-    // @@protoc_insertion_point(message_implements:SendMessage2BrokerRequest)
-    SendMessage2BrokerRequestOrBuilder {
+    // @@protoc_insertion_point(message_implements:CreateTopicRequest)
+    CreateTopicRequestOrBuilder {
 private static final long serialVersionUID = 0L;
-  // Use SendMessage2BrokerRequest.newBuilder() to construct.
-  private SendMessage2BrokerRequest(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
+  // Use CreateTopicRequest.newBuilder() to construct.
+  private CreateTopicRequest(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
     super(builder);
   }
-  private SendMessage2BrokerRequest() {
-    message_ = "";
+  private CreateTopicRequest() {
     topic_ = "";
   }
 
@@ -24,7 +23,7 @@ private static final long serialVersionUID = 0L;
   @SuppressWarnings({"unused"})
   protected java.lang.Object newInstance(
       UnusedPrivateParameter unused) {
-    return new SendMessage2BrokerRequest();
+    return new CreateTopicRequest();
   }
 
   @java.lang.Override
@@ -34,59 +33,21 @@ private static final long serialVersionUID = 0L;
   }
   public static final com.google.protobuf.Descriptors.Descriptor
       getDescriptor() {
-    return org.catmq.protocol.service.Service.internal_static_SendMessage2BrokerRequest_descriptor;
+    return org.catmq.protocol.service.Service.internal_static_CreateTopicRequest_descriptor;
   }
 
   @java.lang.Override
   protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
       internalGetFieldAccessorTable() {
-    return org.catmq.protocol.service.Service.internal_static_SendMessage2BrokerRequest_fieldAccessorTable
+    return org.catmq.protocol.service.Service.internal_static_CreateTopicRequest_fieldAccessorTable
         .ensureFieldAccessorsInitialized(
-            org.catmq.protocol.service.SendMessage2BrokerRequest.class, org.catmq.protocol.service.SendMessage2BrokerRequest.Builder.class);
+            org.catmq.protocol.service.CreateTopicRequest.class, org.catmq.protocol.service.CreateTopicRequest.Builder.class);
   }
 
-  public static final int MESSAGE_FIELD_NUMBER = 1;
-  private volatile java.lang.Object message_;
-  /**
-   * <code>string message = 1;</code>
-   * @return The message.
-   */
-  @java.lang.Override
-  public java.lang.String getMessage() {
-    java.lang.Object ref = message_;
-    if (ref instanceof java.lang.String) {
-      return (java.lang.String) ref;
-    } else {
-      com.google.protobuf.ByteString bs = 
-          (com.google.protobuf.ByteString) ref;
-      java.lang.String s = bs.toStringUtf8();
-      message_ = s;
-      return s;
-    }
-  }
-  /**
-   * <code>string message = 1;</code>
-   * @return The bytes for message.
-   */
-  @java.lang.Override
-  public com.google.protobuf.ByteString
-      getMessageBytes() {
-    java.lang.Object ref = message_;
-    if (ref instanceof java.lang.String) {
-      com.google.protobuf.ByteString b = 
-          com.google.protobuf.ByteString.copyFromUtf8(
-              (java.lang.String) ref);
-      message_ = b;
-      return b;
-    } else {
-      return (com.google.protobuf.ByteString) ref;
-    }
-  }
-
-  public static final int TOPIC_FIELD_NUMBER = 2;
+  public static final int TOPIC_FIELD_NUMBER = 1;
   private volatile java.lang.Object topic_;
   /**
-   * <code>string topic = 2;</code>
+   * <code>string topic = 1;</code>
    * @return The topic.
    */
   @java.lang.Override
@@ -103,7 +64,7 @@ private static final long serialVersionUID = 0L;
     }
   }
   /**
-   * <code>string topic = 2;</code>
+   * <code>string topic = 1;</code>
    * @return The bytes for topic.
    */
   @java.lang.Override
@@ -135,11 +96,8 @@ private static final long serialVersionUID = 0L;
   @java.lang.Override
   public void writeTo(com.google.protobuf.CodedOutputStream output)
                       throws java.io.IOException {
-    if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(message_)) {
-      com.google.protobuf.GeneratedMessageV3.writeString(output, 1, message_);
-    }
     if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(topic_)) {
-      com.google.protobuf.GeneratedMessageV3.writeString(output, 2, topic_);
+      com.google.protobuf.GeneratedMessageV3.writeString(output, 1, topic_);
     }
     getUnknownFields().writeTo(output);
   }
@@ -150,11 +108,8 @@ private static final long serialVersionUID = 0L;
     if (size != -1) return size;
 
     size = 0;
-    if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(message_)) {
-      size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, message_);
-    }
     if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(topic_)) {
-      size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, topic_);
+      size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, topic_);
     }
     size += getUnknownFields().getSerializedSize();
     memoizedSize = size;
@@ -166,13 +121,11 @@ private static final long serialVersionUID = 0L;
     if (obj == this) {
      return true;
     }
-    if (!(obj instanceof org.catmq.protocol.service.SendMessage2BrokerRequest)) {
+    if (!(obj instanceof org.catmq.protocol.service.CreateTopicRequest)) {
       return super.equals(obj);
     }
-    org.catmq.protocol.service.SendMessage2BrokerRequest other = (org.catmq.protocol.service.SendMessage2BrokerRequest) obj;
+    org.catmq.protocol.service.CreateTopicRequest other = (org.catmq.protocol.service.CreateTopicRequest) obj;
 
-    if (!getMessage()
-        .equals(other.getMessage())) return false;
     if (!getTopic()
         .equals(other.getTopic())) return false;
     if (!getUnknownFields().equals(other.getUnknownFields())) return false;
@@ -186,8 +139,6 @@ private static final long serialVersionUID = 0L;
     }
     int hash = 41;
     hash = (19 * hash) + getDescriptor().hashCode();
-    hash = (37 * hash) + MESSAGE_FIELD_NUMBER;
-    hash = (53 * hash) + getMessage().hashCode();
     hash = (37 * hash) + TOPIC_FIELD_NUMBER;
     hash = (53 * hash) + getTopic().hashCode();
     hash = (29 * hash) + getUnknownFields().hashCode();
@@ -195,69 +146,69 @@ private static final long serialVersionUID = 0L;
     return hash;
   }
 
-  public static org.catmq.protocol.service.SendMessage2BrokerRequest parseFrom(
+  public static org.catmq.protocol.service.CreateTopicRequest parseFrom(
       java.nio.ByteBuffer data)
       throws com.google.protobuf.InvalidProtocolBufferException {
     return PARSER.parseFrom(data);
   }
-  public static org.catmq.protocol.service.SendMessage2BrokerRequest parseFrom(
+  public static org.catmq.protocol.service.CreateTopicRequest parseFrom(
       java.nio.ByteBuffer data,
       com.google.protobuf.ExtensionRegistryLite extensionRegistry)
       throws com.google.protobuf.InvalidProtocolBufferException {
     return PARSER.parseFrom(data, extensionRegistry);
   }
-  public static org.catmq.protocol.service.SendMessage2BrokerRequest parseFrom(
+  public static org.catmq.protocol.service.CreateTopicRequest parseFrom(
       com.google.protobuf.ByteString data)
       throws com.google.protobuf.InvalidProtocolBufferException {
     return PARSER.parseFrom(data);
   }
-  public static org.catmq.protocol.service.SendMessage2BrokerRequest parseFrom(
+  public static org.catmq.protocol.service.CreateTopicRequest parseFrom(
       com.google.protobuf.ByteString data,
       com.google.protobuf.ExtensionRegistryLite extensionRegistry)
       throws com.google.protobuf.InvalidProtocolBufferException {
     return PARSER.parseFrom(data, extensionRegistry);
   }
-  public static org.catmq.protocol.service.SendMessage2BrokerRequest parseFrom(byte[] data)
+  public static org.catmq.protocol.service.CreateTopicRequest parseFrom(byte[] data)
       throws com.google.protobuf.InvalidProtocolBufferException {
     return PARSER.parseFrom(data);
   }
-  public static org.catmq.protocol.service.SendMessage2BrokerRequest parseFrom(
+  public static org.catmq.protocol.service.CreateTopicRequest parseFrom(
       byte[] data,
       com.google.protobuf.ExtensionRegistryLite extensionRegistry)
       throws com.google.protobuf.InvalidProtocolBufferException {
     return PARSER.parseFrom(data, extensionRegistry);
   }
-  public static org.catmq.protocol.service.SendMessage2BrokerRequest parseFrom(java.io.InputStream input)
+  public static org.catmq.protocol.service.CreateTopicRequest parseFrom(java.io.InputStream input)
       throws java.io.IOException {
     return com.google.protobuf.GeneratedMessageV3
         .parseWithIOException(PARSER, input);
   }
-  public static org.catmq.protocol.service.SendMessage2BrokerRequest parseFrom(
+  public static org.catmq.protocol.service.CreateTopicRequest parseFrom(
       java.io.InputStream input,
       com.google.protobuf.ExtensionRegistryLite extensionRegistry)
       throws java.io.IOException {
     return com.google.protobuf.GeneratedMessageV3
         .parseWithIOException(PARSER, input, extensionRegistry);
   }
-  public static org.catmq.protocol.service.SendMessage2BrokerRequest parseDelimitedFrom(java.io.InputStream input)
+  public static org.catmq.protocol.service.CreateTopicRequest parseDelimitedFrom(java.io.InputStream input)
       throws java.io.IOException {
     return com.google.protobuf.GeneratedMessageV3
         .parseDelimitedWithIOException(PARSER, input);
   }
-  public static org.catmq.protocol.service.SendMessage2BrokerRequest parseDelimitedFrom(
+  public static org.catmq.protocol.service.CreateTopicRequest parseDelimitedFrom(
       java.io.InputStream input,
       com.google.protobuf.ExtensionRegistryLite extensionRegistry)
       throws java.io.IOException {
     return com.google.protobuf.GeneratedMessageV3
         .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
   }
-  public static org.catmq.protocol.service.SendMessage2BrokerRequest parseFrom(
+  public static org.catmq.protocol.service.CreateTopicRequest parseFrom(
       com.google.protobuf.CodedInputStream input)
       throws java.io.IOException {
     return com.google.protobuf.GeneratedMessageV3
         .parseWithIOException(PARSER, input);
   }
-  public static org.catmq.protocol.service.SendMessage2BrokerRequest parseFrom(
+  public static org.catmq.protocol.service.CreateTopicRequest parseFrom(
       com.google.protobuf.CodedInputStream input,
       com.google.protobuf.ExtensionRegistryLite extensionRegistry)
       throws java.io.IOException {
@@ -270,7 +221,7 @@ private static final long serialVersionUID = 0L;
   public static Builder newBuilder() {
     return DEFAULT_INSTANCE.toBuilder();
   }
-  public static Builder newBuilder(org.catmq.protocol.service.SendMessage2BrokerRequest prototype) {
+  public static Builder newBuilder(org.catmq.protocol.service.CreateTopicRequest prototype) {
     return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
   }
   @java.lang.Override
@@ -286,26 +237,26 @@ private static final long serialVersionUID = 0L;
     return builder;
   }
   /**
-   * Protobuf type {@code SendMessage2BrokerRequest}
+   * Protobuf type {@code CreateTopicRequest}
    */
   public static final class Builder extends
       com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
-      // @@protoc_insertion_point(builder_implements:SendMessage2BrokerRequest)
-      org.catmq.protocol.service.SendMessage2BrokerRequestOrBuilder {
+      // @@protoc_insertion_point(builder_implements:CreateTopicRequest)
+      org.catmq.protocol.service.CreateTopicRequestOrBuilder {
     public static final com.google.protobuf.Descriptors.Descriptor
         getDescriptor() {
-      return org.catmq.protocol.service.Service.internal_static_SendMessage2BrokerRequest_descriptor;
+      return org.catmq.protocol.service.Service.internal_static_CreateTopicRequest_descriptor;
     }
 
     @java.lang.Override
     protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
         internalGetFieldAccessorTable() {
-      return org.catmq.protocol.service.Service.internal_static_SendMessage2BrokerRequest_fieldAccessorTable
+      return org.catmq.protocol.service.Service.internal_static_CreateTopicRequest_fieldAccessorTable
           .ensureFieldAccessorsInitialized(
-              org.catmq.protocol.service.SendMessage2BrokerRequest.class, org.catmq.protocol.service.SendMessage2BrokerRequest.Builder.class);
+              org.catmq.protocol.service.CreateTopicRequest.class, org.catmq.protocol.service.CreateTopicRequest.Builder.class);
     }
 
-    // Construct using org.catmq.protocol.service.SendMessage2BrokerRequest.newBuilder()
+    // Construct using org.catmq.protocol.service.CreateTopicRequest.newBuilder()
     private Builder() {
 
     }
@@ -318,8 +269,6 @@ private static final long serialVersionUID = 0L;
     @java.lang.Override
     public Builder clear() {
       super.clear();
-      message_ = "";
-
       topic_ = "";
 
       return this;
@@ -328,17 +277,17 @@ private static final long serialVersionUID = 0L;
     @java.lang.Override
     public com.google.protobuf.Descriptors.Descriptor
         getDescriptorForType() {
-      return org.catmq.protocol.service.Service.internal_static_SendMessage2BrokerRequest_descriptor;
+      return org.catmq.protocol.service.Service.internal_static_CreateTopicRequest_descriptor;
     }
 
     @java.lang.Override
-    public org.catmq.protocol.service.SendMessage2BrokerRequest getDefaultInstanceForType() {
-      return org.catmq.protocol.service.SendMessage2BrokerRequest.getDefaultInstance();
+    public org.catmq.protocol.service.CreateTopicRequest getDefaultInstanceForType() {
+      return org.catmq.protocol.service.CreateTopicRequest.getDefaultInstance();
     }
 
     @java.lang.Override
-    public org.catmq.protocol.service.SendMessage2BrokerRequest build() {
-      org.catmq.protocol.service.SendMessage2BrokerRequest result = buildPartial();
+    public org.catmq.protocol.service.CreateTopicRequest build() {
+      org.catmq.protocol.service.CreateTopicRequest result = buildPartial();
       if (!result.isInitialized()) {
         throw newUninitializedMessageException(result);
       }
@@ -346,9 +295,8 @@ private static final long serialVersionUID = 0L;
     }
 
     @java.lang.Override
-    public org.catmq.protocol.service.SendMessage2BrokerRequest buildPartial() {
-      org.catmq.protocol.service.SendMessage2BrokerRequest result = new org.catmq.protocol.service.SendMessage2BrokerRequest(this);
-      result.message_ = message_;
+    public org.catmq.protocol.service.CreateTopicRequest buildPartial() {
+      org.catmq.protocol.service.CreateTopicRequest result = new org.catmq.protocol.service.CreateTopicRequest(this);
       result.topic_ = topic_;
       onBuilt();
       return result;
@@ -388,20 +336,16 @@ private static final long serialVersionUID = 0L;
     }
     @java.lang.Override
     public Builder mergeFrom(com.google.protobuf.Message other) {
-      if (other instanceof org.catmq.protocol.service.SendMessage2BrokerRequest) {
-        return mergeFrom((org.catmq.protocol.service.SendMessage2BrokerRequest)other);
+      if (other instanceof org.catmq.protocol.service.CreateTopicRequest) {
+        return mergeFrom((org.catmq.protocol.service.CreateTopicRequest)other);
       } else {
         super.mergeFrom(other);
         return this;
       }
     }
 
-    public Builder mergeFrom(org.catmq.protocol.service.SendMessage2BrokerRequest other) {
-      if (other == org.catmq.protocol.service.SendMessage2BrokerRequest.getDefaultInstance()) return this;
-      if (!other.getMessage().isEmpty()) {
-        message_ = other.message_;
-        onChanged();
-      }
+    public Builder mergeFrom(org.catmq.protocol.service.CreateTopicRequest other) {
+      if (other == org.catmq.protocol.service.CreateTopicRequest.getDefaultInstance()) return this;
       if (!other.getTopic().isEmpty()) {
         topic_ = other.topic_;
         onChanged();
@@ -433,15 +377,10 @@ private static final long serialVersionUID = 0L;
               done = true;
               break;
             case 10: {
-              message_ = input.readStringRequireUtf8();
-
-              break;
-            } // case 10
-            case 18: {
               topic_ = input.readStringRequireUtf8();
 
               break;
-            } // case 18
+            } // case 10
             default: {
               if (!super.parseUnknownField(input, extensionRegistry, tag)) {
                 done = true; // was an endgroup tag
@@ -458,85 +397,9 @@ private static final long serialVersionUID = 0L;
       return this;
     }
 
-    private java.lang.Object message_ = "";
-    /**
-     * <code>string message = 1;</code>
-     * @return The message.
-     */
-    public java.lang.String getMessage() {
-      java.lang.Object ref = message_;
-      if (!(ref instanceof java.lang.String)) {
-        com.google.protobuf.ByteString bs =
-            (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
-        message_ = s;
-        return s;
-      } else {
-        return (java.lang.String) ref;
-      }
-    }
-    /**
-     * <code>string message = 1;</code>
-     * @return The bytes for message.
-     */
-    public com.google.protobuf.ByteString
-        getMessageBytes() {
-      java.lang.Object ref = message_;
-      if (ref instanceof String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
-        message_ = b;
-        return b;
-      } else {
-        return (com.google.protobuf.ByteString) ref;
-      }
-    }
-    /**
-     * <code>string message = 1;</code>
-     * @param value The message to set.
-     * @return This builder for chaining.
-     */
-    public Builder setMessage(
-        java.lang.String value) {
-      if (value == null) {
-    throw new NullPointerException();
-  }
-  
-      message_ = value;
-      onChanged();
-      return this;
-    }
-    /**
-     * <code>string message = 1;</code>
-     * @return This builder for chaining.
-     */
-    public Builder clearMessage() {
-      
-      message_ = getDefaultInstance().getMessage();
-      onChanged();
-      return this;
-    }
-    /**
-     * <code>string message = 1;</code>
-     * @param value The bytes for message to set.
-     * @return This builder for chaining.
-     */
-    public Builder setMessageBytes(
-        com.google.protobuf.ByteString value) {
-      if (value == null) {
-    throw new NullPointerException();
-  }
-  checkByteStringIsUtf8(value);
-      
-      message_ = value;
-      onChanged();
-      return this;
-    }
-
     private java.lang.Object topic_ = "";
     /**
-     * <code>string topic = 2;</code>
+     * <code>string topic = 1;</code>
      * @return The topic.
      */
     public java.lang.String getTopic() {
@@ -552,7 +415,7 @@ private static final long serialVersionUID = 0L;
       }
     }
     /**
-     * <code>string topic = 2;</code>
+     * <code>string topic = 1;</code>
      * @return The bytes for topic.
      */
     public com.google.protobuf.ByteString
@@ -569,7 +432,7 @@ private static final long serialVersionUID = 0L;
       }
     }
     /**
-     * <code>string topic = 2;</code>
+     * <code>string topic = 1;</code>
      * @param value The topic to set.
      * @return This builder for chaining.
      */
@@ -584,7 +447,7 @@ private static final long serialVersionUID = 0L;
       return this;
     }
     /**
-     * <code>string topic = 2;</code>
+     * <code>string topic = 1;</code>
      * @return This builder for chaining.
      */
     public Builder clearTopic() {
@@ -594,7 +457,7 @@ private static final long serialVersionUID = 0L;
       return this;
     }
     /**
-     * <code>string topic = 2;</code>
+     * <code>string topic = 1;</code>
      * @param value The bytes for topic to set.
      * @return This builder for chaining.
      */
@@ -622,23 +485,23 @@ private static final long serialVersionUID = 0L;
     }
 
 
-    // @@protoc_insertion_point(builder_scope:SendMessage2BrokerRequest)
+    // @@protoc_insertion_point(builder_scope:CreateTopicRequest)
   }
 
-  // @@protoc_insertion_point(class_scope:SendMessage2BrokerRequest)
-  private static final org.catmq.protocol.service.SendMessage2BrokerRequest DEFAULT_INSTANCE;
+  // @@protoc_insertion_point(class_scope:CreateTopicRequest)
+  private static final org.catmq.protocol.service.CreateTopicRequest DEFAULT_INSTANCE;
   static {
-    DEFAULT_INSTANCE = new org.catmq.protocol.service.SendMessage2BrokerRequest();
+    DEFAULT_INSTANCE = new org.catmq.protocol.service.CreateTopicRequest();
   }
 
-  public static org.catmq.protocol.service.SendMessage2BrokerRequest getDefaultInstance() {
+  public static org.catmq.protocol.service.CreateTopicRequest getDefaultInstance() {
     return DEFAULT_INSTANCE;
   }
 
-  private static final com.google.protobuf.Parser<SendMessage2BrokerRequest>
-      PARSER = new com.google.protobuf.AbstractParser<SendMessage2BrokerRequest>() {
+  private static final com.google.protobuf.Parser<CreateTopicRequest>
+      PARSER = new com.google.protobuf.AbstractParser<CreateTopicRequest>() {
     @java.lang.Override
-    public SendMessage2BrokerRequest parsePartialFrom(
+    public CreateTopicRequest parsePartialFrom(
         com.google.protobuf.CodedInputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
@@ -657,17 +520,17 @@ private static final long serialVersionUID = 0L;
     }
   };
 
-  public static com.google.protobuf.Parser<SendMessage2BrokerRequest> parser() {
+  public static com.google.protobuf.Parser<CreateTopicRequest> parser() {
     return PARSER;
   }
 
   @java.lang.Override
-  public com.google.protobuf.Parser<SendMessage2BrokerRequest> getParserForType() {
+  public com.google.protobuf.Parser<CreateTopicRequest> getParserForType() {
     return PARSER;
   }
 
   @java.lang.Override
-  public org.catmq.protocol.service.SendMessage2BrokerRequest getDefaultInstanceForType() {
+  public org.catmq.protocol.service.CreateTopicRequest getDefaultInstanceForType() {
     return DEFAULT_INSTANCE;
   }
 

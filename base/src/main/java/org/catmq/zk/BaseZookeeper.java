@@ -6,9 +6,6 @@ import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 
-/**
- * @author BYL
- */
 @Slf4j
 public abstract class BaseZookeeper {
     public final CuratorFramework client;
@@ -22,43 +19,7 @@ public abstract class BaseZookeeper {
      * This method is used to close resources.
      */
     protected abstract void close();
-
-    /**
-     * This method is used to increase the number of connections on specified client.
-     *
-     * @param path the path target client.
-     */
-    protected void increaseTheNumberOfRequestedSessions(String path) {
-        try {
-            byte[] bytes = client.getData().forPath(path);
-            int count = Integer.parseInt(new String(bytes));
-            count++;
-            client.setData().forPath(path, String.valueOf(count).getBytes());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    /**
-     * This method is used to decrease the number of connections on specified client.
-     *
-     * @param path the path of target client.
-     */
-    protected void decreaseTheNumberOfRequestedSessions(String path) {
-        try {
-            byte[] bytes = client.getData().forPath(path);
-            int count = Integer.parseInt(new String(bytes));
-            if (count <= 0) {
-                log.error("The number of connections on {} is less than 0.", path);
-                return;
-            }
-            count--;
-            client.setData().forPath(path, String.valueOf(count).getBytes());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
+    
     protected BaseZookeeper(String zkAddress) {
         RetryPolicy policy = new ExponentialBackoffRetry(1000, 3);
         this.client = CuratorFrameworkFactory.newClient(zkAddress, policy);

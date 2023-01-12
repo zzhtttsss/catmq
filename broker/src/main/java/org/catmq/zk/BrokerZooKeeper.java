@@ -10,6 +10,7 @@ import org.catmq.broker.BrokerServer;
 import org.catmq.command.BooleanError;
 import org.catmq.constant.FileConstant;
 import org.catmq.constant.ZkConstant;
+import org.catmq.util.Concat2String;
 import org.catmq.util.StringUtil;
 
 import java.util.ArrayList;
@@ -39,26 +40,6 @@ public class BrokerZooKeeper extends BaseZookeeper {
             System.exit(-1);
         }
 
-    }
-
-    /**
-     * Make it available to unit test
-     *
-     * @param path the path target client.
-     */
-    @Override
-    public void increaseTheNumberOfRequestedSessions(String path) {
-        super.increaseTheNumberOfRequestedSessions(path);
-    }
-
-    /**
-     * Make it available to unit test
-     *
-     * @param path the path target client.
-     */
-    @Override
-    public void decreaseTheNumberOfRequestedSessions(String path) {
-        super.decreaseTheNumberOfRequestedSessions(path);
     }
 
     @Override
@@ -94,6 +75,11 @@ public class BrokerZooKeeper extends BaseZookeeper {
      */
     private BooleanError registerBrokerInfo() {
         try {
+            if (this.client.checkExists().forPath(this.brokerPath) != null) {
+                log.info("Broker info has been registered and will be deleted.");
+                this.client.delete().forPath(this.brokerPath);
+                log.info("Broker info has been deleted.");
+            }
             this.client.create()
                     .creatingParentsIfNeeded()
                     .withMode(CreateMode.PERSISTENT)
@@ -111,18 +97,20 @@ public class BrokerZooKeeper extends BaseZookeeper {
 
     private BooleanError registerBrokerConnection(BrokerServer server) {
         BrokerInfo info = server.brokerInfo;
-        CuratorFramework client = server.bzk.client;
-        log.info("Register broker address to zk. {}", info.getBrokerIp() + FileConstant.Colon + info.getBrokerPort());
+        CuratorFramework client = server.brokerZooKeeper.client;
+        log.info("Register broker address to zk. {}", info.getBrokerIp() + FileConstant.COLON + info.getBrokerPort());
         try {
             client.create()
                     .creatingParentsIfNeeded()
                     .withMode(CreateMode.EPHEMERAL)
-                    .forPath(StringUtil.concatString(ZkConstant.BROKER_ADDRESS, FileConstant.LEFT_SLASH) +
-                                    info.getBrokerIp() +
-                                    ":" +
-                                    info.getBrokerPort(),
-                            "0".getBytes());
-            CuratorCache cc = CuratorCache.build(client, ZkConstant.BROKER_ADDRESS);
+                    .forPath(Concat2String.builder()
+                            .concat(ZkConstant.BROKER_ADDRESS_PATH)
+                            .concat(FileConstant.LEFT_SLASH)
+                            .concat(info.getBrokerIp())
+                            .concat(FileConstant.COLON)
+                            .concat(info.getBrokerPort())
+                            .build(), info.toBytes());
+            CuratorCache cc = CuratorCache.build(client, ZkConstant.BROKER_ADDRESS_PATH);
             cc.listenable().addListener(new DeadNodeListener(info));
             cc.start();
         } catch (Exception e) {
