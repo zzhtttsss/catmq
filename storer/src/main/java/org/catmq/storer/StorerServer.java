@@ -4,6 +4,8 @@ import io.grpc.Context;
 import io.grpc.Metadata;
 import io.grpc.stub.StreamObserver;
 import lombok.extern.slf4j.Slf4j;
+import org.catmq.pipline.Finisher;
+import org.catmq.pipline.Preparer;
 import org.catmq.pipline.TaskPlan;
 import org.catmq.grpc.InterceptorConstants;
 import org.catmq.grpc.RequestContext;
@@ -64,7 +66,9 @@ public class StorerServer extends StorerServiceGrpc.StorerServiceImplBase {
     @Override
     public void sendMessage2Storer(SendMessage2StorerRequest request, StreamObserver<SendMessage2StorerResponse> responseObserver) {
         Function<Status, SendMessage2StorerResponse> statusResponseCreator = status -> SendMessage2StorerResponse.newBuilder().setStatus(status).build();
+        log.info("receive a message: {}", request.getBody());
         RequestContext ctx = createContext();
+
         try {
             this.writeOrderedExecutor.executeOrdered(2L, new GrpcTask<>(ctx, request, TaskPlan.SEND_MESSAGE_2_STORER_TASK_PLAN,
                     responseObserver, statusResponseCreator));
@@ -97,8 +101,8 @@ public class StorerServer extends StorerServiceGrpc.StorerServiceImplBase {
         Context ctx = Context.current();
         Metadata headers = InterceptorConstants.METADATA.get(ctx);
         RequestContext context = RequestContext.create()
-                .setEntryId(Long.parseLong(getValueFromMetadata(headers, InterceptorConstants.ENTRY_ID)))
-                .setSegmentId(Long.parseLong(getValueFromMetadata(headers, InterceptorConstants.SEGMENT_ID)))
+                .setEntryId(getValueFromMetadata(headers, InterceptorConstants.ENTRY_ID))
+                .setSegmentId(getValueFromMetadata(headers, InterceptorConstants.SEGMENT_ID))
                 .setLocalAddress(getValueFromMetadata(headers, InterceptorConstants.LOCAL_ADDRESS))
                 .setRemoteAddress(getValueFromMetadata(headers, InterceptorConstants.REMOTE_ADDRESS))
                 .setClientID(getValueFromMetadata(headers, InterceptorConstants.CLIENT_ID))
@@ -134,11 +138,24 @@ public class StorerServer extends StorerServiceGrpc.StorerServiceImplBase {
 
         public CompletableFuture<T> execute(RequestContext ctx, V request, TaskPlan<V, T> taskPlan){
             CompletableFuture<T> future = new CompletableFuture<>();
+            try {
+                for (Preparer p : taskPlan.preparers()) {
+                    p.prepare(ctx);
+                }
+                T response = taskPlan.processor().process(ctx, request);
+                for (Finisher f : taskPlan.finishers()) {
+                    f.finish(ctx);
+                }
+                future.complete(response);
+            } catch (Throwable t) {
+                future.completeExceptionally(t);
+            }
             return future;
         }
 
         @Override
         public void run() {
+            log.info("start to run");
             execute(ctx, request, taskPlan)
                     .whenComplete((response, throwable) -> writeResponse(ctx, request, response, streamObserver,
                             throwable, statusResponseCreator));

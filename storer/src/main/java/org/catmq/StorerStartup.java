@@ -12,6 +12,8 @@ import org.catmq.storer.StorerServer;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
+import static org.catmq.storer.Storer.STORER;
+
 @Slf4j
 public class StorerStartup {
 
@@ -19,6 +21,7 @@ public class StorerStartup {
 
     public static void start() throws IOException {
         /* The port on which the server should run */
+        STORER.init();
         int port = 5432;
         server = Grpc.newServerBuilderForPort(port, InsecureServerCredentials.create())
                 .addService(new StorerServer())

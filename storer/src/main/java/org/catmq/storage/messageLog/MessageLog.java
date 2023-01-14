@@ -3,7 +3,6 @@ package org.catmq.storage.messageLog;
 import com.sun.jna.NativeLong;
 import com.sun.jna.Pointer;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.catmq.util.CUtil;
@@ -49,6 +48,10 @@ public class MessageLog {
     private FileChannel fileChannel;
 
     private MappedByteBuffer mappedByteBuffer;
+
+    protected volatile int wrotePosition;
+    protected volatile int committedPosition;
+    protected volatile int flushedPosition;
 
     static {
         WROTE_POSITION_UPDATER = AtomicIntegerFieldUpdater.newUpdater(MessageLog.class, "wrotePosition");

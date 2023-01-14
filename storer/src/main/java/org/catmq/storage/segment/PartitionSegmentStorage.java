@@ -42,13 +42,14 @@ public class PartitionSegmentStorage {
     private final CopyOnWriteArrayList<PartitionSegment> partitionSegments;
 
     public PartitionSegmentStorage() {
-        this.path = "./segment/";
+        this.path = "/Users/zzh/Documents/projects/catmq/catmq/storer/src/segment";
         this.writeCache4Append = new WriteCache(MAX_CACHE_SIZE);
         this.writeCache4Flush = new WriteCache(MAX_CACHE_SIZE);
         this.readCache = new ReadCache();
         this.partitionSegments = new CopyOnWriteArrayList<>();
         this.flushWriteCacheService = new FlushWriteCacheService(this);
-        entryOffsetIndex = new EntryOffsetIndex(KeyValueStorageRocksDB.factory, "");
+        entryOffsetIndex = new EntryOffsetIndex(KeyValueStorageRocksDB.factory,
+                "/Users/zzh/Documents/projects/catmq/catmq/storer/src/index");
         flushWriteCacheService.start();
     }
 

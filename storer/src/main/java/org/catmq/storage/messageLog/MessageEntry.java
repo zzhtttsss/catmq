@@ -1,13 +1,16 @@
 package org.catmq.storage.messageLog;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.util.CharsetUtil;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.concurrent.CountDownLatch;
 
 import static org.catmq.storage.messageLog.MessageLog.LENGTH_OF_INT;
 
+@Slf4j
 @Getter
 public class MessageEntry {
 
@@ -45,7 +48,10 @@ public class MessageEntry {
     }
 
     public void dump2ByteBuf(ByteBuf byteBuf) {
+        log.info("length is {}", length);
         byteBuf.writeInt(length);
+        log.info("bytebuf is {}", byteBuf.toString(CharsetUtil.UTF_8));
+        log.info("int is {}", byteBuf.getInt(0));
         byteBuf.writeBytes(message);
     }
 }

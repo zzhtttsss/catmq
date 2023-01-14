@@ -1,8 +1,11 @@
 package org.catmq.grpc;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.util.HashMap;
 import java.util.Map;
 
+@Slf4j
 public class RequestContext {
     public static final String INNER_ACTION_PREFIX = "Inner";
 
@@ -91,16 +94,17 @@ public class RequestContext {
         return Long.parseLong(this.getVal(ContextVariable.SEGMENT_ID));
     }
 
-    public RequestContext setSegmentId(long segmentId) {
+    public RequestContext setSegmentId(String segmentId) {
         this.withVal(ContextVariable.SEGMENT_ID, segmentId);
         return this;
     }
 
     public long getEntryId() {
+        log.info((this.getVal(ContextVariable.ENTRY_ID)));
         return Long.parseLong(this.getVal(ContextVariable.ENTRY_ID));
     }
 
-    public RequestContext setEntryId(long entryId) {
+    public RequestContext setEntryId(String entryId) {
         this.withVal(ContextVariable.ENTRY_ID, entryId);
         return this;
     }

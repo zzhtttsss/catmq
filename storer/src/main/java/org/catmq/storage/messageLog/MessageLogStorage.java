@@ -7,6 +7,7 @@ import java.io.File;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import static org.catmq.constant.FileConstant.GB;
+import static org.catmq.constant.FileConstant.MB;
 
 @Slf4j
 public class MessageLogStorage {
@@ -21,10 +22,12 @@ public class MessageLogStorage {
 
     public MessageLogStorage() {
         // TODO read config
-        this.path = "./messageLog/";
-        this.maxMessageLogSize = (int) GB;
+        this.path = "/Users/zzh/Documents/projects/catmq/catmq/storer/src/messageLog";
+        this.maxMessageLogSize = (int) MB;
         allocateMessageLogService = new AllocateMessageLogService();
         allocateMessageLogService.start();
+        log.info("start to create");
+        this.tryCreateMessageLog(0);
     }
 
     public MessageLog getLatestMessageLog() {

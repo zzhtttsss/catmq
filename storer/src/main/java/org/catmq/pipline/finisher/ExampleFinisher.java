@@ -1,17 +1,18 @@
 package org.catmq.pipline.finisher;
 
+import lombok.extern.slf4j.Slf4j;
 import org.catmq.grpc.RequestContext;
 import org.catmq.pipline.Finisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@Slf4j
 public class ExampleFinisher implements Finisher {
-    Logger logger = LoggerFactory.getLogger(ExampleFinisher.class);
     public static final String EXAMPLE_FINISHER = "ExampleFinisher";
 
     @Override
     public void finish(RequestContext ctx) {
-        logger.info("ExampleFinisher");
+        log.info("ExampleFinisher");
     }
 
     public enum ExampleFinisherEnum {

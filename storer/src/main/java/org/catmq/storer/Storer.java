@@ -1,26 +1,33 @@
 package org.catmq.storer;
 
+import lombok.extern.slf4j.Slf4j;
 import org.catmq.storage.segment.PartitionSegmentStorage;
 import org.catmq.storage.messageLog.FlushMessageEntryService;
 import org.catmq.storage.messageLog.MessageLogStorage;
 
+@Slf4j
 public class Storer {
 
-    public final MessageLogStorage messageLogStorage;
-    public final PartitionSegmentStorage partitionSegmentStorage;
+    public static final Storer STORER;
 
-    public final FlushMessageEntryService flushMessageEntryService;
+    public MessageLogStorage messageLogStorage;
+    public PartitionSegmentStorage partitionSegmentStorage;
 
+    public FlushMessageEntryService flushMessageEntryService;
 
+    static {
+        STORER = new Storer();
+    }
 
-    private Storer() {
+    private Storer() {}
+
+    public void init(){
         messageLogStorage = new MessageLogStorage();
         partitionSegmentStorage = new PartitionSegmentStorage();
         flushMessageEntryService = new FlushMessageEntryService();
         flushMessageEntryService.start();
     }
 
-    public static final Storer STORER = new Storer();
 
 
 
