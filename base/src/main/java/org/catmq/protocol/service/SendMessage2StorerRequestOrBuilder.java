@@ -8,19 +8,7 @@ public interface SendMessage2StorerRequestOrBuilder extends
     com.google.protobuf.MessageOrBuilder {
 
   /**
-   * <code>string msgId = 2;</code>
-   * @return The msgId.
-   */
-  java.lang.String getMsgId();
-  /**
-   * <code>string msgId = 2;</code>
-   * @return The bytes for msgId.
-   */
-  com.google.protobuf.ByteString
-      getMsgIdBytes();
-
-  /**
-   * <code>bytes body = 3;</code>
+   * <code>bytes body = 1;</code>
    * @return The body.
    */
   com.google.protobuf.ByteString getBody();

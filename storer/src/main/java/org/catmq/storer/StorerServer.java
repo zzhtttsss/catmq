@@ -97,6 +97,8 @@ public class StorerServer extends StorerServiceGrpc.StorerServiceImplBase {
         Context ctx = Context.current();
         Metadata headers = InterceptorConstants.METADATA.get(ctx);
         RequestContext context = RequestContext.create()
+                .setEntryId(Long.parseLong(getValueFromMetadata(headers, InterceptorConstants.ENTRY_ID)))
+                .setSegmentId(Long.parseLong(getValueFromMetadata(headers, InterceptorConstants.SEGMENT_ID)))
                 .setLocalAddress(getValueFromMetadata(headers, InterceptorConstants.LOCAL_ADDRESS))
                 .setRemoteAddress(getValueFromMetadata(headers, InterceptorConstants.REMOTE_ADDRESS))
                 .setClientID(getValueFromMetadata(headers, InterceptorConstants.CLIENT_ID))
@@ -138,7 +140,8 @@ public class StorerServer extends StorerServiceGrpc.StorerServiceImplBase {
         @Override
         public void run() {
             execute(ctx, request, taskPlan)
-                    .whenComplete((response, throwable) -> writeResponse(ctx, request, response, streamObserver, throwable, statusResponseCreator));
+                    .whenComplete((response, throwable) -> writeResponse(ctx, request, response, streamObserver,
+                            throwable, statusResponseCreator));
         }
     }
 

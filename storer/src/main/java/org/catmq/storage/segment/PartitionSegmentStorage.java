@@ -1,7 +1,5 @@
 package org.catmq.storage.segment;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import io.netty.util.internal.PlatformDependent;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -51,6 +49,7 @@ public class PartitionSegmentStorage {
         this.partitionSegments = new CopyOnWriteArrayList<>();
         this.flushWriteCacheService = new FlushWriteCacheService(this);
         entryOffsetIndex = new EntryOffsetIndex(KeyValueStorageRocksDB.factory, "");
+        flushWriteCacheService.start();
     }
 
     public void appendEntry2WriteCache(MessageEntry messageEntry) {
@@ -69,14 +68,6 @@ public class PartitionSegmentStorage {
             this.writeCache4Append.appendEntry(messageEntry);
         }
         writeCacheRotationLock.unlockWrite(stamp);
-    }
-
-    public void dumpEntry2Index() {
-        this.writeCache4Flush.getCache().forEach((segmentId, map) -> {
-            map.forEach((msgId, messageEntry) -> {
-//                entryOffsetIndex.addLocation(segmentId, msgId, );
-            });
-        });
     }
 
     public void swapAndFlush() {

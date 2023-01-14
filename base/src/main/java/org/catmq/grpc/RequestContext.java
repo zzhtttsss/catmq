@@ -87,12 +87,21 @@ public class RequestContext {
         return this.getVal(ContextVariable.ACTION);
     }
 
-    public long getChunkId() {
-        return Long.parseLong(this.getVal(ContextVariable.CHUNK_ID));
+    public long getSegmentId() {
+        return Long.parseLong(this.getVal(ContextVariable.SEGMENT_ID));
     }
 
-    public RequestContext setChunkId(String chunkId) {
-        this.withVal(ContextVariable.CHUNK_ID, chunkId);
+    public RequestContext setSegmentId(long segmentId) {
+        this.withVal(ContextVariable.SEGMENT_ID, segmentId);
+        return this;
+    }
+
+    public long getEntryId() {
+        return Long.parseLong(this.getVal(ContextVariable.ENTRY_ID));
+    }
+
+    public RequestContext setEntryId(long entryId) {
+        this.withVal(ContextVariable.ENTRY_ID, entryId);
         return this;
     }
 

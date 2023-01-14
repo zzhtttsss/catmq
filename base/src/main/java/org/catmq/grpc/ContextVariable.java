@@ -9,5 +9,8 @@ public class ContextVariable {
 //    public static final String REMAINING_MS = "remaining-ms";
     public static final String ACTION = "action";
 
-    public static final String CHUNK_ID = "chunk-id";
+    public static final String SEGMENT_ID = "segment-id";
+
+    public static final String ENTRY_ID = "entry-id";
+
 }

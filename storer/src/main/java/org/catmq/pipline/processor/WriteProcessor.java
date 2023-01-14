@@ -24,7 +24,7 @@ public class WriteProcessor implements Processor<SendMessage2StorerRequest, Send
     @Override
     public SendMessage2StorerResponse process(RequestContext ctx, SendMessage2StorerRequest request) {
         Storer storer = Storer.STORER;
-        MessageEntry messageEntry = new MessageEntry(request.getMsgId(), ctx.getChunkId(), request.getBody().toByteArray());
+        MessageEntry messageEntry = new MessageEntry(ctx.getEntryId(), ctx.getSegmentId(), request.getBody().toByteArray());
         storer.partitionSegmentStorage.appendEntry2WriteCache(messageEntry);
         storer.flushMessageEntryService.putMessageEntry2Queue(messageEntry);
         try {
@@ -32,7 +32,7 @@ public class WriteProcessor implements Processor<SendMessage2StorerRequest, Send
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-        SendMessage2StorerResponse response = SendMessage2StorerResponse.newBuilder().build();
+        SendMessage2StorerResponse response = SendMessage2StorerResponse.newBuilder().setAck(true).setRes("").build();
         return response;
     }
 

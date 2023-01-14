@@ -24,6 +24,7 @@ public class MessageLogStorage {
         this.path = "./messageLog/";
         this.maxMessageLogSize = (int) GB;
         allocateMessageLogService = new AllocateMessageLogService();
+        allocateMessageLogService.start();
     }
 
     public MessageLog getLatestMessageLog() {

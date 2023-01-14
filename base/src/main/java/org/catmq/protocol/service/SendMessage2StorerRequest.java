@@ -16,7 +16,6 @@ private static final long serialVersionUID = 0L;
     super(builder);
   }
   private SendMessage2StorerRequest() {
-    msgId_ = "";
     body_ = com.google.protobuf.ByteString.EMPTY;
   }
 
@@ -45,48 +44,10 @@ private static final long serialVersionUID = 0L;
             org.catmq.protocol.service.SendMessage2StorerRequest.class, org.catmq.protocol.service.SendMessage2StorerRequest.Builder.class);
   }
 
-  public static final int MSGID_FIELD_NUMBER = 2;
-  private volatile java.lang.Object msgId_;
-  /**
-   * <code>string msgId = 2;</code>
-   * @return The msgId.
-   */
-  @java.lang.Override
-  public java.lang.String getMsgId() {
-    java.lang.Object ref = msgId_;
-    if (ref instanceof java.lang.String) {
-      return (java.lang.String) ref;
-    } else {
-      com.google.protobuf.ByteString bs = 
-          (com.google.protobuf.ByteString) ref;
-      java.lang.String s = bs.toStringUtf8();
-      msgId_ = s;
-      return s;
-    }
-  }
-  /**
-   * <code>string msgId = 2;</code>
-   * @return The bytes for msgId.
-   */
-  @java.lang.Override
-  public com.google.protobuf.ByteString
-      getMsgIdBytes() {
-    java.lang.Object ref = msgId_;
-    if (ref instanceof java.lang.String) {
-      com.google.protobuf.ByteString b = 
-          com.google.protobuf.ByteString.copyFromUtf8(
-              (java.lang.String) ref);
-      msgId_ = b;
-      return b;
-    } else {
-      return (com.google.protobuf.ByteString) ref;
-    }
-  }
-
-  public static final int BODY_FIELD_NUMBER = 3;
+  public static final int BODY_FIELD_NUMBER = 1;
   private com.google.protobuf.ByteString body_;
   /**
-   * <code>bytes body = 3;</code>
+   * <code>bytes body = 1;</code>
    * @return The body.
    */
   @java.lang.Override
@@ -108,11 +69,8 @@ private static final long serialVersionUID = 0L;
   @java.lang.Override
   public void writeTo(com.google.protobuf.CodedOutputStream output)
                       throws java.io.IOException {
-    if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(msgId_)) {
-      com.google.protobuf.GeneratedMessageV3.writeString(output, 2, msgId_);
-    }
     if (!body_.isEmpty()) {
-      output.writeBytes(3, body_);
+      output.writeBytes(1, body_);
     }
     getUnknownFields().writeTo(output);
   }
@@ -123,12 +81,9 @@ private static final long serialVersionUID = 0L;
     if (size != -1) return size;
 
     size = 0;
-    if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(msgId_)) {
-      size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, msgId_);
-    }
     if (!body_.isEmpty()) {
       size += com.google.protobuf.CodedOutputStream
-        .computeBytesSize(3, body_);
+        .computeBytesSize(1, body_);
     }
     size += getUnknownFields().getSerializedSize();
     memoizedSize = size;
@@ -145,8 +100,6 @@ private static final long serialVersionUID = 0L;
     }
     org.catmq.protocol.service.SendMessage2StorerRequest other = (org.catmq.protocol.service.SendMessage2StorerRequest) obj;
 
-    if (!getMsgId()
-        .equals(other.getMsgId())) return false;
     if (!getBody()
         .equals(other.getBody())) return false;
     if (!getUnknownFields().equals(other.getUnknownFields())) return false;
@@ -160,8 +113,6 @@ private static final long serialVersionUID = 0L;
     }
     int hash = 41;
     hash = (19 * hash) + getDescriptor().hashCode();
-    hash = (37 * hash) + MSGID_FIELD_NUMBER;
-    hash = (53 * hash) + getMsgId().hashCode();
     hash = (37 * hash) + BODY_FIELD_NUMBER;
     hash = (53 * hash) + getBody().hashCode();
     hash = (29 * hash) + getUnknownFields().hashCode();
@@ -292,8 +243,6 @@ private static final long serialVersionUID = 0L;
     @java.lang.Override
     public Builder clear() {
       super.clear();
-      msgId_ = "";
-
       body_ = com.google.protobuf.ByteString.EMPTY;
 
       return this;
@@ -322,7 +271,6 @@ private static final long serialVersionUID = 0L;
     @java.lang.Override
     public org.catmq.protocol.service.SendMessage2StorerRequest buildPartial() {
       org.catmq.protocol.service.SendMessage2StorerRequest result = new org.catmq.protocol.service.SendMessage2StorerRequest(this);
-      result.msgId_ = msgId_;
       result.body_ = body_;
       onBuilt();
       return result;
@@ -372,10 +320,6 @@ private static final long serialVersionUID = 0L;
 
     public Builder mergeFrom(org.catmq.protocol.service.SendMessage2StorerRequest other) {
       if (other == org.catmq.protocol.service.SendMessage2StorerRequest.getDefaultInstance()) return this;
-      if (!other.getMsgId().isEmpty()) {
-        msgId_ = other.msgId_;
-        onChanged();
-      }
       if (other.getBody() != com.google.protobuf.ByteString.EMPTY) {
         setBody(other.getBody());
       }
@@ -405,16 +349,11 @@ private static final long serialVersionUID = 0L;
             case 0:
               done = true;
               break;
-            case 18: {
-              msgId_ = input.readStringRequireUtf8();
-
-              break;
-            } // case 18
-            case 26: {
+            case 10: {
               body_ = input.readBytes();
 
               break;
-            } // case 26
+            } // case 10
             default: {
               if (!super.parseUnknownField(input, extensionRegistry, tag)) {
                 done = true; // was an endgroup tag
@@ -431,85 +370,9 @@ private static final long serialVersionUID = 0L;
       return this;
     }
 
-    private java.lang.Object msgId_ = "";
-    /**
-     * <code>string msgId = 2;</code>
-     * @return The msgId.
-     */
-    public java.lang.String getMsgId() {
-      java.lang.Object ref = msgId_;
-      if (!(ref instanceof java.lang.String)) {
-        com.google.protobuf.ByteString bs =
-            (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
-        msgId_ = s;
-        return s;
-      } else {
-        return (java.lang.String) ref;
-      }
-    }
-    /**
-     * <code>string msgId = 2;</code>
-     * @return The bytes for msgId.
-     */
-    public com.google.protobuf.ByteString
-        getMsgIdBytes() {
-      java.lang.Object ref = msgId_;
-      if (ref instanceof String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
-        msgId_ = b;
-        return b;
-      } else {
-        return (com.google.protobuf.ByteString) ref;
-      }
-    }
-    /**
-     * <code>string msgId = 2;</code>
-     * @param value The msgId to set.
-     * @return This builder for chaining.
-     */
-    public Builder setMsgId(
-        java.lang.String value) {
-      if (value == null) {
-    throw new NullPointerException();
-  }
-  
-      msgId_ = value;
-      onChanged();
-      return this;
-    }
-    /**
-     * <code>string msgId = 2;</code>
-     * @return This builder for chaining.
-     */
-    public Builder clearMsgId() {
-      
-      msgId_ = getDefaultInstance().getMsgId();
-      onChanged();
-      return this;
-    }
-    /**
-     * <code>string msgId = 2;</code>
-     * @param value The bytes for msgId to set.
-     * @return This builder for chaining.
-     */
-    public Builder setMsgIdBytes(
-        com.google.protobuf.ByteString value) {
-      if (value == null) {
-    throw new NullPointerException();
-  }
-  checkByteStringIsUtf8(value);
-      
-      msgId_ = value;
-      onChanged();
-      return this;
-    }
-
     private com.google.protobuf.ByteString body_ = com.google.protobuf.ByteString.EMPTY;
     /**
-     * <code>bytes body = 3;</code>
+     * <code>bytes body = 1;</code>
      * @return The body.
      */
     @java.lang.Override
@@ -517,7 +380,7 @@ private static final long serialVersionUID = 0L;
       return body_;
     }
     /**
-     * <code>bytes body = 3;</code>
+     * <code>bytes body = 1;</code>
      * @param value The body to set.
      * @return This builder for chaining.
      */
@@ -531,7 +394,7 @@ private static final long serialVersionUID = 0L;
       return this;
     }
     /**
-     * <code>bytes body = 3;</code>
+     * <code>bytes body = 1;</code>
      * @return This builder for chaining.
      */
     public Builder clearBody() {

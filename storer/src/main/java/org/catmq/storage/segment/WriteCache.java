@@ -1,10 +1,8 @@
 package org.catmq.storage.segment;
 
-import io.netty.buffer.ByteBuf;
 import lombok.Getter;
 import org.catmq.storage.messageLog.MessageEntry;
 
-import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -18,7 +16,7 @@ public class WriteCache {
     private AtomicLong cacheSize;
 
     @Getter
-    private AtomicLong offset;
+    public static AtomicLong segmentOffset;
 
     @Getter
     private AtomicInteger entryNum;
@@ -29,7 +27,7 @@ public class WriteCache {
     public WriteCache(long maxCacheSize) {
         this.maxCacheSize = maxCacheSize;
         this.cacheSize = new AtomicLong(0L);
-        this.offset = new AtomicLong(0L);
+        segmentOffset = new AtomicLong(0L);
         this.entryNum = new AtomicInteger(0);
     }
 
@@ -39,8 +37,8 @@ public class WriteCache {
         }
         cache.getOrDefault(messageEntry.getSegmentId(), new LinkedHashMap<>()).put(messageEntry.getEntryId(), messageEntry);
         cacheSize.addAndGet(messageEntry.getTotalSize());
-        messageEntry.setOffset(offset.get());
-        offset.addAndGet(messageEntry.getTotalSize());
+        messageEntry.setOffset(segmentOffset.get());
+        segmentOffset.addAndGet(messageEntry.getTotalSize());
         entryNum.incrementAndGet();
         return true;
     }

@@ -29,8 +29,7 @@ message GetMessageFromBrokerResponse {
 }
 
 message SendMessage2StorerRequest {
-  string msgId = 2;
-  bytes body = 3;
+  bytes body = 1;
 }
 
 message SendMessage2StorerResponse {

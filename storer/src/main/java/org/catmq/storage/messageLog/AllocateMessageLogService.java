@@ -1,5 +1,6 @@
 package org.catmq.storage.messageLog;
 
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.catmq.storage.ServiceThread;
 
@@ -131,7 +132,7 @@ public class AllocateMessageLogService extends ServiceThread {
         }
     }
 
-
+    @Data
     static class AllocateRequest implements Comparable<AllocateRequest> {
 
         private static final int countDownLatchCount = 1;
@@ -144,38 +145,6 @@ public class AllocateMessageLogService extends ServiceThread {
         public AllocateRequest(String filePath, int fileSize) {
             this.filePath = filePath;
             this.fileSize = fileSize;
-        }
-
-        public String getFilePath() {
-            return filePath;
-        }
-
-        public void setFilePath(String filePath) {
-            this.filePath = filePath;
-        }
-
-        public int getFileSize() {
-            return fileSize;
-        }
-
-        public void setFileSize(int fileSize) {
-            this.fileSize = fileSize;
-        }
-
-        public CountDownLatch getCountDownLatch() {
-            return countDownLatch;
-        }
-
-        public void setCountDownLatch(CountDownLatch countDownLatch) {
-            this.countDownLatch = countDownLatch;
-        }
-
-        public MessageLog getMessageLog() {
-            return messageLog;
-        }
-
-        public void setMessageLog(MessageLog messageLog) {
-            this.messageLog = messageLog;
         }
 
         /**
