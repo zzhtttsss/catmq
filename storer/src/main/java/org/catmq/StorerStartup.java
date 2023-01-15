@@ -20,7 +20,6 @@ public class StorerStartup {
     private static Server server;
 
     public static void start() throws IOException {
-        /* The port on which the server should run */
         STORER.init();
         int port = 5432;
         server = Grpc.newServerBuilderForPort(port, InsecureServerCredentials.create())
@@ -35,7 +34,6 @@ public class StorerStartup {
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {
-                // Use stderr here since the logger may have been reset by its JVM shutdown hook.
                 System.err.println("*** shutting down gRPC server since JVM is shutting down");
                 try {
                     StorerStartup.stop();
@@ -53,15 +51,11 @@ public class StorerStartup {
         }
     }
 
-    /**
-     * Await termination on the main thread since the grpc library uses daemon threads.
-     */
     public static void blockUntilShutdown() throws InterruptedException {
         if (server != null) {
             server.awaitTermination();
         }
     }
-
 
     public static void main(String[] args) throws IOException, InterruptedException {
         StorerStartup.start();

@@ -23,7 +23,7 @@ public class MessageLogStorage {
     public MessageLogStorage() {
         // TODO read config
         this.path = "/Users/zzh/Documents/projects/catmq/catmq/storer/src/messageLog";
-        this.maxMessageLogSize = (int) MB;
+        this.maxMessageLogSize = 1 * (int) MB;
         allocateMessageLogService = new AllocateMessageLogService();
         allocateMessageLogService.start();
         log.info("start to create");
@@ -45,7 +45,7 @@ public class MessageLogStorage {
         if (mappedFileLast != null && mappedFileLast.isFull()) {
             createOffset = mappedFileLast.getOffset() + this.maxMessageLogSize;
         }
-
+        log.debug("createOffset is {}", createOffset);
         if (createOffset != -1 && needCreate) {
             return tryCreateMessageLog(createOffset);
         }
@@ -57,9 +57,11 @@ public class MessageLogStorage {
         String nextFilePath = StringUtil.concatString(this.path, File.separator, StringUtil.offset2FileName(createOffset));
         String nextNextFilePath = StringUtil.concatString(this.path, File.separator,
                 StringUtil.offset2FileName(createOffset + this.maxMessageLogSize));
+        log.debug("nextFilePath is {}, nextNextFilePath is {}", nextFilePath, nextNextFilePath);
         MessageLog messageLog = this.allocateMessageLogService.getNextMessageLog(nextFilePath,
                 nextNextFilePath, this.maxMessageLogSize);
         if (messageLog != null) {
+            log.debug("messageLog is not null.");
             this.messageLogs.add(messageLog);
         }
         return messageLog;

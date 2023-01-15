@@ -43,6 +43,20 @@ configuration 子节点为 appender、logger、root
         </encoder>
     </appender>
 
+    <appender name="warnLog" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>warn</level>
+        </filter>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>logs/warn.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>30</maxHistory><!--保存最近30天的日志-->
+        </rollingPolicy>
+        <encoder>
+            <charset>UTF-8</charset>
+            <pattern>[%d{yyyy-MM-dd HH:mm:ss.SSS}] [%thread] %-5level %logger{36} : %msg%n</pattern>
+        </encoder>
+    </appender>
+
     <appender name="errorLog" class="ch.qos.logback.core.FileAppender">
         <!-- ThresholdFilter:临界值过滤器，过滤掉 TRACE 和 DEBUG 级别的日志 -->
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
@@ -71,6 +85,7 @@ configuration 子节点为 appender、logger、root
         <appender-ref ref="console"/>
         <appender-ref ref="infoLog"/>
         <appender-ref ref="errorLog"/>
+        <appender-ref ref="warnLog"/>
         <!--<appender-ref ref="logstash"/>-->
     </root>
 

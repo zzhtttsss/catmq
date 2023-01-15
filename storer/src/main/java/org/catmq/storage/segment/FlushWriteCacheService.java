@@ -65,6 +65,7 @@ public class FlushWriteCacheService extends ServiceThread {
                         this.hasException = true;
                         log.error("write file " + fileName + " error or add index error.", e);
                     }
+                    byteBuf.release();
                 });
             });
             batch.flush();

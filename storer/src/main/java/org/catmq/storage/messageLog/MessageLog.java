@@ -84,14 +84,19 @@ public class MessageLog {
         }
     }
 
-    public boolean appendMessageEntry(MessageEntry messageEntry, ByteBuf byteBuf) {
+    public int appendMessageEntry(byte[] messageBytes, ByteBuf byteBuf, int beginIndex, int endIndex) {
         int currentPos = WROTE_POSITION_UPDATER.get(this);
-        if (messageEntry.getMessage().length + END_FILE_MIN_BLANK_LENGTH > this.fileSize - currentPos) {
-            return false;
+        int remainSize = this.fileSize - currentPos;
+        if (messageBytes.length > remainSize) {
+            log.warn("reach the max length, currentPos is {}", currentPos);
+            byteBuf.writeBytes(messageBytes, beginIndex, remainSize);
+            WROTE_POSITION_UPDATER.addAndGet(this, remainSize);
+            return remainSize;
         }
         // TODO 目前只写入了消息体，没有加其他信息。
-        messageEntry.dump2ByteBuf(byteBuf);
-        return true;
+        byteBuf.writeBytes(messageBytes, beginIndex, endIndex - beginIndex);
+        WROTE_POSITION_UPDATER.addAndGet(this, messageBytes.length);
+        return 0;
     }
 
     public void flush() {
@@ -99,6 +104,7 @@ public class MessageLog {
     }
 
     public void putAndFlush(ByteBuf byteBuf) {
+//        log.warn("filename is {}", this.file.getName());
         this.mappedByteBuffer.put(byteBuf.nioBuffer());
         flush();
     }
@@ -145,6 +151,15 @@ public class MessageLog {
     public boolean isFull() {
         return this.fileSize == WROTE_POSITION_UPDATER.get(this);
     }
+
+    public void setWritePosition(int index) {
+        WROTE_POSITION_UPDATER.set(this, index);
+    }
+
+    public void resetWritePosition() {
+        setWritePosition(0);
+    }
+
 
     public void mlock() {
         final long beginTime = System.currentTimeMillis();

@@ -25,10 +25,12 @@ public class AllocateMessageLogService extends ServiceThread {
     public MessageLog getNextMessageLog(String nextFilePath, String nextNextFilePath, int fileSize) {
         AllocateRequest nextReq = new AllocateRequest(nextFilePath, fileSize);
         if (this.requestMap.putIfAbsent(nextFilePath, nextReq) == null) {
+            log.debug("add nextReq");
             this.requestQueue.offer(nextReq);
         }
         AllocateRequest nextNextReq = new AllocateRequest(nextNextFilePath, fileSize);
         if (this.requestMap.putIfAbsent(nextNextFilePath, nextNextReq) == null) {
+            log.debug("add nextNextReq");
             this.requestQueue.offer(nextNextReq);
         }
 
@@ -40,7 +42,9 @@ public class AllocateMessageLogService extends ServiceThread {
         AllocateRequest result = this.requestMap.get(nextFilePath);
         try {
             if (result != null) {
+                log.debug("start to wait...");
                 boolean ok = result.getCountDownLatch().await(waitTimeOut, TimeUnit.MILLISECONDS);
+                log.debug("finish waiting, ok");
                 if (!ok) {
                     log.warn("create mmap timeout " + result.getFilePath() + " " + result.getFileSize());
                     return null;
@@ -99,8 +103,10 @@ public class AllocateMessageLogService extends ServiceThread {
                 }
             }
         } finally {
-            if (req != null && isSuccess)
+            if (req != null && isSuccess) {
+                log.info("count down!");
                 req.getCountDownLatch().countDown();
+            }
         }
         return true;
 

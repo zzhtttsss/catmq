@@ -11,7 +11,7 @@ public class ExamplePreparer implements Preparer {
     public static final String EXAMPLE_PREPARER = "ExamplePreparer";
 
     public void prepare(RequestContext ctx) {
-        log.info("ExamplePreparer");
+        log.debug("ExamplePreparer");
 
     }
 

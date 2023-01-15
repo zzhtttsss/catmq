@@ -12,7 +12,7 @@ public class ExampleFinisher implements Finisher {
 
     @Override
     public void finish(RequestContext ctx) {
-        log.info("ExampleFinisher");
+        log.debug("ExampleFinisher");
     }
 
     public enum ExampleFinisherEnum {
