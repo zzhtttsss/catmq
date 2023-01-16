@@ -2,7 +2,7 @@ package org.catmq.storage.messageLog;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.catmq.storage.ServiceThread;
+import org.catmq.thread.ServiceThread;
 
 import java.io.File;
 import java.io.IOException;
@@ -25,28 +25,24 @@ public class AllocateMessageLogService extends ServiceThread {
     public MessageLog getNextMessageLog(String nextFilePath, String nextNextFilePath, int fileSize) {
         AllocateRequest nextReq = new AllocateRequest(nextFilePath, fileSize);
         if (this.requestMap.putIfAbsent(nextFilePath, nextReq) == null) {
-            log.debug("add nextReq");
             this.requestQueue.offer(nextReq);
         }
         AllocateRequest nextNextReq = new AllocateRequest(nextNextFilePath, fileSize);
         if (this.requestMap.putIfAbsent(nextNextFilePath, nextNextReq) == null) {
-            log.debug("add nextNextReq");
             this.requestQueue.offer(nextNextReq);
         }
 
         if (hasException) {
-            log.warn(this.getServiceName() + " service has exception. so return null");
+            log.warn("{} service has exception. so return null", this.getServiceName());
             return null;
         }
 
         AllocateRequest result = this.requestMap.get(nextFilePath);
         try {
             if (result != null) {
-                log.debug("start to wait...");
                 boolean ok = result.getCountDownLatch().await(waitTimeOut, TimeUnit.MILLISECONDS);
-                log.debug("finish waiting, ok");
                 if (!ok) {
-                    log.warn("create mmap timeout " + result.getFilePath() + " " + result.getFileSize());
+                    log.warn("Create mmap timeout, file path: {}, file size: {}", result.getFilePath(), result.getFileSize());
                     return null;
                 } else {
                     this.requestMap.remove(nextFilePath);
@@ -54,7 +50,7 @@ public class AllocateMessageLogService extends ServiceThread {
                 }
             }
         } catch (InterruptedException e) {
-            log.warn(this.getServiceName() + " service has exception. ", e);
+            log.warn("{} service has exception.", this.getServiceName(), e);
         }
 
         return null;
@@ -67,13 +63,13 @@ public class AllocateMessageLogService extends ServiceThread {
             req = this.requestQueue.take();
             AllocateRequest expectedRequest = this.requestMap.get(req.getFilePath());
             if (null == expectedRequest) {
-                log.warn("this mmap request expired, maybe cause timeout " + req.getFilePath() + " "
-                        + req.getFileSize());
+                log.warn("This mmap request expired, maybe cause timeout, file path: {}, file size: {}",
+                        req.getFilePath(), req.getFileSize());
                 return true;
             }
             if (expectedRequest != req) {
-                log.warn("never expected here,  maybe cause timeout " + req.getFilePath() + " "
-                        + req.getFileSize() + ", req:" + req + ", expectedRequest:" + expectedRequest);
+                log.warn("Never expected here,  maybe cause timeout, file path: {}, file size: {}, expected request: {}",
+                        req.getFilePath(), req.getFileSize(), expectedRequest);
                 return true;
             }
 
@@ -95,7 +91,7 @@ public class AllocateMessageLogService extends ServiceThread {
         } catch (IOException e) {
             log.warn(this.getServiceName() + " service has exception. ", e);
             this.hasException = true;
-            if (null != req) {
+            if (req != null) {
                 requestQueue.offer(req);
                 try {
                     Thread.sleep(1);
@@ -104,7 +100,6 @@ public class AllocateMessageLogService extends ServiceThread {
             }
         } finally {
             if (req != null && isSuccess) {
-                log.info("count down!");
                 req.getCountDownLatch().countDown();
             }
         }
@@ -119,12 +114,12 @@ public class AllocateMessageLogService extends ServiceThread {
 
     @Override
     public void run() {
-        log.info(this.getServiceName() + " service started");
+        log.info("{} service started.", this.getServiceName());
 
         while (!this.isStopped() && this.createNewMessageLog()) {
 
         }
-        log.info(this.getServiceName() + " service end");
+        log.info("{} service end.", this.getServiceName());
     }
 
     @Override
@@ -132,7 +127,7 @@ public class AllocateMessageLogService extends ServiceThread {
         super.shutdown(true);
         for (AllocateRequest req : this.requestMap.values()) {
             if (req.messageLog != null) {
-                log.info("delete pre allocated maped file, {}", req.messageLog.getFileName());
+                log.info("Delete pre allocated mapped file, {}", req.messageLog.getFileName());
 //                req.messageLog.destroy(1000);
             }
         }
@@ -187,20 +182,26 @@ public class AllocateMessageLogService extends ServiceThread {
 
         @Override
         public boolean equals(Object obj) {
-            if (this == obj)
+            if (this == obj) {
                 return true;
-            if (obj == null)
+            }
+            if (obj == null) {
                 return false;
-            if (getClass() != obj.getClass())
+            }
+            if (getClass() != obj.getClass()) {
                 return false;
+            }
             AllocateRequest other = (AllocateRequest) obj;
             if (filePath == null) {
-                if (other.filePath != null)
+                if (other.filePath != null) {
                     return false;
-            } else if (!filePath.equals(other.filePath))
+                }
+            } else if (!filePath.equals(other.filePath)) {
                 return false;
-            if (fileSize != other.fileSize)
+            }
+            if (fileSize != other.fileSize) {
                 return false;
+            }
             return true;
         }
     }

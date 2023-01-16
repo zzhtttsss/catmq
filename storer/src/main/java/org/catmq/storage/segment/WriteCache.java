@@ -17,10 +17,10 @@ public class WriteCache {
     public final long maxCacheSize;
 
     @Getter
-    private AtomicLong cacheSize;
+    private final AtomicLong cacheSize;
 
     @Getter
-    public static AtomicLong segmentOffset;
+    public static AtomicLong segmentOffset = new AtomicLong(0L);
 
     @Getter
     private AtomicInteger entryNum;
@@ -31,13 +31,11 @@ public class WriteCache {
     public WriteCache(long maxCacheSize) {
         this.maxCacheSize = maxCacheSize;
         this.cacheSize = new AtomicLong(0L);
-        segmentOffset = new AtomicLong(0L);
         this.entryNum = new AtomicInteger(0);
     }
 
     public boolean appendEntry(MessageEntry messageEntry) {
         if (cacheSize.get() + messageEntry.getTotalSize() > maxCacheSize) {
-            log.warn("write cache is full, size is {}", cacheSize.get());
             return false;
         }
 
@@ -55,10 +53,10 @@ public class WriteCache {
         return true;
     }
 
-    public MessageEntry getEntry(long chunkId, String msgId) {
-        Map<Long, MessageEntry> map = this.cache.get(chunkId);
+    public MessageEntry getEntry(long segmentId, Long entryId) {
+        Map<Long, MessageEntry> map = this.cache.get(segmentId);
         if (map != null) {
-            return map.get(msgId);
+            return map.getOrDefault(entryId, null);
         }
         return null;
     }

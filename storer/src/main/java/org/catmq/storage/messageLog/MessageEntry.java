@@ -1,7 +1,6 @@
 package org.catmq.storage.messageLog;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.util.CharsetUtil;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -9,28 +8,22 @@ import lombok.extern.slf4j.Slf4j;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CountDownLatch;
 
-import static org.catmq.storage.messageLog.MessageLog.LENGTH_OF_INT;
+import static org.catmq.constant.CommonConstant.BYTES_LENGTH_OF_INT;
 
 @Slf4j
 @Getter
 public class MessageEntry {
 
-    public static final String MSG_ID_DELIMITER = "_";
-
-    public static final int WAIT_TIME = 1;
+    public static final int COUNT_DOWN_LATCH_WAIT_TIME = 1;
     private final int length;
-
     private final long entryId;
-
     private final long segmentId;
-
     private final byte[] message;
 
-    @Getter
     @Setter
     private long offset;
 
-    private final CountDownLatch waiter = new CountDownLatch(WAIT_TIME);
+    private final CountDownLatch waiter = new CountDownLatch(COUNT_DOWN_LATCH_WAIT_TIME);
 
 
     public MessageEntry(long entryId, long segmentId, byte[] message) {
@@ -45,7 +38,7 @@ public class MessageEntry {
     }
 
     public int getTotalSize() {
-        return this.getLength() + LENGTH_OF_INT;
+        return this.getLength() + BYTES_LENGTH_OF_INT;
     }
 
     public void dump2ByteBuf(ByteBuf byteBuf) {

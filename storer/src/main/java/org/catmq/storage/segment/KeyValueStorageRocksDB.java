@@ -47,8 +47,7 @@ import org.catmq.storage.segment.KeyValueStorageFactory.*;
  */
 public class KeyValueStorageRocksDB implements KeyValueStorage {
 
-    static KeyValueStorageFactory factory = (defaultBasePath, subPath, dbConfigType) ->
-            new KeyValueStorageRocksDB(defaultBasePath, subPath, dbConfigType);
+    static KeyValueStorageFactory factory = KeyValueStorageRocksDB::new;
 
     private final RocksDB db;
     private RocksObject options;
@@ -86,7 +85,7 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
         try {
             RocksDB.loadLibrary();
         } catch (Throwable t) {
-            throw new IOException("Failed to load RocksDB JNI library", t);
+            throw new IOException("Failed to load RocksDB JNI library.", t);
         }
 
         this.optionSync = new WriteOptions();
@@ -96,9 +95,9 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
         this.emptyBatch = new WriteBatch();
 
         String dbFilePath;
-        if (dbConfigType == KeyValueStorageFactory.DbConfigType.EntryLocation) {
+        if (dbConfigType == KeyValueStorageFactory.DbConfigType.EntryPosition) {
             dbFilePath = "";
-        } else if (dbConfigType == KeyValueStorageFactory.DbConfigType.LedgerMetadata) {
+        } else if (dbConfigType == KeyValueStorageFactory.DbConfigType.SegmentMetadata) {
             dbFilePath = "";
         } else {
             dbFilePath = "";
@@ -152,7 +151,7 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
         Options options = new Options();
         options.setCreateIfMissing(true);
 
-        if (dbConfigType == DbConfigType.EntryLocation) {
+        if (dbConfigType == DbConfigType.EntryPosition) {
             /* Set default RocksDB block-cache size to 10% / numberOfLedgers of direct memory, unless override */
 //            int ledgerDirsSize = conf.getLedgerDirNames().length;
 //            long defaultRocksDBBlockCacheSizeBytes = maxDirectMemory() / ledgerDirsSize / 10;

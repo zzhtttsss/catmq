@@ -13,15 +13,18 @@ import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 import static org.catmq.storer.Storer.STORER;
+import static org.catmq.storer.StorerConfig.STORER_CONFIG;
 
 @Slf4j
 public class StorerStartup {
 
     private static Server server;
 
+    private static final int WAIT_TIMEOUT = 30;
+
     public static void start() throws IOException {
         STORER.init();
-        int port = 5432;
+        int port = STORER_CONFIG.getStorerPort();
         server = Grpc.newServerBuilderForPort(port, InsecureServerCredentials.create())
                 .addService(new StorerServer())
                 .addService(ChannelzService.newInstance(100))
@@ -30,24 +33,21 @@ public class StorerStartup {
                 .build()
                 .start();
 
-        log.info("Server started, listening on " + port);
-        Runtime.getRuntime().addShutdownHook(new Thread() {
-            @Override
-            public void run() {
-                System.err.println("*** shutting down gRPC server since JVM is shutting down");
-                try {
-                    StorerStartup.stop();
-                } catch (InterruptedException e) {
-                    e.printStackTrace(System.err);
-                }
-                System.err.println("*** server shut down");
+        log.info("Server started, listening on {}.", port);
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            log.error("*** shutting down gRPC server since JVM is shutting down.");
+            try {
+                stop();
+            } catch (InterruptedException e) {
+                e.printStackTrace(System.err);
             }
-        });
+            log.error("*** server shut down.");
+        }));
     }
 
     public static void stop() throws InterruptedException {
         if (server != null) {
-            server.shutdown().awaitTermination(30, TimeUnit.SECONDS);
+            server.shutdown().awaitTermination(WAIT_TIMEOUT, TimeUnit.SECONDS);
         }
     }
 

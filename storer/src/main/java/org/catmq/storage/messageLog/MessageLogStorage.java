@@ -8,25 +8,21 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import static org.catmq.constant.FileConstant.GB;
 import static org.catmq.constant.FileConstant.MB;
+import static org.catmq.storer.StorerConfig.STORER_CONFIG;
 
 @Slf4j
 public class MessageLogStorage {
 
     public final int maxMessageLogSize;
-
     public final String path;
-
     public final CopyOnWriteArrayList<MessageLog> messageLogs = new CopyOnWriteArrayList<>();
-
     public final AllocateMessageLogService allocateMessageLogService;
 
     public MessageLogStorage() {
-        // TODO read config
-        this.path = "/Users/zzh/Documents/projects/catmq/catmq/storer/src/messageLog";
-        this.maxMessageLogSize = 1 * (int) MB;
+        this.path = STORER_CONFIG.getMessageLogStoragePath();
+        this.maxMessageLogSize = STORER_CONFIG.getMessageLogMaxFileSize();
         allocateMessageLogService = new AllocateMessageLogService();
         allocateMessageLogService.start();
-        log.info("start to create");
         this.tryCreateMessageLog(0);
     }
 
@@ -41,15 +37,12 @@ public class MessageLogStorage {
         if (mappedFileLast == null) {
             createOffset = startOffset - (startOffset % this.maxMessageLogSize);
         }
-
         if (mappedFileLast != null && mappedFileLast.isFull()) {
             createOffset = mappedFileLast.getOffset() + this.maxMessageLogSize;
         }
-        log.debug("createOffset is {}", createOffset);
         if (createOffset != -1 && needCreate) {
             return tryCreateMessageLog(createOffset);
         }
-
         return mappedFileLast;
     }
 
@@ -57,11 +50,9 @@ public class MessageLogStorage {
         String nextFilePath = StringUtil.concatString(this.path, File.separator, StringUtil.offset2FileName(createOffset));
         String nextNextFilePath = StringUtil.concatString(this.path, File.separator,
                 StringUtil.offset2FileName(createOffset + this.maxMessageLogSize));
-        log.debug("nextFilePath is {}, nextNextFilePath is {}", nextFilePath, nextNextFilePath);
         MessageLog messageLog = this.allocateMessageLogService.getNextMessageLog(nextFilePath,
                 nextNextFilePath, this.maxMessageLogSize);
         if (messageLog != null) {
-            log.debug("messageLog is not null.");
             this.messageLogs.add(messageLog);
         }
         return messageLog;

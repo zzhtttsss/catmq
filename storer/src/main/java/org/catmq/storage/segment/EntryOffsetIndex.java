@@ -12,41 +12,43 @@ import org.catmq.util.ByteUtil;
 @Slf4j
 public class EntryOffsetIndex implements Closeable {
 
-    private KeyValueStorage locationsDb;
+    private static final String subPath = "positions";
+
+    private KeyValueStorage positionsDb;
 
     public EntryOffsetIndex(KeyValueStorageFactory storageFactory, String basePath) {
         try {
-            locationsDb = storageFactory.newKeyValueStorage(basePath, "locations",
-                    KeyValueStorageFactory.DbConfigType.EntryLocation);
+            positionsDb = storageFactory.newKeyValueStorage(basePath, subPath,
+                    KeyValueStorageFactory.DbConfigType.EntryPosition);
         } catch (IOException e) {
-            locationsDb = null;
-            log.error("fail to build locationsDb", e);
+            positionsDb = null;
+            log.error("Fail to build locationsDb.", e);
         }
     }
 
     @Override
     public void close() throws IOException {
-        locationsDb.close();
+        positionsDb.close();
     }
 
-    public long getLocation(long ledgerId, long entryId) throws IOException {
-        byte[] key = ByteUtil.convLong2Bytes(ledgerId, entryId);
+    public long getPosition(long segmentId, long entryId) throws IOException {
+        byte[] key = ByteUtil.convLong2Bytes(segmentId, entryId);
         byte[] value = new byte[Long.BYTES];
-        if (locationsDb.get(key, value) < 0) {
+        if (positionsDb.get(key, value) < 0) {
             return 0;
         }
         return ByteUtil.getLong(value, 0);
     }
 
 
-    public long getLastEntryInLedger(long ledgerId) throws IOException {
-        return getLastEntryInLedgerInternal(ledgerId);
+    public long getLastEntryInSegment(long segmentId) throws IOException {
+        return getLastEntryInSegmentInternal(segmentId);
     }
 
-    private long getLastEntryInLedgerInternal(long ledgerId) throws IOException {
-        byte[] key = ByteUtil.convLong2Bytes(ledgerId, Long.MAX_VALUE);
+    private long getLastEntryInSegmentInternal(long segmentId) throws IOException {
+        byte[] key = ByteUtil.convLong2Bytes(segmentId, Long.MAX_VALUE);
         // Search the last entry in storage
-        Entry<byte[], byte[]> entry = locationsDb.getFloor(key);
+        Entry<byte[], byte[]> entry = positionsDb.getFloor(key);
 
         if (entry == null) {
             throw new IOException();
@@ -54,9 +56,9 @@ public class EntryOffsetIndex implements Closeable {
             long foundLedgerId = ByteUtil.getLong(entry.getKey(), 0);
             long lastEntryId = ByteUtil.getLong(entry.getKey(), 8);
 
-            if (foundLedgerId == ledgerId) {
+            if (foundLedgerId == segmentId) {
                 if (log.isDebugEnabled()) {
-                    log.debug("Found last page in storage db for ledger {} - last entry: {}", ledgerId, lastEntryId);
+                    log.debug("Found last page in storage db for ledger {} - last entry: {}.", segmentId, lastEntryId);
                 }
                 return lastEntryId;
             } else {
@@ -65,23 +67,23 @@ public class EntryOffsetIndex implements Closeable {
         }
     }
 
-    public void addLocation(long ledgerId, long entryId, long location) throws IOException {
-        Batch batch = locationsDb.newBatch();
-        addLocation(batch, ledgerId, entryId, location);
+    public void addPosition(long segmentId, long entryId, long position) throws IOException {
+        Batch batch = positionsDb.newBatch();
+        addPosition(batch, segmentId, entryId, position);
         batch.flush();
         batch.close();
     }
 
     public Batch newBatch() {
-        return locationsDb.newBatch();
+        return positionsDb.newBatch();
     }
 
-    public void addLocation(Batch batch, long ledgerId, long entryId, long location) throws IOException {
-        byte[] key = ByteUtil.convLong2Bytes(ledgerId, entryId);
-        byte[] value = ByteUtil.convLong2Bytes(location);
+    public void addPosition(Batch batch, long segmentId, long entryId, long position) throws IOException {
+        byte[] key = ByteUtil.convLong2Bytes(segmentId, entryId);
+        byte[] value = ByteUtil.convLong2Bytes(position);
 
         if (log.isDebugEnabled()) {
-            log.debug("Add location - ledger: {} -- entry: {} -- location: {}", ledgerId, entryId, location);
+            log.debug("Add position - segment: {} -- entry: {} -- position: {}.", segmentId, entryId, position);
         }
         batch.put(key, value);
     }

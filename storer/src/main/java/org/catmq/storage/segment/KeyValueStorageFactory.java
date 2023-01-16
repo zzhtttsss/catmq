@@ -12,8 +12,8 @@ public interface KeyValueStorageFactory {
      */
     enum DbConfigType {
         Default, // Used for default,command util or test case
-        LedgerMetadata, // Used for ledgers db, doesn't need particular configuration
-        EntryLocation // Used for location index, lots of writes and much bigger dataset
+        SegmentMetadata, // Used for ledgers db, doesn't need particular configuration
+        EntryPosition // Used for location index, lots of writes and much bigger dataset
     }
 
     KeyValueStorage newKeyValueStorage(String defaultBasePath, String subPath, DbConfigType dbConfigType)

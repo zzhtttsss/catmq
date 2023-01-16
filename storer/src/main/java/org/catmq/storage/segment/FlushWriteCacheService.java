@@ -4,7 +4,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.catmq.storage.ServiceThread;
+import org.catmq.thread.ServiceThread;
 import org.catmq.util.StringUtil;
 
 import java.io.File;
@@ -16,7 +16,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 @Slf4j
 public class FlushWriteCacheService extends ServiceThread {
 
-    private final PartitionSegmentStorage partitionSegmentStorage;
+    private final SegmentStorage segmentStorage;
 
     @Getter
     private final ArrayBlockingQueue<WriteCache> requestQueue = new ArrayBlockingQueue<>(1);
@@ -25,8 +25,8 @@ public class FlushWriteCacheService extends ServiceThread {
 
     private volatile boolean hasException = false;
 
-    public FlushWriteCacheService(PartitionSegmentStorage partitionSegmentStorage) {
-        this.partitionSegmentStorage = partitionSegmentStorage;
+    public FlushWriteCacheService(SegmentStorage segmentStorage) {
+        this.segmentStorage = segmentStorage;
     }
 
     @Override
@@ -45,15 +45,15 @@ public class FlushWriteCacheService extends ServiceThread {
 
     private boolean flush2File() {
         WriteCache writeCache;
-        String fileName = StringUtil.concatString(partitionSegmentStorage.getPath(), File.separator,
+        String fileName = StringUtil.concatString(segmentStorage.getPath(), File.separator,
                 StringUtil.offset2FileName(offset));
         try {
             writeCache = requestQueue.take();
             log.warn("get a write cache from queue, cache size is {}", writeCache.getCache().size());
-            partitionSegmentStorage.flushLock.lock();
+            segmentStorage.flushLock.lock();
             File file = new File(fileName);
             FileChannel fileChannel = new RandomAccessFile(file, "rw").getChannel();
-            EntryOffsetIndex entryOffsetIndex = partitionSegmentStorage.getEntryOffsetIndex();
+            EntryOffsetIndex entryOffsetIndex = segmentStorage.getEntryOffsetIndex();
             KeyValueStorage.Batch batch = entryOffsetIndex.newBatch();
             writeCache.getCache().forEach((segmentId, map) -> {
                 map.forEach((entryId, messageEntry) -> {
@@ -61,7 +61,7 @@ public class FlushWriteCacheService extends ServiceThread {
                     messageEntry.dump2ByteBuf(byteBuf);
                     try {
                         fileChannel.write(byteBuf.internalNioBuffer(0, byteBuf.readableBytes()));
-                        entryOffsetIndex.addLocation(batch, segmentId, entryId, messageEntry.getOffset());
+                        entryOffsetIndex.addPosition(batch, segmentId, entryId, messageEntry.getOffset());
                     } catch (IOException e) {
                         this.hasException = true;
                         log.error("write file " + fileName + " error or add index error.", e);
@@ -75,7 +75,7 @@ public class FlushWriteCacheService extends ServiceThread {
             fileChannel.close();
             offset += writeCache.getCacheSize().get();
             log.warn("success to flush index and segment.");
-            partitionSegmentStorage.clearFlushedCache();
+            segmentStorage.clearFlushedCache();
             return true;
         } catch (InterruptedException e) {
             log.warn("{} interrupted, possibly by shutdown.", this.getServiceName());
@@ -86,7 +86,7 @@ public class FlushWriteCacheService extends ServiceThread {
             log.error("load file " + fileName + " error", e);
             return false;
         } finally {
-            partitionSegmentStorage.flushLock.unlock();
+            segmentStorage.flushLock.unlock();
         }
     }
 

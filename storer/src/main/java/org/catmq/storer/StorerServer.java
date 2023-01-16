@@ -31,10 +31,9 @@ public class StorerServer extends StorerServiceGrpc.StorerServiceImplBase {
 
 
     public StorerServer() {
-        StorerConfig config = StorerConfig.StorerConfigEnum.INSTANCE.getInstance();
-        writeOrderedExecutor = createExecutor(config.getWriteOrderedExecutorThreadNums(), WRITE_ORDERED_EXECUTOR_NAME,
+        writeOrderedExecutor = createExecutor(STORER_CONFIG.getWriteOrderedExecutorThreadNums(), WRITE_ORDERED_EXECUTOR_NAME,
                 NO_TASK_LIMIT);
-        readThreadPoolExecutor = createExecutor(config.getReadOrderedExecutorThreadNums(), READ_ORDERED_EXECUTOR_NAME,
+        readThreadPoolExecutor = createExecutor(STORER_CONFIG.getReadOrderedExecutorThreadNums(), READ_ORDERED_EXECUTOR_NAME,
                 NO_TASK_LIMIT);
 
 
