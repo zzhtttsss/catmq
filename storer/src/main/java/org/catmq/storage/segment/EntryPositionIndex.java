@@ -9,14 +9,17 @@ import java.util.Map.Entry;
 import org.catmq.storage.segment.KeyValueStorage.*;
 import org.catmq.util.ByteUtil;
 
+/**
+ * Manage the index of all message.
+ */
 @Slf4j
-public class EntryOffsetIndex implements Closeable {
+public class EntryPositionIndex implements Closeable {
 
     private static final String subPath = "positions";
 
     private KeyValueStorage positionsDb;
 
-    public EntryOffsetIndex(KeyValueStorageFactory storageFactory, String basePath) {
+    public EntryPositionIndex(KeyValueStorageFactory storageFactory, String basePath) {
         try {
             positionsDb = storageFactory.newKeyValueStorage(basePath, subPath,
                     KeyValueStorageFactory.DbConfigType.EntryPosition);
@@ -45,6 +48,13 @@ public class EntryOffsetIndex implements Closeable {
         return getLastEntryInSegmentInternal(segmentId);
     }
 
+    /**
+     * Get the offset of a segment's last entry.
+     *
+     * @param segmentId id of a segment
+     * @return the offset of a segment's last entry
+     * @throws IOException
+     */
     private long getLastEntryInSegmentInternal(long segmentId) throws IOException {
         byte[] key = ByteUtil.convLong2Bytes(segmentId, Long.MAX_VALUE);
         // Search the last entry in storage
@@ -78,6 +88,15 @@ public class EntryOffsetIndex implements Closeable {
         return positionsDb.newBatch();
     }
 
+    /**
+     * Add an index entry into the batch.
+     *
+     * @param batch batch manager
+     * @param segmentId id of segment
+     * @param entryId id of message entry
+     * @param position offset in the segment file.
+     * @throws IOException
+     */
     public void addPosition(Batch batch, long segmentId, long entryId, long position) throws IOException {
         byte[] key = ByteUtil.convLong2Bytes(segmentId, entryId);
         byte[] value = ByteUtil.convLong2Bytes(position);

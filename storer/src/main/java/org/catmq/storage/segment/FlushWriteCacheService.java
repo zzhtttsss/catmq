@@ -4,6 +4,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.catmq.storage.MessageEntry;
 import org.catmq.thread.ServiceThread;
 import org.catmq.util.StringUtil;
 
@@ -18,9 +19,17 @@ public class FlushWriteCacheService extends ServiceThread {
 
     private final SegmentStorage segmentStorage;
 
+    /**
+     * Receive the writeCache to be flushed.
+     * Because It is guaranteed that only one write thread can do swap and flush at a time, the
+     * capacity of the queue should be 1.
+     */
     @Getter
     private final ArrayBlockingQueue<WriteCache> requestQueue = new ArrayBlockingQueue<>(1);
 
+    /**
+     * Represent the offset which is the beginning of the next segment file.
+     */
     private long offset = 0;
 
     private volatile boolean hasException = false;
@@ -37,31 +46,44 @@ public class FlushWriteCacheService extends ServiceThread {
     @Override
     public void run() {
         log.info(this.getServiceName() + " service started.");
+
         while (!this.isStopped() && flush2File()) {
 
         }
+
         log.info(this.getServiceName() + " service end.");
     }
 
+    /**
+     * Flush the {@link WriteCache} to the disk.
+     * All {@link MessageEntry} in the {@link WriteCache} are flushed to a new segment file.
+     * The position of each {@link MessageEntry} in the file is also inserted into the database
+     * as an index.
+     *
+     * @return whether the service need continue running.
+     */
     private boolean flush2File() {
         WriteCache writeCache;
         String fileName = StringUtil.concatString(segmentStorage.getPath(), File.separator,
                 StringUtil.offset2FileName(offset));
         try {
+            // Wait until there is a new writeCache.
             writeCache = requestQueue.take();
-            log.debug("get a write cache from queue, cache size is {}", writeCache.getCache().size());
+            // Lock to avoid the writeCache to be modified by write threads.
             segmentStorage.flushLock.lock();
+
             File file = new File(fileName);
             FileChannel fileChannel = new RandomAccessFile(file, "rw").getChannel();
-            EntryOffsetIndex entryOffsetIndex = segmentStorage.getEntryOffsetIndex();
-            KeyValueStorage.Batch batch = entryOffsetIndex.newBatch();
+            EntryPositionIndex entryPositionIndex = segmentStorage.getEntryPositionIndex();
+            KeyValueStorage.Batch batch = entryPositionIndex.newBatch();
+
             writeCache.getCache().forEach((segmentId, map) -> {
                 map.forEach((entryId, messageEntry) -> {
                     ByteBuf byteBuf = Unpooled.directBuffer(messageEntry.getTotalSize());
                     messageEntry.dump2ByteBuf(byteBuf);
                     try {
                         fileChannel.write(byteBuf.internalNioBuffer(0, byteBuf.readableBytes()));
-                        entryOffsetIndex.addPosition(batch, segmentId, entryId, messageEntry.getOffset());
+                        entryPositionIndex.addPosition(batch, segmentId, entryId, messageEntry.getOffset());
                     } catch (IOException e) {
                         this.hasException = true;
                         log.error("write file " + fileName + " error or add index error.", e);

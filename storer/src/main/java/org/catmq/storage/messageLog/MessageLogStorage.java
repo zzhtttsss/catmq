@@ -10,6 +10,9 @@ import static org.catmq.constant.FileConstant.GB;
 import static org.catmq.constant.FileConstant.MB;
 import static org.catmq.storer.StorerConfig.STORER_CONFIG;
 
+/**
+ * Manage all {@link MessageLog}.
+ */
 @Slf4j
 public class MessageLogStorage {
 
@@ -46,6 +49,12 @@ public class MessageLogStorage {
         return mappedFileLast;
     }
 
+    /**
+     * Get a new {@link MessageLog} from the {@link AllocateMessageLogService}.
+     *
+     * @param createOffset the beginning offset of the new {@link MessageLog}
+     * @return a new {@link MessageLog}
+     */
     public MessageLog tryCreateMessageLog(long createOffset) {
         String nextFilePath = StringUtil.concatString(this.path, File.separator, StringUtil.offset2FileName(createOffset));
         String nextNextFilePath = StringUtil.concatString(this.path, File.separator,

@@ -4,6 +4,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import lombok.extern.slf4j.Slf4j;
 import org.catmq.collection.RecyclableArrayList;
+import org.catmq.storage.MessageEntry;
 import org.catmq.thread.ServiceThread;
 import org.catmq.storer.Storer;
 
@@ -12,11 +13,17 @@ import java.util.concurrent.BlockingQueue;
 
 import static org.catmq.storer.StorerConfig.STORER_CONFIG;
 
+/**
+ * Service thread to flush {@link MessageEntry} to {@link MessageLog}.
+ */
 @Slf4j
 public class FlushMessageEntryService extends ServiceThread {
 
     public static final int BEGIN_OFFSET = 0;
 
+    /**
+     * cache all pending {@link MessageEntry}.
+     */
     private final BlockingQueue<MessageEntry> FlushMessageEntryQueue;
 
     private static final RecyclableArrayList.Recycler<MessageEntry> entryListRecycler =
@@ -32,12 +39,18 @@ public class FlushMessageEntryService extends ServiceThread {
         return MessageLogStorage.class.getSimpleName();
     }
 
+    /**
+     * Continue writing {@link MessageEntry} to the {@link MessageLog}.
+     */
     @Override
     public void run() {
         log.info("{} service started.", this.getServiceName());
 
         long lastFlushTime = System.currentTimeMillis();
         while (!this.stopped) {
+            // There are two situations that we need flush all messageEntry in queue to the disk:
+            // 1. A certain amount of time has elapsed since the last flush.
+            // 2. The number of messageEntry in the queue reaches a certain number.
             if (System.currentTimeMillis() - lastFlushTime > 20 || FlushMessageEntryQueue.size() >= 10000) {
                 if (FlushMessageEntryQueue.isEmpty()) {
                     continue;
@@ -45,6 +58,7 @@ public class FlushMessageEntryService extends ServiceThread {
 
                 MessageLog messageLog = Storer.STORER.messageLogStorage.getLatestMessageLog();
                 RecyclableArrayList<MessageEntry> currentMessageEntries = entryListRecycler.newInstance();
+                // Move all messageEntry in the queue to a array.
                 FlushMessageEntryQueue.drainTo(currentMessageEntries);
 
                 ByteBuf byteBuf = Unpooled.directBuffer();
@@ -52,11 +66,13 @@ public class FlushMessageEntryService extends ServiceThread {
                     byte[] msgBytes = me.conv2Bytes();
                     int msgLength = msgBytes.length;
                     int nextBeginIndex = messageLog.appendMessageEntry(msgBytes, byteBuf, 0, msgLength);
+                    // It means that current messageLog do not have enough space, so we need to flush
+                    // the current buffer to the messageLog and change to write the next messageLog.
                     if (nextBeginIndex != 0) {
                         log.debug("Need a new messageLog.");
                         // TODO 一批消息如果一部分在前一个messageLog中flush之后崩溃可能会出现消息重复。
-                        // flush data to current MessageLog and change to next MessageLog.
                         messageLog.putAndFlush(byteBuf);
+                        // Unlock the full mapped file.
                         messageLog.unlockMappedFile();
                         byteBuf.clear();
                         messageLog = Storer.STORER.messageLogStorage.getLastMessageLog(BEGIN_OFFSET);
@@ -66,6 +82,7 @@ public class FlushMessageEntryService extends ServiceThread {
 
                 messageLog.putAndFlush(byteBuf);
                 byteBuf.release();
+                // Mark each messageEntry as done to inform their requests.
                 for (MessageEntry me : currentMessageEntries) {
                     me.markFlushDone();
                 }

@@ -4,7 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.catmq.grpc.RequestContext;
 import org.catmq.pipline.Processor;
 import org.catmq.protocol.service.*;
-import org.catmq.storage.messageLog.MessageEntry;
+import org.catmq.storage.MessageEntry;
 import org.catmq.storer.Storer;
 
 @Slf4j

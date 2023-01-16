@@ -16,25 +16,35 @@ import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
+import org.catmq.storage.MessageEntry;
 
 import static org.catmq.constant.FileConstant.RANDOM_ACCESS_FILE_READ_WRITE_MODE;
 
+/**
+ * Represent a message log file in the disk.
+ * The message log file stores the log of messages in sequential order, so that we can do recover all
+ * messages after a crash by loading the message log.
+ */
 @Slf4j
 public class MessageLog {
 
     public static final int OS_PAGE_SIZE = 1024 * 4;
+
+    /**
+     * Atomically update the offset of each {@link MessageLog}.
+     */
     protected static final AtomicIntegerFieldUpdater<MessageLog> WROTE_POSITION_UPDATER;
     private int flushLeastPagesWhenWarmMapedFile = 1024 / 4 * 16;
     @Getter
-    private String fileName;
+    private final String fileName;
     private File file;
     @Getter
-    private int fileSize;
+    private final int fileSize;
     @Getter
-    private long offset;
+    private final long offset;
     private FileChannel fileChannel;
-    private MappedByteBuffer mappedByteBuffer;
-    protected volatile int wrotePosition;
+    private final MappedByteBuffer mappedByteBuffer;
+    private volatile int wrotePosition;
 
     static {
         WROTE_POSITION_UPDATER = AtomicIntegerFieldUpdater.newUpdater(MessageLog.class, "wrotePosition");
@@ -52,11 +62,9 @@ public class MessageLog {
             ok = true;
         } catch (FileNotFoundException e) {
             log.error("Failed to create file {}", this.fileName, e);
-
             throw e;
         } catch (IOException e) {
             log.error("Failed to map file {}", this.fileName, e);
-
             throw e;
         } finally {
             if (!ok && this.fileChannel != null) {
@@ -65,9 +73,20 @@ public class MessageLog {
         }
     }
 
+    /**
+     * Write the specified part of a {@link MessageEntry} to the buffer.
+     *
+     * @param messageBytes byte array of a {@link MessageEntry}
+     * @param byteBuf where the {@link MessageEntry} be written to
+     * @param beginIndex the beginning index
+     * @param endIndex the end index
+     * @return The length of bytes that could not be written because current {@link MessageLog} is full.
+     */
     public int appendMessageEntry(byte[] messageBytes, ByteBuf byteBuf, int beginIndex, int endIndex) {
         int currentPos = WROTE_POSITION_UPDATER.get(this);
         int remainSize = this.fileSize - currentPos;
+        // If current messageLog do not have enough space, write some bytes to make current messageLog
+        // full, and return the length of the remaining bytes that have not been written to the messageLog.
         if (messageBytes.length > remainSize) {
             byteBuf.writeBytes(messageBytes, beginIndex, remainSize);
             WROTE_POSITION_UPDATER.addAndGet(this, remainSize);
@@ -89,11 +108,15 @@ public class MessageLog {
         flush();
     }
 
-    public void warmMappedFile() {
+    /**
+     * Warm up the mapped file.
+     */
+    public void warmUpMappedFile() {
         long beginTime = System.currentTimeMillis();
         ByteBuffer byteBuffer = this.mappedByteBuffer.slice();
         int flush = 0;
         long time = System.currentTimeMillis();
+        // Write a byte at each page to make each page in the memory.
         for (int i = 0, j = 0; i < this.fileSize; i += MessageLog.OS_PAGE_SIZE, j++) {
             byteBuffer.put(i, (byte) 0);
             if ((i / OS_PAGE_SIZE) - (flush / OS_PAGE_SIZE) >= flushLeastPagesWhenWarmMapedFile) {
@@ -101,7 +124,7 @@ public class MessageLog {
                 mappedByteBuffer.force();
             }
 
-            // prevent gc
+            // Prevent gc
             if (j % 1000 == 0) {
                 time = System.currentTimeMillis();
                 try {
@@ -112,7 +135,7 @@ public class MessageLog {
             }
         }
 
-        // force flush when prepare load finished
+        // Force flush when prepare load finished.
         log.debug("Mapped file warm-up done, force to disk, mappedFile={}, costTime={}",
                 this.getFileName(), System.currentTimeMillis() - beginTime);
         mappedByteBuffer.force();
@@ -135,6 +158,9 @@ public class MessageLog {
         munlock();
     }
 
+    /**
+     * Lock the mapped file of this {@link MessageLog} to keep it in the memory.
+     */
     private void mlock() {
         final long beginTime = System.currentTimeMillis();
         final long address = ((DirectBuffer) (this.mappedByteBuffer)).address();
@@ -150,6 +176,9 @@ public class MessageLog {
         }
     }
 
+    /**
+     * Unlock the mapped file of this {@link MessageLog} so it can be swap out of the memory.
+     */
     private void munlock() {
         final long beginTime = System.currentTimeMillis();
         final long address = ((DirectBuffer) (this.mappedByteBuffer)).address();

@@ -23,10 +23,18 @@ import static org.catmq.storer.StorerConfig.*;
 import static org.catmq.thread.OrderedExecutor.NO_TASK_LIMIT;
 import static org.catmq.util.StringUtil.defaultString;
 
+/**
+ * Handle all grpc request.
+ */
 @Slf4j
 public class StorerServer extends StorerServiceGrpc.StorerServiceImplBase {
+    /**
+     * Handle all write request.
+     */
     protected OrderedExecutor writeOrderedExecutor;
-
+    /**
+     * Handle all read request.
+     */
     protected OrderedExecutor readThreadPoolExecutor;
 
 
@@ -77,6 +85,18 @@ public class StorerServer extends StorerServiceGrpc.StorerServiceImplBase {
         }
     }
 
+    /**
+     * Handle and write response to the {@link StreamObserver}.
+     *
+     * @param context the context of the request
+     * @param request the grpc request
+     * @param response the grpc response
+     * @param responseObserver {@link StreamObserver} to handle the response
+     * @param t exception
+     * @param errorResponseCreator {@link Function} to handle error
+     * @param <V>
+     * @param <T>
+     */
     protected <V, T> void writeResponse(RequestContext context, V request, T response, StreamObserver<T> responseObserver,
                                         Throwable t, Function<Status, T> errorResponseCreator) {
         if (t != null) {
@@ -97,6 +117,11 @@ public class StorerServer extends StorerServiceGrpc.StorerServiceImplBase {
         return ResponseBuilder.ResponseBuilderEnum.INSTANCE.getInstance().buildStatus(Code.TOO_MANY_REQUESTS, "flow limit");
     }
 
+    /**
+     * Get the metadata of the grpc request and create a {@link RequestContext} with it.
+     *
+     * @return the context of the grpc request
+     */
     protected RequestContext createContext() {
         Context ctx = Context.current();
         Metadata headers = InterceptorConstants.METADATA.get(ctx);
@@ -116,6 +141,12 @@ public class StorerServer extends StorerServiceGrpc.StorerServiceImplBase {
         return defaultString(headers.get(key));
     }
 
+    /**
+     * Represent a grpc request that need to be handled.
+     *
+     * @param <V> class of grpc request
+     * @param <T> class of grpc response
+     */
     protected class GrpcTask<V, T> implements Runnable {
 
         protected final RequestContext ctx;
@@ -136,6 +167,14 @@ public class StorerServer extends StorerServiceGrpc.StorerServiceImplBase {
 
         }
 
+        /**
+         * Process the grpc request like a pipeline.
+         *
+         * @param ctx the context of the grpc request
+         * @param request the grpc request
+         * @param taskPlan the plan of the pipeline
+         * @return
+         */
         public CompletableFuture<T> execute(RequestContext ctx, V request, TaskPlan<V, T> taskPlan){
             CompletableFuture<T> future = new CompletableFuture<>();
             try {
@@ -153,6 +192,9 @@ public class StorerServer extends StorerServiceGrpc.StorerServiceImplBase {
             return future;
         }
 
+        /**
+         * Process the grpc request and handle the response.
+         */
         @Override
         public void run() {
             execute(ctx, request, taskPlan)

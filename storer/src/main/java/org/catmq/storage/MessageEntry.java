@@ -1,4 +1,4 @@
-package org.catmq.storage.messageLog;
+package org.catmq.storage;
 
 import io.netty.buffer.ByteBuf;
 import lombok.Getter;

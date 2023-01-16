@@ -11,6 +11,11 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
+import static org.catmq.storer.StorerConfig.STORER_CONFIG;
+
+/**
+ * Service thread to allocate {@link MessageLog}.
+ */
 @Slf4j
 public class AllocateMessageLogService extends ServiceThread {
 
@@ -22,6 +27,18 @@ public class AllocateMessageLogService extends ServiceThread {
 
     private static final int waitTimeOut = 1000 * 5;
 
+    /**
+     * Get the next {@link MessageLog}.
+     * When this method be call, it also makes a request to let the service thread create the next
+     * {@link MessageLog} of the next {@link MessageLog}. In this way, we can prepare the next
+     * {@link MessageLog} in advance so that write threads can get the next {@link MessageLog}
+     * immediately.
+     *
+     * @param nextFilePath the path of the next message log file.
+     * @param nextNextFilePath the path of the next message log file of the next message log file.
+     * @param fileSize the size of message log file.
+     * @return The next {@link MessageLog}
+     */
     public MessageLog getNextMessageLog(String nextFilePath, String nextNextFilePath, int fileSize) {
         AllocateRequest nextReq = new AllocateRequest(nextFilePath, fileSize);
         if (this.requestMap.putIfAbsent(nextFilePath, nextReq) == null) {
@@ -40,6 +57,7 @@ public class AllocateMessageLogService extends ServiceThread {
         AllocateRequest result = this.requestMap.get(nextFilePath);
         try {
             if (result != null) {
+                // Wait for the new messageLog to be created.
                 boolean ok = result.getCountDownLatch().await(waitTimeOut, TimeUnit.MILLISECONDS);
                 if (!ok) {
                     log.warn("Create mmap timeout, file path: {}, file size: {}", result.getFilePath(), result.getFileSize());
@@ -56,7 +74,15 @@ public class AllocateMessageLogService extends ServiceThread {
         return null;
     }
 
-    private boolean createNewMessageLog() {
+    /**
+     * Create a {@link MessageLog}.
+     * If turn on file warm up, it will let the OS load the message log file into virtual memory and
+     * lock it. File warm up can significantly increase the speed of writing the message log file,
+     * but it will take some time to be done.
+     *
+     * @return whether the service need continue running.
+     */
+    private boolean createMessageLog() {
         boolean isSuccess = false;
         AllocateRequest req = null;
         try {
@@ -75,9 +101,9 @@ public class AllocateMessageLogService extends ServiceThread {
 
             if (req.getMessageLog() == null) {
                 MessageLog messageLog = new MessageLog(req.getFilePath(), req.getFileSize());
-                // pre write messageLog
-                if (true) {
-                    messageLog.warmMappedFile();
+                // preheating the messageLog
+                if (STORER_CONFIG.isNeedWarmMappedFile()) {
+                    messageLog.warmUpMappedFile();
                 }
 
                 req.setMessageLog(messageLog);
@@ -116,7 +142,7 @@ public class AllocateMessageLogService extends ServiceThread {
     public void run() {
         log.info("{} service started.", this.getServiceName());
 
-        while (!this.isStopped() && this.createNewMessageLog()) {
+        while (!this.isStopped() && this.createMessageLog()) {
 
         }
         log.info("{} service end.", this.getServiceName());
@@ -128,11 +154,15 @@ public class AllocateMessageLogService extends ServiceThread {
         for (AllocateRequest req : this.requestMap.values()) {
             if (req.messageLog != null) {
                 log.info("Delete pre allocated mapped file, {}", req.messageLog.getFileName());
+                // TODO 销毁逻辑
 //                req.messageLog.destroy(1000);
             }
         }
     }
 
+    /**
+     * Represent a request to get a new messageLog.
+     */
     @Data
     static class AllocateRequest implements Comparable<AllocateRequest> {
 
@@ -149,7 +179,7 @@ public class AllocateMessageLogService extends ServiceThread {
         }
 
         /**
-         * fileSize大的优先级高，文件大小相同，文件的offset越小优先级越高
+         * First compare the file size, then compare the file offset.
          */
         public int compareTo(AllocateRequest other) {
             if (this.fileSize < other.fileSize)

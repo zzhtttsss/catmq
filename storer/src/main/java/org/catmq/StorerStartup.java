@@ -15,6 +15,9 @@ import java.util.concurrent.TimeUnit;
 import static org.catmq.storer.Storer.STORER;
 import static org.catmq.storer.StorerConfig.STORER_CONFIG;
 
+/**
+ * Start the storer service.
+ */
 @Slf4j
 public class StorerStartup {
 
