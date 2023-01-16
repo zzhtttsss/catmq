@@ -88,7 +88,7 @@ public class MessageLog {
         int currentPos = WROTE_POSITION_UPDATER.get(this);
         int remainSize = this.fileSize - currentPos;
         if (messageBytes.length > remainSize) {
-            log.warn("reach the max length, currentPos is {}", currentPos);
+            log.debug("reach the max length, currentPos is {}", currentPos);
             byteBuf.writeBytes(messageBytes, beginIndex, remainSize);
             WROTE_POSITION_UPDATER.addAndGet(this, remainSize);
             return remainSize;

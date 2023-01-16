@@ -49,6 +49,7 @@ public class FlushWriteCacheService extends ServiceThread {
                 StringUtil.offset2FileName(offset));
         try {
             writeCache = requestQueue.take();
+            log.warn("get a write cache from queue, cache size is {}", writeCache.getCache().size());
             partitionSegmentStorage.flushLock.lock();
             File file = new File(fileName);
             FileChannel fileChannel = new RandomAccessFile(file, "rw").getChannel();
@@ -59,7 +60,7 @@ public class FlushWriteCacheService extends ServiceThread {
                     ByteBuf byteBuf = Unpooled.directBuffer(messageEntry.getTotalSize());
                     messageEntry.dump2ByteBuf(byteBuf);
                     try {
-                        fileChannel.write(byteBuf.nioBuffer());
+                        fileChannel.write(byteBuf.internalNioBuffer(0, byteBuf.readableBytes()));
                         entryOffsetIndex.addLocation(batch, segmentId, entryId, messageEntry.getOffset());
                     } catch (IOException e) {
                         this.hasException = true;
@@ -71,6 +72,9 @@ public class FlushWriteCacheService extends ServiceThread {
             batch.flush();
             batch.close();
             fileChannel.force(true);
+            fileChannel.close();
+            offset += writeCache.getCacheSize().get();
+            log.warn("success to flush index and segment.");
             partitionSegmentStorage.clearFlushedCache();
             return true;
         } catch (InterruptedException e) {

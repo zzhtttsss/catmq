@@ -65,13 +65,14 @@ public class StorerServer extends StorerServiceGrpc.StorerServiceImplBase {
 
     @Override
     public void sendMessage2Storer(SendMessage2StorerRequest request, StreamObserver<SendMessage2StorerResponse> responseObserver) {
-        Function<Status, SendMessage2StorerResponse> statusResponseCreator = status -> SendMessage2StorerResponse.newBuilder().setStatus(status).build();
-        log.info("receive a message: {}", request.getBody());
+        Function<Status, SendMessage2StorerResponse> statusResponseCreator =
+                status -> SendMessage2StorerResponse.newBuilder().setStatus(status).build();
+        log.debug("receive a message: {}", request.getBody());
         RequestContext ctx = createContext();
 
         try {
-            this.writeOrderedExecutor.executeOrdered(2L, new GrpcTask<>(ctx, request, TaskPlan.SEND_MESSAGE_2_STORER_TASK_PLAN,
-                    responseObserver, statusResponseCreator));
+            this.writeOrderedExecutor.executeOrdered(ctx.getSegmentId(), new GrpcTask<>(ctx, request,
+                    TaskPlan.SEND_MESSAGE_2_STORER_TASK_PLAN, responseObserver, statusResponseCreator));
         } catch (Throwable t) {
             writeResponse(ctx, request, null, responseObserver, t, statusResponseCreator);
         }
@@ -155,7 +156,6 @@ public class StorerServer extends StorerServiceGrpc.StorerServiceImplBase {
 
         @Override
         public void run() {
-            log.info("start to run");
             execute(ctx, request, taskPlan)
                     .whenComplete((response, throwable) -> writeResponse(ctx, request, response, streamObserver,
                             throwable, statusResponseCreator));

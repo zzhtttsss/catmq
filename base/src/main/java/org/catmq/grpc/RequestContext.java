@@ -100,7 +100,6 @@ public class RequestContext {
     }
 
     public long getEntryId() {
-        log.info((this.getVal(ContextVariable.ENTRY_ID)));
         return Long.parseLong(this.getVal(ContextVariable.ENTRY_ID));
     }
 

@@ -5,7 +5,7 @@ import java.nio.ByteBuffer;
 public class ByteUtil {
 
     public static byte[] convLong2Bytes(long... longs) {
-        ByteBuffer byteBuffer = ByteBuffer.allocate(Long.SIZE / Byte.SIZE);
+        ByteBuffer byteBuffer = ByteBuffer.allocate(longs.length * Long.BYTES);
         for (long l: longs) {
             byteBuffer.putLong(l);
         }

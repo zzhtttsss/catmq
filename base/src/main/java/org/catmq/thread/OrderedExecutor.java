@@ -428,7 +428,6 @@ public class OrderedExecutor implements ExecutorService {
      * @param r
      */
     public void executeOrdered(long orderingKey, Runnable r) {
-        log.info("receive a task");
         chooseThread(orderingKey).execute(r);
     }
 

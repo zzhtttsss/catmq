@@ -16,7 +16,7 @@ public class StorerConfig {
 
     @Getter
     @Setter
-    private int writeOrderedExecutorThreadNums = 1;
+    private int writeOrderedExecutorThreadNums = 4;
 
     @Getter
     @Setter

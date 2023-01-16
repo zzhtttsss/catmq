@@ -1,14 +1,15 @@
 package org.catmq.storage.segment;
 
-import io.netty.util.internal.PlatformDependent;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.catmq.storage.messageLog.MessageEntry;
 
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicStampedReference;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.concurrent.locks.StampedLock;
+
+import static org.catmq.constant.FileConstant.MB;
 
 @Slf4j
 public class PartitionSegmentStorage {
@@ -21,7 +22,8 @@ public class PartitionSegmentStorage {
 
     private final FlushWriteCacheService flushWriteCacheService;
 
-    public static final long MAX_CACHE_SIZE = (long) (0.25 * PlatformDependent.estimateMaxDirectMemory());
+//    public static final long MAX_CACHE_SIZE = (long) (0.25 * PlatformDependent.estimateMaxDirectMemory());
+    public static final long MAX_CACHE_SIZE = 1 * MB;
 
     @Getter
     private WriteCache writeCache4Append;
@@ -32,11 +34,12 @@ public class PartitionSegmentStorage {
     @Getter
     private ReadCache readCache;
 
-    private final StampedLock writeCacheRotationLock = new StampedLock();
+//    private final StampedLock writeCacheRotationLock = new StampedLock();
 
     protected final ReentrantLock flushLock = new ReentrantLock();
 
-    private AtomicBoolean swaping = new AtomicBoolean(false);
+    private final AtomicBoolean swapping = new AtomicBoolean(false);
+    private final AtomicStampedReference<Boolean> canSwap = new AtomicStampedReference<>(false, 1);
 
     @Getter
     private final CopyOnWriteArrayList<PartitionSegment> partitionSegments;
@@ -54,21 +57,22 @@ public class PartitionSegmentStorage {
     }
 
     public void appendEntry2WriteCache(MessageEntry messageEntry) {
-        long stamp = writeCacheRotationLock.writeLock();
+        int stamp = canSwap.getStamp();
         boolean ok = writeCache4Append.appendEntry(messageEntry);
         if (!ok) {
             // Only one thread can swap the cache.
-            if (swaping.compareAndSet(false, true)) {
+            if (canSwap.compareAndSet(false, true, stamp, stamp + 1)) {
+                log.warn("cas success, start swapping");
                 swapAndFlush();
             }
             else {
-                while (swaping.get()) {
+                log.warn("cas fail, start waiting");
+                while (swapping.get()) {
                     // Blocking if other thread is swapping the cache.
                 }
             }
             this.writeCache4Append.appendEntry(messageEntry);
         }
-        writeCacheRotationLock.unlockWrite(stamp);
     }
 
     public void swapAndFlush() {
@@ -78,10 +82,12 @@ public class PartitionSegmentStorage {
 
     public void swapWriteCache() {
         flushLock.lock();
+        log.warn("writeCache4Append map size is {}", writeCache4Append.getCache().size());
         WriteCache temp = this.writeCache4Append;
         this.writeCache4Append = this.writeCache4Flush;
-        swaping.compareAndSet(true, false);
+        canSwap.set(false, canSwap.getStamp() + 1);
         this.writeCache4Flush = temp;
+        log.warn("writeCache4Flush map size is {}", writeCache4Flush.getCache().size());
         flushLock.unlock();
     }
 

@@ -13,7 +13,6 @@ public class ContextInterceptor implements ServerInterceptor {
             Metadata headers,
             ServerCallHandler<R, W> next
     ) {
-        log.info(headers.toString());
         io.grpc.Context context = Context.current().withValue(InterceptorConstants.METADATA, headers);
         return Contexts.interceptCall(context, call, headers, next);
     }
