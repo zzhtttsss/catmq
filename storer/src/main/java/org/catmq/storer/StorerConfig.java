@@ -27,7 +27,7 @@ public class StorerConfig {
 
     public static final String WRITE_ORDERED_EXECUTOR_NAME = "writeOrderedExecutor";
     public static final String READ_ORDERED_EXECUTOR_NAME = "readOrderedExecutor";
-    private static final String CONFIG_PATH = "src/main/resources/storer.properties";
+    private static final String CONFIG_PATH = "/storer.properties";
 
     @Getter@Setter
     private String storerName;
@@ -52,11 +52,13 @@ public class StorerConfig {
     private String segmentStoragePath;
     @Getter@Setter
     private long segmentMaxFileSize;
+    @Getter@Setter
+    private String segmentIndexStoragePath;
 
     public void readConfig() {
         InputStream stream = this.getClass().getResourceAsStream(CONFIG_PATH);
         if (stream == null) {
-            throw new RuntimeException("broker.properties not found");
+            throw new RuntimeException("storer.properties not found");
         }
         Properties properties = new Properties();
         try {
@@ -71,12 +73,13 @@ public class StorerConfig {
         readOrderedExecutorThreadNums = Integer.parseInt(properties.getProperty(ConfigConstant.READ_ORDERED_EXECUTOR_THREAD_NUMS,
                         String.valueOf(PROCESSOR_NUMBER)));
         needWarmMappedFile = Boolean.parseBoolean(properties.getProperty(ConfigConstant.NEED_WARM_MAPPED_FILE, "false"));
-        flushMessageEntryQueueCapacity = Integer.parseInt(properties.getProperty(ConfigConstant.FLUSH_MESSAGE_ENTRY_QUEUE_CAPACITY, "10000"));
-        messageLogStoragePath = properties.getProperty(ConfigConstant.MESSAGE_LOG_STORAGE_PATH, "src/messageLog");
+        flushMessageEntryQueueCapacity = Integer.parseInt(properties.getProperty(ConfigConstant.FLUSH_MESSAGE_ENTRY_QUEUE_CAPACITY, "100000"));
+        messageLogStoragePath = properties.getProperty(ConfigConstant.MESSAGE_LOG_STORAGE_PATH, "storer/src/messageLog");
         messageLogMaxFileSize = (int) (Integer.parseInt(properties.getProperty(ConfigConstant.MESSAGE_LOG_MAX_FILE_SIZE,
                 "1024")) * MB);
-        segmentStoragePath = properties.getProperty(ConfigConstant.MESSAGE_LOG_STORAGE_PATH, "src/segment");
-        segmentMaxFileSize = Long.parseLong(properties.getProperty(ConfigConstant.MESSAGE_LOG_MAX_FILE_SIZE,
+        segmentStoragePath = properties.getProperty(ConfigConstant.SEGMENT_STORAGE_PATH, "storer/src/segment");
+        segmentMaxFileSize = Long.parseLong(properties.getProperty(ConfigConstant.SEGMENT_MAX_FILE_SIZE,
                 String.valueOf(0.25 * PlatformDependent.estimateMaxDirectMemory())));
+        segmentIndexStoragePath = properties.getProperty(ConfigConstant.SEGMENT_INDEX_STORAGE_PATH, "storer/src/index");
     }
 }

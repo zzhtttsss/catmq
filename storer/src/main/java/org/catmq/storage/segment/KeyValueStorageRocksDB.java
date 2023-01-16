@@ -108,7 +108,7 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
             db = initializeRocksDBWithConfFile(basePath, subPath, dbConfigType, readOnly, dbFilePath);
         } else {
             log.info("Haven't found the file and read the configuration from the main bookkeeper configuration");
-            db = initializeRocksDBWithBookieConf(basePath, subPath, dbConfigType, readOnly);
+            db = initializeRocksDBWithConf(basePath, subPath, dbConfigType, readOnly);
         }
 
         optionSync.setSync(true);
@@ -146,8 +146,8 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
         }
     }
 
-    private RocksDB initializeRocksDBWithBookieConf(String basePath, String subPath, DbConfigType dbConfigType,
-                                                    boolean readOnly) throws IOException {
+    private RocksDB initializeRocksDBWithConf(String basePath, String subPath, DbConfigType dbConfigType,
+                                              boolean readOnly) throws IOException {
         Options options = new Options();
         options.setCreateIfMissing(true);
 

@@ -49,7 +49,7 @@ public class FlushWriteCacheService extends ServiceThread {
                 StringUtil.offset2FileName(offset));
         try {
             writeCache = requestQueue.take();
-            log.warn("get a write cache from queue, cache size is {}", writeCache.getCache().size());
+            log.debug("get a write cache from queue, cache size is {}", writeCache.getCache().size());
             segmentStorage.flushLock.lock();
             File file = new File(fileName);
             FileChannel fileChannel = new RandomAccessFile(file, "rw").getChannel();

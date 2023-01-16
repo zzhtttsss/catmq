@@ -17,7 +17,7 @@ import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
-import static org.catmq.constant.CommonConstant.RANDOM_ACCESS_FILE_READ_WRITE_MODE;
+import static org.catmq.constant.FileConstant.RANDOM_ACCESS_FILE_READ_WRITE_MODE;
 
 @Slf4j
 public class MessageLog {

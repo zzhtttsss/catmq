@@ -41,7 +41,7 @@ public class SegmentStorage {
         this.segments = new CopyOnWriteArrayList<>();
         this.flushWriteCacheService = new FlushWriteCacheService(this);
         entryOffsetIndex = new EntryOffsetIndex(KeyValueStorageRocksDB.factory,
-                "src/index");
+                STORER_CONFIG.getSegmentIndexStoragePath());
         flushWriteCacheService.start();
     }
 

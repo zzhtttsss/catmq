@@ -31,4 +31,5 @@ public class ConfigConstant {
     public static final String MESSAGE_LOG_MAX_FILE_SIZE = "messageLog.maxFileSize";
     public static final String SEGMENT_STORAGE_PATH = "segment.storagePath";
     public static final String SEGMENT_MAX_FILE_SIZE = "segment.maxFileSize";
+    public static final String SEGMENT_INDEX_STORAGE_PATH = "segment.indexStoragePath";
 }
