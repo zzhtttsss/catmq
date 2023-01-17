@@ -173,7 +173,7 @@ public class StorerServer extends StorerServiceGrpc.StorerServiceImplBase {
          * @param ctx the context of the grpc request
          * @param request the grpc request
          * @param taskPlan the plan of the pipeline
-         * @return
+         * @return {@link CompletableFuture} with response to be handled
          */
         public CompletableFuture<T> execute(RequestContext ctx, V request, TaskPlan<V, T> taskPlan){
             CompletableFuture<T> future = new CompletableFuture<>();
