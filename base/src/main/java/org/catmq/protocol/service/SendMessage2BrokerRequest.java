@@ -17,7 +17,6 @@ private static final long serialVersionUID = 0L;
   }
   private SendMessage2BrokerRequest() {
     message_ = "";
-    topic_ = "";
   }
 
   @java.lang.Override
@@ -83,55 +82,6 @@ private static final long serialVersionUID = 0L;
     }
   }
 
-  public static final int TOPIC_FIELD_NUMBER = 2;
-  private volatile java.lang.Object topic_;
-  /**
-   * <code>string topic = 2;</code>
-   * @return The topic.
-   */
-  @java.lang.Override
-  public java.lang.String getTopic() {
-    java.lang.Object ref = topic_;
-    if (ref instanceof java.lang.String) {
-      return (java.lang.String) ref;
-    } else {
-      com.google.protobuf.ByteString bs = 
-          (com.google.protobuf.ByteString) ref;
-      java.lang.String s = bs.toStringUtf8();
-      topic_ = s;
-      return s;
-    }
-  }
-  /**
-   * <code>string topic = 2;</code>
-   * @return The bytes for topic.
-   */
-  @java.lang.Override
-  public com.google.protobuf.ByteString
-      getTopicBytes() {
-    java.lang.Object ref = topic_;
-    if (ref instanceof java.lang.String) {
-      com.google.protobuf.ByteString b = 
-          com.google.protobuf.ByteString.copyFromUtf8(
-              (java.lang.String) ref);
-      topic_ = b;
-      return b;
-    } else {
-      return (com.google.protobuf.ByteString) ref;
-    }
-  }
-
-  public static final int PRODUCERID_FIELD_NUMBER = 3;
-  private long producerId_;
-  /**
-   * <code>int64 producerId = 3;</code>
-   * @return The producerId.
-   */
-  @java.lang.Override
-  public long getProducerId() {
-    return producerId_;
-  }
-
   private byte memoizedIsInitialized = -1;
   @java.lang.Override
   public final boolean isInitialized() {
@@ -149,12 +99,6 @@ private static final long serialVersionUID = 0L;
     if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(message_)) {
       com.google.protobuf.GeneratedMessageV3.writeString(output, 1, message_);
     }
-    if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(topic_)) {
-      com.google.protobuf.GeneratedMessageV3.writeString(output, 2, topic_);
-    }
-    if (producerId_ != 0L) {
-      output.writeInt64(3, producerId_);
-    }
     getUnknownFields().writeTo(output);
   }
 
@@ -166,13 +110,6 @@ private static final long serialVersionUID = 0L;
     size = 0;
     if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(message_)) {
       size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, message_);
-    }
-    if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(topic_)) {
-      size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, topic_);
-    }
-    if (producerId_ != 0L) {
-      size += com.google.protobuf.CodedOutputStream
-        .computeInt64Size(3, producerId_);
     }
     size += getUnknownFields().getSerializedSize();
     memoizedSize = size;
@@ -191,10 +128,6 @@ private static final long serialVersionUID = 0L;
 
     if (!getMessage()
         .equals(other.getMessage())) return false;
-    if (!getTopic()
-        .equals(other.getTopic())) return false;
-    if (getProducerId()
-        != other.getProducerId()) return false;
     if (!getUnknownFields().equals(other.getUnknownFields())) return false;
     return true;
   }
@@ -208,11 +141,6 @@ private static final long serialVersionUID = 0L;
     hash = (19 * hash) + getDescriptor().hashCode();
     hash = (37 * hash) + MESSAGE_FIELD_NUMBER;
     hash = (53 * hash) + getMessage().hashCode();
-    hash = (37 * hash) + TOPIC_FIELD_NUMBER;
-    hash = (53 * hash) + getTopic().hashCode();
-    hash = (37 * hash) + PRODUCERID_FIELD_NUMBER;
-    hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
-        getProducerId());
     hash = (29 * hash) + getUnknownFields().hashCode();
     memoizedHashCode = hash;
     return hash;
@@ -343,10 +271,6 @@ private static final long serialVersionUID = 0L;
       super.clear();
       message_ = "";
 
-      topic_ = "";
-
-      producerId_ = 0L;
-
       return this;
     }
 
@@ -374,8 +298,6 @@ private static final long serialVersionUID = 0L;
     public org.catmq.protocol.service.SendMessage2BrokerRequest buildPartial() {
       org.catmq.protocol.service.SendMessage2BrokerRequest result = new org.catmq.protocol.service.SendMessage2BrokerRequest(this);
       result.message_ = message_;
-      result.topic_ = topic_;
-      result.producerId_ = producerId_;
       onBuilt();
       return result;
     }
@@ -428,13 +350,6 @@ private static final long serialVersionUID = 0L;
         message_ = other.message_;
         onChanged();
       }
-      if (!other.getTopic().isEmpty()) {
-        topic_ = other.topic_;
-        onChanged();
-      }
-      if (other.getProducerId() != 0L) {
-        setProducerId(other.getProducerId());
-      }
       this.mergeUnknownFields(other.getUnknownFields());
       onChanged();
       return this;
@@ -466,16 +381,6 @@ private static final long serialVersionUID = 0L;
 
               break;
             } // case 10
-            case 18: {
-              topic_ = input.readStringRequireUtf8();
-
-              break;
-            } // case 18
-            case 24: {
-              producerId_ = input.readInt64();
-
-              break;
-            } // case 24
             default: {
               if (!super.parseUnknownField(input, extensionRegistry, tag)) {
                 done = true; // was an endgroup tag
@@ -564,113 +469,6 @@ private static final long serialVersionUID = 0L;
   checkByteStringIsUtf8(value);
       
       message_ = value;
-      onChanged();
-      return this;
-    }
-
-    private java.lang.Object topic_ = "";
-    /**
-     * <code>string topic = 2;</code>
-     * @return The topic.
-     */
-    public java.lang.String getTopic() {
-      java.lang.Object ref = topic_;
-      if (!(ref instanceof java.lang.String)) {
-        com.google.protobuf.ByteString bs =
-            (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
-        topic_ = s;
-        return s;
-      } else {
-        return (java.lang.String) ref;
-      }
-    }
-    /**
-     * <code>string topic = 2;</code>
-     * @return The bytes for topic.
-     */
-    public com.google.protobuf.ByteString
-        getTopicBytes() {
-      java.lang.Object ref = topic_;
-      if (ref instanceof String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
-        topic_ = b;
-        return b;
-      } else {
-        return (com.google.protobuf.ByteString) ref;
-      }
-    }
-    /**
-     * <code>string topic = 2;</code>
-     * @param value The topic to set.
-     * @return This builder for chaining.
-     */
-    public Builder setTopic(
-        java.lang.String value) {
-      if (value == null) {
-    throw new NullPointerException();
-  }
-  
-      topic_ = value;
-      onChanged();
-      return this;
-    }
-    /**
-     * <code>string topic = 2;</code>
-     * @return This builder for chaining.
-     */
-    public Builder clearTopic() {
-      
-      topic_ = getDefaultInstance().getTopic();
-      onChanged();
-      return this;
-    }
-    /**
-     * <code>string topic = 2;</code>
-     * @param value The bytes for topic to set.
-     * @return This builder for chaining.
-     */
-    public Builder setTopicBytes(
-        com.google.protobuf.ByteString value) {
-      if (value == null) {
-    throw new NullPointerException();
-  }
-  checkByteStringIsUtf8(value);
-      
-      topic_ = value;
-      onChanged();
-      return this;
-    }
-
-    private long producerId_ ;
-    /**
-     * <code>int64 producerId = 3;</code>
-     * @return The producerId.
-     */
-    @java.lang.Override
-    public long getProducerId() {
-      return producerId_;
-    }
-    /**
-     * <code>int64 producerId = 3;</code>
-     * @param value The producerId to set.
-     * @return This builder for chaining.
-     */
-    public Builder setProducerId(long value) {
-      
-      producerId_ = value;
-      onChanged();
-      return this;
-    }
-    /**
-     * <code>int64 producerId = 3;</code>
-     * @return This builder for chaining.
-     */
-    public Builder clearProducerId() {
-      
-      producerId_ = 0L;
       onChanged();
       return this;
     }

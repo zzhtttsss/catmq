@@ -27,14 +27,6 @@ public  abstract class BrokerService
         org.catmq.protocol.service.GetMessageFromBrokerRequest request,
         com.google.protobuf.RpcCallback<org.catmq.protocol.service.GetMessageFromBrokerResponse> done);
 
-    /**
-     * <code>rpc CreateTopic(.CreateTopicRequest) returns (.CreateTopicResponse);</code>
-     */
-    public abstract void createTopic(
-        com.google.protobuf.RpcController controller,
-        org.catmq.protocol.service.CreateTopicRequest request,
-        com.google.protobuf.RpcCallback<org.catmq.protocol.service.CreateTopicResponse> done);
-
   }
 
   public static com.google.protobuf.Service newReflectiveService(
@@ -54,14 +46,6 @@ public  abstract class BrokerService
           org.catmq.protocol.service.GetMessageFromBrokerRequest request,
           com.google.protobuf.RpcCallback<org.catmq.protocol.service.GetMessageFromBrokerResponse> done) {
         impl.getMessageFromBroker(controller, request, done);
-      }
-
-      @java.lang.Override
-      public  void createTopic(
-          com.google.protobuf.RpcController controller,
-          org.catmq.protocol.service.CreateTopicRequest request,
-          com.google.protobuf.RpcCallback<org.catmq.protocol.service.CreateTopicResponse> done) {
-        impl.createTopic(controller, request, done);
       }
 
     };
@@ -90,8 +74,6 @@ public  abstract class BrokerService
             return impl.sendMessage2Broker(controller, (org.catmq.protocol.service.SendMessage2BrokerRequest)request);
           case 1:
             return impl.getMessageFromBroker(controller, (org.catmq.protocol.service.GetMessageFromBrokerRequest)request);
-          case 2:
-            return impl.createTopic(controller, (org.catmq.protocol.service.CreateTopicRequest)request);
           default:
             throw new java.lang.AssertionError("Can't get here.");
         }
@@ -110,8 +92,6 @@ public  abstract class BrokerService
             return org.catmq.protocol.service.SendMessage2BrokerRequest.getDefaultInstance();
           case 1:
             return org.catmq.protocol.service.GetMessageFromBrokerRequest.getDefaultInstance();
-          case 2:
-            return org.catmq.protocol.service.CreateTopicRequest.getDefaultInstance();
           default:
             throw new java.lang.AssertionError("Can't get here.");
         }
@@ -130,8 +110,6 @@ public  abstract class BrokerService
             return org.catmq.protocol.service.SendMessage2BrokerResponse.getDefaultInstance();
           case 1:
             return org.catmq.protocol.service.GetMessageFromBrokerResponse.getDefaultInstance();
-          case 2:
-            return org.catmq.protocol.service.CreateTopicResponse.getDefaultInstance();
           default:
             throw new java.lang.AssertionError("Can't get here.");
         }
@@ -155,14 +133,6 @@ public  abstract class BrokerService
       com.google.protobuf.RpcController controller,
       org.catmq.protocol.service.GetMessageFromBrokerRequest request,
       com.google.protobuf.RpcCallback<org.catmq.protocol.service.GetMessageFromBrokerResponse> done);
-
-  /**
-   * <code>rpc CreateTopic(.CreateTopicRequest) returns (.CreateTopicResponse);</code>
-   */
-  public abstract void createTopic(
-      com.google.protobuf.RpcController controller,
-      org.catmq.protocol.service.CreateTopicRequest request,
-      com.google.protobuf.RpcCallback<org.catmq.protocol.service.CreateTopicResponse> done);
 
   public static final
       com.google.protobuf.Descriptors.ServiceDescriptor
@@ -196,11 +166,6 @@ public  abstract class BrokerService
           com.google.protobuf.RpcUtil.<org.catmq.protocol.service.GetMessageFromBrokerResponse>specializeCallback(
             done));
         return;
-      case 2:
-        this.createTopic(controller, (org.catmq.protocol.service.CreateTopicRequest)request,
-          com.google.protobuf.RpcUtil.<org.catmq.protocol.service.CreateTopicResponse>specializeCallback(
-            done));
-        return;
       default:
         throw new java.lang.AssertionError("Can't get here.");
     }
@@ -219,8 +184,6 @@ public  abstract class BrokerService
         return org.catmq.protocol.service.SendMessage2BrokerRequest.getDefaultInstance();
       case 1:
         return org.catmq.protocol.service.GetMessageFromBrokerRequest.getDefaultInstance();
-      case 2:
-        return org.catmq.protocol.service.CreateTopicRequest.getDefaultInstance();
       default:
         throw new java.lang.AssertionError("Can't get here.");
     }
@@ -239,8 +202,6 @@ public  abstract class BrokerService
         return org.catmq.protocol.service.SendMessage2BrokerResponse.getDefaultInstance();
       case 1:
         return org.catmq.protocol.service.GetMessageFromBrokerResponse.getDefaultInstance();
-      case 2:
-        return org.catmq.protocol.service.CreateTopicResponse.getDefaultInstance();
       default:
         throw new java.lang.AssertionError("Can't get here.");
     }
@@ -291,21 +252,6 @@ public  abstract class BrokerService
           org.catmq.protocol.service.GetMessageFromBrokerResponse.class,
           org.catmq.protocol.service.GetMessageFromBrokerResponse.getDefaultInstance()));
     }
-
-    public  void createTopic(
-        com.google.protobuf.RpcController controller,
-        org.catmq.protocol.service.CreateTopicRequest request,
-        com.google.protobuf.RpcCallback<org.catmq.protocol.service.CreateTopicResponse> done) {
-      channel.callMethod(
-        getDescriptor().getMethods().get(2),
-        controller,
-        request,
-        org.catmq.protocol.service.CreateTopicResponse.getDefaultInstance(),
-        com.google.protobuf.RpcUtil.generalizeCallback(
-          done,
-          org.catmq.protocol.service.CreateTopicResponse.class,
-          org.catmq.protocol.service.CreateTopicResponse.getDefaultInstance()));
-    }
   }
 
   public static BlockingInterface newBlockingStub(
@@ -322,11 +268,6 @@ public  abstract class BrokerService
     public org.catmq.protocol.service.GetMessageFromBrokerResponse getMessageFromBroker(
         com.google.protobuf.RpcController controller,
         org.catmq.protocol.service.GetMessageFromBrokerRequest request)
-        throws com.google.protobuf.ServiceException;
-
-    public org.catmq.protocol.service.CreateTopicResponse createTopic(
-        com.google.protobuf.RpcController controller,
-        org.catmq.protocol.service.CreateTopicRequest request)
         throws com.google.protobuf.ServiceException;
   }
 
@@ -358,18 +299,6 @@ public  abstract class BrokerService
         controller,
         request,
         org.catmq.protocol.service.GetMessageFromBrokerResponse.getDefaultInstance());
-    }
-
-
-    public org.catmq.protocol.service.CreateTopicResponse createTopic(
-        com.google.protobuf.RpcController controller,
-        org.catmq.protocol.service.CreateTopicRequest request)
-        throws com.google.protobuf.ServiceException {
-      return (org.catmq.protocol.service.CreateTopicResponse) channel.callBlockingMethod(
-        getDescriptor().getMethods().get(2),
-        controller,
-        request,
-        org.catmq.protocol.service.CreateTopicResponse.getDefaultInstance());
     }
 
   }

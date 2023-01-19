@@ -18,22 +18,4 @@ public interface GetMessageFromBrokerRequestOrBuilder extends
    */
   com.google.protobuf.ByteString
       getMessageBytes();
-
-  /**
-   * <code>string topic = 2;</code>
-   * @return The topic.
-   */
-  java.lang.String getTopic();
-  /**
-   * <code>string topic = 2;</code>
-   * @return The bytes for topic.
-   */
-  com.google.protobuf.ByteString
-      getTopicBytes();
-
-  /**
-   * <code>int64 consumerId = 3;</code>
-   * @return The consumerId.
-   */
-  long getConsumerId();
 }

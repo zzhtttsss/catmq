@@ -39,16 +39,4 @@ public interface GetMessageFromBrokerResponseOrBuilder extends
    * <code>.Status status = 3;</code>
    */
   org.catmq.protocol.definition.StatusOrBuilder getStatusOrBuilder();
-
-  /**
-   * <code>string message = 4;</code>
-   * @return The message.
-   */
-  java.lang.String getMessage();
-  /**
-   * <code>string message = 4;</code>
-   * @return The bytes for message.
-   */
-  com.google.protobuf.ByteString
-      getMessageBytes();
 }

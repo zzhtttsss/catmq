@@ -12,8 +12,4 @@ public enum Command {
     GET,
     // Topic Command represents user will operate topic like creating,listing and so on
     TOPIC;
-
-    public static Command valueOfIgnoreCase(String name) {
-        return Command.valueOf(name.toUpperCase());
-    }
 }
