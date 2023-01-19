@@ -21,6 +21,9 @@ configuration 子节点为 appender、logger、root
 
     <!--控制台-->
     <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>info</level>
+        </filter>
         <encoder>
             <!--格式化输出：%d表示日期，%thread表示线程名，%-5level：级别从左显示5个字符宽度 %logger输出日志的logger名 %msg：日志消息，%n是换行符 -->
             <pattern>${CONSOLE_LOG_PATTERN}</pattern>
@@ -34,7 +37,7 @@ configuration 子节点为 appender、logger、root
             <level>info</level>
         </filter>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>logs/info.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <fileNamePattern>logs/broker.%d{yyyy-MM-dd}.log</fileNamePattern>
             <maxHistory>30</maxHistory><!--保存最近30天的日志-->
         </rollingPolicy>
         <encoder>
@@ -52,7 +55,7 @@ configuration 子节点为 appender、logger、root
             <charset>UTF-8</charset>
             <pattern>[%d{yyyy-MM-dd HH:mm:ss.SSS}] [%thread] %-5level %logger{36} : %msg%n</pattern>
         </encoder>
-        <file>logs/error.log</file>
+        <file>logs/brokerError.log</file>
     </appender>
 
     <!--将日志输出到logstack-->
