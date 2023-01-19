@@ -1,77 +1,102 @@
-package org.catmq.broker;
+package org.catmq.storer;
 
 import io.grpc.Context;
 import io.grpc.Metadata;
 import io.grpc.stub.StreamObserver;
 import lombok.extern.slf4j.Slf4j;
+import org.catmq.pipline.Finisher;
+import org.catmq.pipline.Preparer;
 import org.catmq.pipline.TaskPlan;
 import org.catmq.grpc.InterceptorConstants;
 import org.catmq.grpc.RequestContext;
 import org.catmq.grpc.ResponseBuilder;
 import org.catmq.grpc.ResponseWriter;
-import org.catmq.pipline.Finisher;
-import org.catmq.pipline.Preparer;
 import org.catmq.protocol.definition.Code;
 import org.catmq.protocol.definition.Status;
-import org.catmq.protocol.service.BrokerServiceGrpc;
-import org.catmq.protocol.service.SendMessage2BrokerRequest;
-import org.catmq.protocol.service.SendMessage2BrokerResponse;
-import org.catmq.thread.ThreadFactoryWithIndex;
-import org.catmq.thread.ThreadPoolMonitor;
-import org.catmq.zk.BrokerZooKeeper;
+import org.catmq.protocol.service.*;
+import org.catmq.thread.OrderedExecutor;
 
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
+import static org.catmq.storer.StorerConfig.*;
+import static org.catmq.thread.OrderedExecutor.NO_TASK_LIMIT;
 import static org.catmq.util.StringUtil.defaultString;
 
+/**
+ * Handle all grpc request.
+ */
 @Slf4j
-public class BrokerServer extends BrokerServiceGrpc.BrokerServiceImplBase {
+public class StorerServer extends StorerServiceGrpc.StorerServiceImplBase {
+    /**
+     * Handle all write request.
+     */
+    protected OrderedExecutor writeOrderedExecutor;
+    /**
+     * Handle all read request.
+     */
+    protected OrderedExecutor readThreadPoolExecutor;
 
-    public BrokerInfo brokerInfo;
-    protected BrokerZooKeeper bzk;
-    private ScheduledExecutorService timeExecutor;
 
-    protected ThreadPoolExecutor producerThreadPoolExecutor;
+    public StorerServer() {
+        writeOrderedExecutor = createExecutor(STORER_CONFIG.getWriteOrderedExecutorThreadNums(), WRITE_ORDERED_EXECUTOR_NAME,
+                NO_TASK_LIMIT);
+        readThreadPoolExecutor = createExecutor(STORER_CONFIG.getReadOrderedExecutorThreadNums(), READ_ORDERED_EXECUTOR_NAME,
+                NO_TASK_LIMIT);
 
-    public BrokerServer() {
-        BrokerConfig config = BrokerConfig.BrokerConfigEnum.INSTANCE.getInstance();
-        this.producerThreadPoolExecutor = ThreadPoolMonitor.createAndMonitor(
-                config.getGrpcProducerThreadPoolNums(),
-                config.getGrpcProducerThreadPoolNums(),
-                1,
-                TimeUnit.MINUTES,
-                "GrpcProducerThreadPool",
-                config.getGrpcProducerThreadQueueCapacity()
-        );
-        this.brokerInfo = new BrokerInfo(config.getBrokerId(), config.getBrokerName(),
-                config.getBrokerIp(), config.getBrokerPort(), "127.0.0.1:2181");
-        this.bzk = new BrokerZooKeeper("127.0.0.1:2181", this, null);
-        this.timeExecutor = new ScheduledThreadPoolExecutor(4,
-                new ThreadFactoryWithIndex("BrokerTimerThread_"));
+
         this.init();
     }
 
     protected void init() {
-        GrpcTaskRejectedExecutionHandler rejectedExecutionHandler = new GrpcTaskRejectedExecutionHandler();
-        this.producerThreadPoolExecutor.setRejectedExecutionHandler(rejectedExecutionHandler);
-
-        this.bzk.register2Zk();
-        log.info("BrokerServer init success");
 
     }
 
+    private OrderedExecutor createExecutor(
+            int numThreads,
+            String nameFormat,
+            int maxTasksInQueue) {
+        if (numThreads <= 0) {
+            return null;
+        } else {
+            return OrderedExecutor.newBuilder()
+                    .numThreads(numThreads)
+                    .name(nameFormat)
+                    .traceTaskExecution(false)
+                    .preserveMdcForTaskExecution(false)
+                    .maxTasksInQueue(maxTasksInQueue)
+                    .enableThreadScopedMetrics(true)
+                    .build();
+        }
+    }
+
     @Override
-    public void sendMessage2Broker(SendMessage2BrokerRequest request, StreamObserver<SendMessage2BrokerResponse> responseObserver) {
-        Function<Status, SendMessage2BrokerResponse> statusResponseCreator = status -> SendMessage2BrokerResponse.newBuilder().setStatus(status).build();
+    public void sendMessage2Storer(SendMessage2StorerRequest request, StreamObserver<SendMessage2StorerResponse> responseObserver) {
+        Function<Status, SendMessage2StorerResponse> statusResponseCreator =
+                status -> SendMessage2StorerResponse.newBuilder().setStatus(status).build();
+        log.debug("receive a message: {}", request.getBody());
         RequestContext ctx = createContext();
+
         try {
-            this.producerThreadPoolExecutor.submit(new GrpcTask<>(ctx, request, TaskPlan.SEND_MESSAGE_2_BROKER_TASK_PLAN, responseObserver, statusResponseCreator));
+            this.writeOrderedExecutor.executeOrdered(ctx.getSegmentId(), new GrpcTask<>(ctx, request,
+                    TaskPlan.SEND_MESSAGE_2_STORER_TASK_PLAN, responseObserver, statusResponseCreator));
         } catch (Throwable t) {
             writeResponse(ctx, request, null, responseObserver, t, statusResponseCreator);
         }
     }
 
+    /**
+     * Handle and write response to the {@link StreamObserver}.
+     *
+     * @param context the context of the request
+     * @param request the grpc request
+     * @param response the grpc response
+     * @param responseObserver {@link StreamObserver} to handle the response
+     * @param t exception
+     * @param errorResponseCreator {@link Function} to handle error
+     * @param <V>
+     * @param <T>
+     */
     protected <V, T> void writeResponse(RequestContext context, V request, T response, StreamObserver<T> responseObserver,
                                         Throwable t, Function<Status, T> errorResponseCreator) {
         if (t != null) {
@@ -92,10 +117,17 @@ public class BrokerServer extends BrokerServiceGrpc.BrokerServiceImplBase {
         return ResponseBuilder.ResponseBuilderEnum.INSTANCE.getInstance().buildStatus(Code.TOO_MANY_REQUESTS, "flow limit");
     }
 
+    /**
+     * Get the metadata of the grpc request and create a {@link RequestContext} with it.
+     *
+     * @return the context of the grpc request
+     */
     protected RequestContext createContext() {
         Context ctx = Context.current();
         Metadata headers = InterceptorConstants.METADATA.get(ctx);
         RequestContext context = RequestContext.create()
+                .setEntryId(getValueFromMetadata(headers, InterceptorConstants.ENTRY_ID))
+                .setSegmentId(getValueFromMetadata(headers, InterceptorConstants.SEGMENT_ID))
                 .setLocalAddress(getValueFromMetadata(headers, InterceptorConstants.LOCAL_ADDRESS))
                 .setRemoteAddress(getValueFromMetadata(headers, InterceptorConstants.REMOTE_ADDRESS))
                 .setClientID(getValueFromMetadata(headers, InterceptorConstants.CLIENT_ID))
@@ -109,6 +141,12 @@ public class BrokerServer extends BrokerServiceGrpc.BrokerServiceImplBase {
         return defaultString(headers.get(key));
     }
 
+    /**
+     * Represent a grpc request that need to be handled.
+     *
+     * @param <V> class of grpc request
+     * @param <T> class of grpc response
+     */
     protected class GrpcTask<V, T> implements Runnable {
 
         protected final RequestContext ctx;
@@ -129,7 +167,15 @@ public class BrokerServer extends BrokerServiceGrpc.BrokerServiceImplBase {
 
         }
 
-        public CompletableFuture<T> execute(RequestContext ctx, V request, TaskPlan<V, T> taskPlan) {
+        /**
+         * Process the grpc request like a pipeline.
+         *
+         * @param ctx the context of the grpc request
+         * @param request the grpc request
+         * @param taskPlan the plan of the pipeline
+         * @return {@link CompletableFuture} with response to be handled
+         */
+        public CompletableFuture<T> execute(RequestContext ctx, V request, TaskPlan<V, T> taskPlan){
             CompletableFuture<T> future = new CompletableFuture<>();
             try {
                 for (Preparer p : taskPlan.preparers()) {
@@ -146,29 +192,14 @@ public class BrokerServer extends BrokerServiceGrpc.BrokerServiceImplBase {
             return future;
         }
 
+        /**
+         * Process the grpc request and handle the response.
+         */
         @Override
         public void run() {
             execute(ctx, request, taskPlan)
-                    .whenComplete((response, throwable) -> writeResponse(ctx, request, response, streamObserver, throwable, statusResponseCreator));
-        }
-    }
-
-    protected class GrpcTaskRejectedExecutionHandler implements RejectedExecutionHandler {
-
-        public GrpcTaskRejectedExecutionHandler() {
-
-        }
-
-        @Override
-        public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
-            if (r instanceof GrpcTask) {
-                try {
-                    GrpcTask grpcTask = (GrpcTask) r;
-                    writeResponse(grpcTask.ctx, grpcTask.request, grpcTask.statusResponseCreator.apply(flowLimitStatus()), grpcTask.streamObserver, null, null);
-                } catch (Throwable t) {
-                    log.warn("write rejected error response failed", t);
-                }
-            }
+                    .whenComplete((response, throwable) -> writeResponse(ctx, request, response, streamObserver,
+                            throwable, statusResponseCreator));
         }
     }
 
