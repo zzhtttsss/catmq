@@ -8,8 +8,9 @@ option java_string_check_utf8 = true;
 import "definition.proto";
 
 message SendMessage2BrokerRequest {
-
   string message = 1;
+  string topic = 2;
+  int64 producerId = 3;
 }
 
 message SendMessage2BrokerResponse {
@@ -20,19 +21,23 @@ message SendMessage2BrokerResponse {
 
 message GetMessageFromBrokerRequest {
   string message = 1;
+  string topic = 2;
+  int64 consumerId = 3;
 }
 
 message GetMessageFromBrokerResponse {
   bool ack = 1;
   string res = 2;
   Status status = 3;
+  string message = 4;
 }
 
-message SendMessage2StorerRequest {
-  bytes body = 1;
+message CreateTopicRequest {
+  string topic = 1;
+  int64 producerId = 2;
 }
 
-message SendMessage2StorerResponse {
+message CreateTopicResponse {
   bool ack = 1;
   string res = 2;
   Status status = 3;
@@ -41,10 +46,6 @@ message SendMessage2StorerResponse {
 service BrokerService{
   rpc SendMessage2Broker (SendMessage2BrokerRequest) returns (SendMessage2BrokerResponse) {}
   rpc GetMessageFromBroker (GetMessageFromBrokerRequest) returns (GetMessageFromBrokerResponse) {}
-
+  rpc CreateTopic (CreateTopicRequest) returns (CreateTopicResponse) {}
 }
 
-service StorerService{
-  rpc SendMessage2Storer (SendMessage2StorerRequest) returns (SendMessage2StorerResponse) {}
-
-}
