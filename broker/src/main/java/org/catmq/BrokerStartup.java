@@ -8,6 +8,7 @@ import io.grpc.protobuf.services.ProtoReflectionService;
 import lombok.extern.slf4j.Slf4j;
 import org.catmq.broker.BrokerConfig;
 import org.catmq.broker.BrokerServer;
+import org.catmq.broker.service.ZkService;
 import org.catmq.grpc.ContextInterceptor;
 
 import java.io.IOException;
@@ -16,15 +17,16 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class BrokerStartup {
     private static Server server;
+    private static BrokerServer brokerServer;
 
     public static void start() throws IOException {
         // read config first
         BrokerConfig config = BrokerConfig.BrokerConfigEnum.INSTANCE.getInstance();
-        config.readConfig("/broker.properties");
-        /* The port on which the server should run */
+        // The port on which the server should run
         int port = config.getBrokerPort();
+        brokerServer = new BrokerServer();
         server = Grpc.newServerBuilderForPort(port, InsecureServerCredentials.create())
-                .addService(new BrokerServer())
+                .addService(brokerServer)
                 .addService(ChannelzService.newInstance(100))
                 .addService(ProtoReflectionService.newInstance())
                 .intercept(new ContextInterceptor())
@@ -36,21 +38,23 @@ public class BrokerStartup {
             @Override
             public void run() {
                 // Use stderr here since the logger may have been reset by its JVM shutdown hook.
-                System.err.println("*** shutting down gRPC server since JVM is shutting down");
+                log.warn("*** shutting down gRPC server since JVM is shutting down");
                 try {
                     BrokerStartup.stop();
-                } catch (InterruptedException e) {
+                } catch (Exception e) {
                     e.printStackTrace(System.err);
                 }
-                System.err.println("*** server shut down");
+                log.warn("*** server shut down");
             }
         });
     }
 
-    public static void stop() throws InterruptedException {
+    public static void stop() throws InterruptedException, IOException {
         if (server != null) {
+            brokerServer.close();
             server.shutdown().awaitTermination(30, TimeUnit.SECONDS);
         }
+        ZkService.ZkServiceEnum.INSTANCE.getInstance().close();
     }
 
     /**

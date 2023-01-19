@@ -77,6 +77,37 @@ public final class BrokerServiceGrpc {
     return getGetMessageFromBrokerMethod;
   }
 
+  private static volatile io.grpc.MethodDescriptor<org.catmq.protocol.service.CreateTopicRequest,
+      org.catmq.protocol.service.CreateTopicResponse> getCreateTopicMethod;
+
+  @io.grpc.stub.annotations.RpcMethod(
+      fullMethodName = SERVICE_NAME + '/' + "CreateTopic",
+      requestType = org.catmq.protocol.service.CreateTopicRequest.class,
+      responseType = org.catmq.protocol.service.CreateTopicResponse.class,
+      methodType = io.grpc.MethodDescriptor.MethodType.UNARY)
+  public static io.grpc.MethodDescriptor<org.catmq.protocol.service.CreateTopicRequest,
+      org.catmq.protocol.service.CreateTopicResponse> getCreateTopicMethod() {
+    io.grpc.MethodDescriptor<org.catmq.protocol.service.CreateTopicRequest, org.catmq.protocol.service.CreateTopicResponse> getCreateTopicMethod;
+    if ((getCreateTopicMethod = BrokerServiceGrpc.getCreateTopicMethod) == null) {
+      synchronized (BrokerServiceGrpc.class) {
+        if ((getCreateTopicMethod = BrokerServiceGrpc.getCreateTopicMethod) == null) {
+          BrokerServiceGrpc.getCreateTopicMethod = getCreateTopicMethod =
+              io.grpc.MethodDescriptor.<org.catmq.protocol.service.CreateTopicRequest, org.catmq.protocol.service.CreateTopicResponse>newBuilder()
+              .setType(io.grpc.MethodDescriptor.MethodType.UNARY)
+              .setFullMethodName(generateFullMethodName(SERVICE_NAME, "CreateTopic"))
+              .setSampledToLocalTracing(true)
+              .setRequestMarshaller(io.grpc.protobuf.ProtoUtils.marshaller(
+                  org.catmq.protocol.service.CreateTopicRequest.getDefaultInstance()))
+              .setResponseMarshaller(io.grpc.protobuf.ProtoUtils.marshaller(
+                  org.catmq.protocol.service.CreateTopicResponse.getDefaultInstance()))
+              .setSchemaDescriptor(new BrokerServiceMethodDescriptorSupplier("CreateTopic"))
+              .build();
+        }
+      }
+    }
+    return getCreateTopicMethod;
+  }
+
   /**
    * Creates a new async stub that supports all call types for the service
    */
@@ -139,6 +170,13 @@ public final class BrokerServiceGrpc {
       io.grpc.stub.ServerCalls.asyncUnimplementedUnaryCall(getGetMessageFromBrokerMethod(), responseObserver);
     }
 
+    /**
+     */
+    public void createTopic(org.catmq.protocol.service.CreateTopicRequest request,
+        io.grpc.stub.StreamObserver<org.catmq.protocol.service.CreateTopicResponse> responseObserver) {
+      io.grpc.stub.ServerCalls.asyncUnimplementedUnaryCall(getCreateTopicMethod(), responseObserver);
+    }
+
     @java.lang.Override public final io.grpc.ServerServiceDefinition bindService() {
       return io.grpc.ServerServiceDefinition.builder(getServiceDescriptor())
           .addMethod(
@@ -155,6 +193,13 @@ public final class BrokerServiceGrpc {
                 org.catmq.protocol.service.GetMessageFromBrokerRequest,
                 org.catmq.protocol.service.GetMessageFromBrokerResponse>(
                   this, METHODID_GET_MESSAGE_FROM_BROKER)))
+          .addMethod(
+            getCreateTopicMethod(),
+            io.grpc.stub.ServerCalls.asyncUnaryCall(
+              new MethodHandlers<
+                org.catmq.protocol.service.CreateTopicRequest,
+                org.catmq.protocol.service.CreateTopicResponse>(
+                  this, METHODID_CREATE_TOPIC)))
           .build();
     }
   }
@@ -188,6 +233,14 @@ public final class BrokerServiceGrpc {
       io.grpc.stub.ClientCalls.asyncUnaryCall(
           getChannel().newCall(getGetMessageFromBrokerMethod(), getCallOptions()), request, responseObserver);
     }
+
+    /**
+     */
+    public void createTopic(org.catmq.protocol.service.CreateTopicRequest request,
+        io.grpc.stub.StreamObserver<org.catmq.protocol.service.CreateTopicResponse> responseObserver) {
+      io.grpc.stub.ClientCalls.asyncUnaryCall(
+          getChannel().newCall(getCreateTopicMethod(), getCallOptions()), request, responseObserver);
+    }
   }
 
   /**
@@ -216,6 +269,13 @@ public final class BrokerServiceGrpc {
     public org.catmq.protocol.service.GetMessageFromBrokerResponse getMessageFromBroker(org.catmq.protocol.service.GetMessageFromBrokerRequest request) {
       return io.grpc.stub.ClientCalls.blockingUnaryCall(
           getChannel(), getGetMessageFromBrokerMethod(), getCallOptions(), request);
+    }
+
+    /**
+     */
+    public org.catmq.protocol.service.CreateTopicResponse createTopic(org.catmq.protocol.service.CreateTopicRequest request) {
+      return io.grpc.stub.ClientCalls.blockingUnaryCall(
+          getChannel(), getCreateTopicMethod(), getCallOptions(), request);
     }
   }
 
@@ -248,10 +308,19 @@ public final class BrokerServiceGrpc {
       return io.grpc.stub.ClientCalls.futureUnaryCall(
           getChannel().newCall(getGetMessageFromBrokerMethod(), getCallOptions()), request);
     }
+
+    /**
+     */
+    public com.google.common.util.concurrent.ListenableFuture<org.catmq.protocol.service.CreateTopicResponse> createTopic(
+        org.catmq.protocol.service.CreateTopicRequest request) {
+      return io.grpc.stub.ClientCalls.futureUnaryCall(
+          getChannel().newCall(getCreateTopicMethod(), getCallOptions()), request);
+    }
   }
 
   private static final int METHODID_SEND_MESSAGE2BROKER = 0;
   private static final int METHODID_GET_MESSAGE_FROM_BROKER = 1;
+  private static final int METHODID_CREATE_TOPIC = 2;
 
   private static final class MethodHandlers<Req, Resp> implements
       io.grpc.stub.ServerCalls.UnaryMethod<Req, Resp>,
@@ -277,6 +346,10 @@ public final class BrokerServiceGrpc {
         case METHODID_GET_MESSAGE_FROM_BROKER:
           serviceImpl.getMessageFromBroker((org.catmq.protocol.service.GetMessageFromBrokerRequest) request,
               (io.grpc.stub.StreamObserver<org.catmq.protocol.service.GetMessageFromBrokerResponse>) responseObserver);
+          break;
+        case METHODID_CREATE_TOPIC:
+          serviceImpl.createTopic((org.catmq.protocol.service.CreateTopicRequest) request,
+              (io.grpc.stub.StreamObserver<org.catmq.protocol.service.CreateTopicResponse>) responseObserver);
           break;
         default:
           throw new AssertionError();
@@ -341,6 +414,7 @@ public final class BrokerServiceGrpc {
               .setSchemaDescriptor(new BrokerServiceFileDescriptorSupplier())
               .addMethod(getSendMessage2BrokerMethod())
               .addMethod(getGetMessageFromBrokerMethod())
+              .addMethod(getCreateTopicMethod())
               .build();
         }
       }
