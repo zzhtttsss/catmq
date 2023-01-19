@@ -3,6 +3,7 @@ package org.catmq.broker;
 import lombok.Getter;
 import lombok.Setter;
 import org.catmq.constant.ConfigConstant;
+import org.catmq.constant.ZkConstant;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -18,12 +19,15 @@ public class BrokerConfig {
     private String brokerId = UUID.randomUUID().toString();
     private String brokerName;
     private String brokerIp;
+
+    private String zkAddress;
     private int brokerPort = 5432;
     private int grpcProducerThreadQueueCapacity = 10000;
     private int grpcProducerThreadPoolNums = PROCESSOR_NUMBER;
 
-    public void readConfig(String configPath) {
-        InputStream stream = this.getClass().getResourceAsStream(configPath);
+
+    private BrokerConfig() {
+        InputStream stream = this.getClass().getResourceAsStream(ConfigConstant.BROKER_CONFIG_PATH);
         if (stream == null) {
             throw new RuntimeException("broker.properties not found");
         }
@@ -38,11 +42,9 @@ public class BrokerConfig {
         brokerPort = Integer.parseInt(properties.getProperty(ConfigConstant.BROKER_PORT, String.valueOf(brokerPort)));
         grpcProducerThreadQueueCapacity = Integer.parseInt(properties.getProperty(ConfigConstant.GRPC_PRODUCER_THREAD_QUEUE_CAPACITY, String.valueOf(grpcProducerThreadQueueCapacity)));
         grpcProducerThreadPoolNums = Integer.parseInt(properties.getProperty(ConfigConstant.GRPC_PRODUCER_THREAD_POOL_NUMS, String.valueOf(grpcProducerThreadPoolNums)));
+        zkAddress = properties.getProperty(ConfigConstant.ZK_ADDRESS, ZkConstant.ZK_DEFAULT_ADDRESS);
     }
 
-    private BrokerConfig() {
-    }
-    
     public enum BrokerConfigEnum {
         /**
          * Singleton

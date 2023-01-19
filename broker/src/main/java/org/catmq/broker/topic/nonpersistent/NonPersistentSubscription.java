@@ -1,0 +1,50 @@
+package org.catmq.broker.topic.nonpersistent;
+
+import lombok.Getter;
+import org.catmq.broker.common.Consumer;
+import org.catmq.broker.topic.IDispatcher;
+import org.catmq.broker.topic.ISubscription;
+
+import java.util.Optional;
+
+public class NonPersistentSubscription implements ISubscription {
+    @Getter
+    private final NonPersistentTopic topic;
+
+    private final String subscriptionName;
+    @Getter
+    private final String topicName;
+    private volatile INonPersistentDispatcher dispatcher;
+
+    @Override
+    public String getName() {
+        return subscriptionName;
+    }
+
+    @Override
+    public void addConsumer(Consumer consumer) {
+        if (dispatcher == null) {
+            dispatcher = new NonPersistentDispatcherSingleActiveConsumer(this, topic);
+        }
+        dispatcher.addConsumer(consumer);
+    }
+
+    @Override
+    public Optional<IDispatcher> getDispatcher() {
+        return Optional.ofNullable(this.dispatcher);
+    }
+
+    public boolean isSubscribe() {
+        return this.dispatcher != null;
+    }
+
+    public boolean isActiveConsumer(Consumer consumer) {
+        return dispatcher.isActiveConsumer(consumer);
+    }
+
+    public NonPersistentSubscription(NonPersistentTopic topic, String subscriptionName) {
+        this.topic = topic;
+        this.topicName = topic.getTopicName();
+        this.subscriptionName = subscriptionName;
+    }
+}
