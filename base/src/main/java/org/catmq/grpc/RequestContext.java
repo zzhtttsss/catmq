@@ -85,8 +85,15 @@ public class RequestContext {
         this.withVal(ContextVariable.ACTION, action);
         return this;
     }
+
     public String getAction() {
         return this.getVal(ContextVariable.ACTION);
+    }
+
+    public void print() {
+        this.value.forEach((n, v) -> {
+            System.out.println(n + " : " + v);
+        });
     }
 
     public long getSegmentId() {

@@ -64,11 +64,11 @@
             <version>${mockito.version}</version>
         </dependency>
         <!-- tool class -->
-        <!--<dependency>
+        <dependency>
             <groupId>cn.hutool</groupId>
             <artifactId>hutool-all</artifactId>
             <version>${hutool.version}</version>
-        </dependency>-->
+        </dependency>
         <!-- https://mvnrepository.com/artifact/org.apache.curator/curator-recipes -->
         <dependency>
             <groupId>org.apache.curator</groupId>
