@@ -2,7 +2,7 @@ package org.catmq.client.common;
 
 import org.catmq.broker.BrokerInfo;
 
-public interface IClientProxy {
+public interface ClientProxy {
     /**
      * Increase the number of requests sent to the specified broker
      *

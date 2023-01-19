@@ -2,7 +2,7 @@ package org.catmq.broker.common;
 
 import lombok.Getter;
 import lombok.Setter;
-import org.catmq.broker.topic.ISubscription;
+import org.catmq.broker.topic.Subscription;
 import org.catmq.broker.topic.TopicName;
 
 import java.util.Optional;
@@ -14,7 +14,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 @Getter
 public class Consumer {
     @Setter
-    private ISubscription subscription;
+    private Subscription subscription;
     private String topicName;
     private int partitionIdx;
     private final long consumerId;
@@ -40,7 +40,7 @@ public class Consumer {
         this.partitionIdx = TopicName.getPartitionIndex(topicName);
     }
 
-    public Consumer(ISubscription subscription, String topicName, long consumerId,
+    public Consumer(Subscription subscription, String topicName, long consumerId,
                     String consumerName) {
 
         this.subscription = subscription;

@@ -1,7 +1,7 @@
 package org.catmq.broker.service;
 
 import lombok.Getter;
-import org.catmq.broker.topic.ITopic;
+import org.catmq.broker.topic.Topic;
 import org.catmq.broker.topic.TopicName;
 import org.catmq.broker.topic.nonpersistent.NonPersistentTopic;
 
@@ -14,7 +14,7 @@ public class TopicService {
     /**
      * All topics whose key is complete topicName
      */
-    private final ConcurrentHashMap<String, ITopic> topics;
+    private final ConcurrentHashMap<String, Topic> topics;
 
     /**
      * Add topic interface whose name is complete topicName to the topic list.
@@ -35,7 +35,7 @@ public class TopicService {
         });
     }
 
-    public ITopic getTopic(String topicName) {
+    public Topic getTopic(String topicName) {
         return topics.get(topicName);
     }
 

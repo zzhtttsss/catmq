@@ -1,7 +1,7 @@
 package org.catmq.pipline.processor;
 
 import org.catmq.broker.service.TopicService;
-import org.catmq.broker.topic.ITopic;
+import org.catmq.broker.topic.Topic;
 import org.catmq.broker.topic.TopicName;
 import org.catmq.grpc.RequestContext;
 import org.catmq.pipline.Processor;
@@ -20,7 +20,7 @@ public class CreateTopicProcessor implements Processor<CreateTopicRequest, Creat
         if (!topicService.containsTopic(completeTopicName)) {
             topicService.createTopic(completeTopicName, ctx.getBrokerPath());
         }
-        ITopic topic = topicService.getTopic(completeTopicName);
+        Topic topic = topicService.getTopic(completeTopicName);
         //TODO: default subscription name
         topic.createSubscription(completeTopicName);
         return CreateTopicResponse

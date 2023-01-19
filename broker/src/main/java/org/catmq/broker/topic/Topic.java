@@ -1,6 +1,6 @@
 package org.catmq.broker.topic;
 
-public interface ITopic {
+public interface Topic {
 
     /**
      * put message to the consumers who have this topic
@@ -11,7 +11,7 @@ public interface ITopic {
 
     void subscribe(String subscriptionName, long consumerId);
 
-    ISubscription createSubscription(String subscriptionName);
+    Subscription createSubscription(String subscriptionName);
 
     String getTopicName();
     

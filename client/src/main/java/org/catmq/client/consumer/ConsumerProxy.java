@@ -1,8 +1,8 @@
 package org.catmq.client.consumer;
 
-import org.catmq.client.common.IClientProxy;
+import org.catmq.client.common.ClientProxy;
 
-public class ConsumerProxy implements IClientProxy {
+public class ConsumerProxy implements ClientProxy {
     @Override
     public void increaseRequestedCount(String brokerAddress) {
         

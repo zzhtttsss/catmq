@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Deprecated
-public class RoundRobinStrategy implements ILoadBalance {
+public class RoundRobinStrategy implements LoadBalance {
 
     private List<String> brokerAddressList;
     private final AtomicInteger index;

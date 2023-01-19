@@ -2,7 +2,7 @@ package org.catmq.client.producer;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.catmq.client.producer.balance.ILoadBalance;
+import org.catmq.client.producer.balance.LoadBalance;
 import org.catmq.client.producer.balance.LeastUsedStrategy;
 import org.catmq.client.producer.balance.RoundRobinStrategy;
 
@@ -11,7 +11,7 @@ import java.util.Optional;
 @Slf4j
 public class ProducerProxy {
     @Getter
-    private final ILoadBalance loadBalance;
+    private final LoadBalance loadBalance;
 
     /**
      * Get optimal broker address from zookeeper using the specified algorithm

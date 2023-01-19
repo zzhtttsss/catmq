@@ -11,7 +11,7 @@ import java.util.Date;
  * @author BYL
  */
 @Data
-public class Message implements ISerialization {
+public class Message implements Serialization {
 
     public static SimpleDateFormat SDF = new SimpleDateFormat(StringConstant.DATE_FORMAT);
 

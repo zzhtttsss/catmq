@@ -5,7 +5,7 @@ import com.alibaba.fastjson2.JSON;
 /**
  * @author BYL
  */
-public interface ISerialization {
+public interface Serialization {
 
     /**
      * Serialize object to byte array

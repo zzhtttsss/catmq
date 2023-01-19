@@ -7,10 +7,10 @@ import org.apache.zookeeper.CreateMode;
 import org.catmq.broker.BrokerConfig;
 import org.catmq.constant.FileConstant;
 import org.catmq.constant.ZkConstant;
-import org.catmq.util.IIdGenerator;
+import org.catmq.util.IdGenerator;
 import org.catmq.util.StringUtil;
 
-public class ZkIdGenerator implements IIdGenerator {
+public class ZkIdGenerator implements IdGenerator {
 
     private static final String ID_SUFFIX = "-id-";
     private final CuratorFramework client;

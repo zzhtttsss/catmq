@@ -1,6 +1,6 @@
 package org.catmq.util;
 
-public interface IIdGenerator {
+public interface IdGenerator {
     /**
      * generate id
      *

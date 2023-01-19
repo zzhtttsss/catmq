@@ -7,7 +7,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Used to monitor later
  */
-public abstract class BaseTopic implements ITopic {
+public abstract class BaseTopic implements Topic {
     protected final String topicName;
 
     /**

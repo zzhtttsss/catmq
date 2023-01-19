@@ -4,13 +4,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.catmq.broker.common.Consumer;
 import org.catmq.broker.service.ClientManageService;
 import org.catmq.broker.topic.BaseTopic;
-import org.catmq.broker.topic.ISubscription;
-import org.catmq.broker.topic.ITopic;
+import org.catmq.broker.topic.Subscription;
+import org.catmq.broker.topic.Topic;
 
 import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
-public class NonPersistentTopic extends BaseTopic implements ITopic {
+public class NonPersistentTopic extends BaseTopic implements Topic {
 
     /**
      * Subscriptions to this topic whose key is subscriptionName
@@ -23,7 +23,7 @@ public class NonPersistentTopic extends BaseTopic implements ITopic {
     public void putMessage(String message) {
         subscriptions.forEach((name, subscription) -> {
             subscription.getDispatcher().ifPresent(dispatcher -> {
-                if (dispatcher instanceof NonPersistentDispatcherSingleActiveConsumer singleActiveConsumer) {
+                if (dispatcher instanceof SingleActiveConsumerNonPersistentDispatcher singleActiveConsumer) {
                     singleActiveConsumer.sendMessages(message);
                 } else {
                     log.error("Unknown dispatcher type {}", dispatcher.getClass());
@@ -44,7 +44,7 @@ public class NonPersistentTopic extends BaseTopic implements ITopic {
     }
 
     @Override
-    public ISubscription createSubscription(String subscriptionName) {
+    public Subscription createSubscription(String subscriptionName) {
         log.info("[{}] topic created new subscription [{}]", topicName, subscriptionName);
         return this.subscriptions.computeIfAbsent(subscriptionName,
                 name -> new NonPersistentSubscription(this, subscriptionName));
