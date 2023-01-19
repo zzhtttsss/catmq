@@ -47,5 +47,6 @@ service BrokerService{
   rpc SendMessage2Broker (SendMessage2BrokerRequest) returns (SendMessage2BrokerResponse) {}
   rpc GetMessageFromBroker (GetMessageFromBrokerRequest) returns (GetMessageFromBrokerResponse) {}
   rpc CreateTopic (CreateTopicRequest) returns (CreateTopicResponse) {}
+
 }
 
