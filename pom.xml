@@ -28,7 +28,6 @@
         <curator.version>5.4.0</curator.version>
         <logback.version>1.4.5</logback.version>
         <guava.version>31.1-jre</guava.version>
-        <jna.version>5.12.1</jna.version>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
     </properties>
@@ -100,16 +99,5 @@
             <artifactId>guava</artifactId>
             <version>${guava.version}</version>
         </dependency>
-        <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-classic</artifactId>
-            <version>${logback.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>net.java.dev.jna</groupId>
-            <artifactId>jna</artifactId>
-            <version>${jna.version}</version>
-        </dependency>
-
     </dependencies>
 </project>
