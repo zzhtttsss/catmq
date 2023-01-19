@@ -1,10 +1,11 @@
-package org.catmq.processor;
+package org.catmq.pipline.processor;
 
 import lombok.extern.slf4j.Slf4j;
 import org.catmq.broker.service.TopicService;
 import org.catmq.broker.topic.ITopic;
 import org.catmq.broker.topic.TopicName;
-import org.catmq.context.RequestContext;
+import org.catmq.grpc.RequestContext;
+import org.catmq.pipline.Processor;
 import org.catmq.protocol.service.SendMessage2BrokerRequest;
 import org.catmq.protocol.service.SendMessage2BrokerResponse;
 

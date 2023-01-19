@@ -16,8 +16,6 @@ public class ConfigConstant {
     public static final String BROKER_NAME = "broker.name";
     public static final String GRPC_PRODUCER_THREAD_QUEUE_CAPACITY = "grpc.producer.threadQueueCapacity";
     public static final String GRPC_PRODUCER_THREAD_POOL_NUMS = "grpc.producer.threadPoolNums";
-
-    public static final String ZK_ADDRESS = "zk.address";
     //TODO: config directory problem
     /**
      * broker config is in resource directory and producer config is in conf directory
@@ -26,9 +24,7 @@ public class ConfigConstant {
 
     public static final String PRODUCER_CONFIG_PATH = "./conf/producer.properties";
 
-    public static final String CONSUMER_CONFIG_PATH = "./conf/consumer.properties";
-    public static final String PRODUCER_CONFIG_PATH = "../conf/producer.properties";
-    /**
+    public static final String CONSUMER_CONFIG_PATH = "./conf/consumer.properties";/**
      * Storer constants
      */
     public static final String STORER_IP = "storer.ip";

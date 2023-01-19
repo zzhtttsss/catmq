@@ -1,11 +1,12 @@
-package org.catmq.processor;
+package org.catmq.pipline.processor;
 
 import org.catmq.broker.common.Consumer;
 import org.catmq.broker.service.ClientManageService;
 import org.catmq.broker.service.TopicService;
 import org.catmq.broker.topic.ITopic;
 import org.catmq.broker.topic.TopicName;
-import org.catmq.context.RequestContext;
+import org.catmq.grpc.RequestContext;
+import org.catmq.pipline.Processor;
 import org.catmq.protocol.service.GetMessageFromBrokerRequest;
 import org.catmq.protocol.service.GetMessageFromBrokerResponse;
 

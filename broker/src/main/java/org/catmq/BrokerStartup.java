@@ -9,7 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.catmq.broker.BrokerConfig;
 import org.catmq.broker.BrokerServer;
 import org.catmq.broker.service.ZkService;
-import org.catmq.context.ContextInterceptor;
+import org.catmq.grpc.ContextInterceptor;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
