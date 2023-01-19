@@ -10,6 +10,8 @@ public class ZkConstant {
 
     public static final String BROKER_ID_PATH = "/ids";
 
+    public static final String TOPIC_ROOT_PATH = "/topic";
+
     // zk String constants
     public static final String ZK_DEFAULT_ADDRESS = "127.0.0.1:2181";
 

@@ -1,6 +1,5 @@
-package org.catmq.producer;
+package org.catmq.client.producer;
 
-import com.google.common.annotations.VisibleForTesting;
 import io.grpc.Channel;
 import io.grpc.ClientInterceptors;
 import io.grpc.Metadata;
@@ -8,13 +7,14 @@ import io.grpc.StatusRuntimeException;
 import io.grpc.stub.MetadataUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.catmq.broker.topic.TopicName;
-import org.catmq.producer.zk.ProducerZooKeeper;
 import org.catmq.protocol.service.*;
 
 @Slf4j
 public class Producer {
 
     private final BrokerServiceGrpc.BrokerServiceBlockingStub blockingStub;
+
+    private final long producerId;
 
     private final ProducerConfig config;
 
@@ -23,11 +23,11 @@ public class Producer {
 
     public void sendMessage2Broker(String topic, String message) {
         log.info("Will try to send message to broker, topic: {} , message: {}", topic, message);
-        TopicName topicName = TopicName.get(topic);
-        if (!producerZooKeeper.checkTopicExists(topicName)) {
+        if (!TopicName.containsKey(topic)) {
             log.info("Topic [{}] not exists. Ready to create.", topic);
-            createTopic(topicName);
+            createTopic(topic);
         }
+        TopicName topicName = TopicName.get(topic);
         SendMessage2BrokerRequest request = SendMessage2BrokerRequest.newBuilder()
                 .setMessage(message)
                 .setTopic(topicName.getCompleteTopicName())
@@ -39,13 +39,17 @@ public class Producer {
             log.warn("RPC failed: {}", e.getMessage());
             return;
         }
-        log.info("ack: " + response.getAck() + " response: " + response.getRes() + " status msg: " + response.getStatus().getMessage() + " status code: " + response.getStatus().getCode().getNumber());
+        log.info("ack: {} \nresponse: {} \nstatus msg: {} \nstatus code: {}",
+                response.getAck(), response.getRes(), response.getStatus().getMessage(),
+                response.getStatus().getCode().getNumber());
     }
 
-    public void createTopic(TopicName topic) {
+    public void createTopic(String topic) {
+        TopicName topicName = TopicName.get(topic);
         CreateTopicRequest request = CreateTopicRequest
                 .newBuilder()
-                .setTopic(topic.getCompleteTopicName())
+                .setTopic(topicName.getCompleteTopicName())
+                .setProducerId(producerId)
                 .build();
         CreateTopicResponse response = null;
         try {
@@ -61,27 +65,16 @@ public class Producer {
         producerZooKeeper.close();
     }
 
-    /**
-     * Check topic whether exists in broker connected.
-     * If not, create it in broker.
-     *
-     * @param topic topic name
-     * @return true if topic exists in broker, otherwise false
-     */
-    @VisibleForTesting
-    private boolean checkTopicExists(String topic) {
-        return true;
-    }
-
     private void init() {
         producerZooKeeper.register2Zk();
     }
 
-    public Producer(Channel channel) {
+    public Producer(Channel channel, long producerId) {
+        this.producerId = producerId;
         // 'channel' here is a Channel, not a ManagedChannel, so it is not this code's responsibility to
         // shut it down.
         Metadata metadata = new Metadata();
-        metadata.put(Metadata.Key.of("action", Metadata.ASCII_STRING_MARSHALLER), "sendMessage2Broker");
+        metadata.put(Metadata.Key.of("action", Metadata.ASCII_STRING_MARSHALLER), "createTopic");
         Channel headChannel = ClientInterceptors.intercept(channel, MetadataUtils.newAttachHeadersInterceptor(metadata));
         // Passing Channels to code makes code easier to test and makes it easier to reuse Channels.
         blockingStub = BrokerServiceGrpc.newBlockingStub(headChannel);

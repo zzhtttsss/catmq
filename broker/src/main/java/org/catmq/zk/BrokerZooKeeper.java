@@ -2,8 +2,6 @@ package org.catmq.zk;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.recipes.cache.CuratorCache;
 import org.apache.zookeeper.CreateMode;
 import org.catmq.broker.BrokerInfo;
 import org.catmq.broker.BrokerServer;
@@ -38,6 +36,11 @@ public class BrokerZooKeeper extends BaseZookeeper {
         if (!res.isSuccess()) {
             log.error("Register broker address to zk failed. {}", res.getError());
             System.exit(-1);
+        }
+        try {
+            Thread.sleep(1000);
+        } catch (Exception e) {
+            log.error("Thread sleep error. {}", e.getMessage());
         }
 
     }
@@ -97,9 +100,9 @@ public class BrokerZooKeeper extends BaseZookeeper {
 
     private BooleanError registerBrokerConnection(BrokerServer server) {
         BrokerInfo info = server.brokerInfo;
-        CuratorFramework client = server.brokerZooKeeper.client;
         log.info("Register broker address to zk. {}", info.getBrokerIp() + FileConstant.COLON + info.getBrokerPort());
         try {
+            // /address/broker/127.0.0.1:5432
             client.create()
                     .creatingParentsIfNeeded()
                     .withMode(CreateMode.EPHEMERAL)
@@ -110,11 +113,10 @@ public class BrokerZooKeeper extends BaseZookeeper {
                             .concat(FileConstant.COLON)
                             .concat(info.getBrokerPort())
                             .build(), info.toBytes());
-            CuratorCache cc = CuratorCache.build(client, ZkConstant.BROKER_ADDRESS_PATH);
+            /*CuratorCache cc = CuratorCache.build(client, ZkConstant.BROKER_ADDRESS_PATH);
             cc.listenable().addListener(new DeadNodeListener(info));
-            cc.start();
+            cc.start();*/
         } catch (Exception e) {
-            log.error("Register broker address to zk failed. {}", e.getMessage());
             return BooleanError.fail(e.getMessage());
         }
 
@@ -125,6 +127,5 @@ public class BrokerZooKeeper extends BaseZookeeper {
         super(host);
         this.broker = broker;
         this.brokerPath = String.format("/broker/%s", this.broker.brokerInfo.getBrokerName());
-        this.client.start();
     }
 }

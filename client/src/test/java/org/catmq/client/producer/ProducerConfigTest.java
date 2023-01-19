@@ -1,4 +1,4 @@
-package org.catmq.producer;
+package org.catmq.client.producer;
 
 import org.junit.Test;
 

@@ -121,6 +121,17 @@ private static final long serialVersionUID = 0L;
     }
   }
 
+  public static final int PRODUCERID_FIELD_NUMBER = 3;
+  private long producerId_;
+  /**
+   * <code>int64 producerId = 3;</code>
+   * @return The producerId.
+   */
+  @java.lang.Override
+  public long getProducerId() {
+    return producerId_;
+  }
+
   private byte memoizedIsInitialized = -1;
   @java.lang.Override
   public final boolean isInitialized() {
@@ -141,6 +152,9 @@ private static final long serialVersionUID = 0L;
     if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(topic_)) {
       com.google.protobuf.GeneratedMessageV3.writeString(output, 2, topic_);
     }
+    if (producerId_ != 0L) {
+      output.writeInt64(3, producerId_);
+    }
     getUnknownFields().writeTo(output);
   }
 
@@ -155,6 +169,10 @@ private static final long serialVersionUID = 0L;
     }
     if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(topic_)) {
       size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, topic_);
+    }
+    if (producerId_ != 0L) {
+      size += com.google.protobuf.CodedOutputStream
+        .computeInt64Size(3, producerId_);
     }
     size += getUnknownFields().getSerializedSize();
     memoizedSize = size;
@@ -175,6 +193,8 @@ private static final long serialVersionUID = 0L;
         .equals(other.getMessage())) return false;
     if (!getTopic()
         .equals(other.getTopic())) return false;
+    if (getProducerId()
+        != other.getProducerId()) return false;
     if (!getUnknownFields().equals(other.getUnknownFields())) return false;
     return true;
   }
@@ -190,6 +210,9 @@ private static final long serialVersionUID = 0L;
     hash = (53 * hash) + getMessage().hashCode();
     hash = (37 * hash) + TOPIC_FIELD_NUMBER;
     hash = (53 * hash) + getTopic().hashCode();
+    hash = (37 * hash) + PRODUCERID_FIELD_NUMBER;
+    hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+        getProducerId());
     hash = (29 * hash) + getUnknownFields().hashCode();
     memoizedHashCode = hash;
     return hash;
@@ -322,6 +345,8 @@ private static final long serialVersionUID = 0L;
 
       topic_ = "";
 
+      producerId_ = 0L;
+
       return this;
     }
 
@@ -350,6 +375,7 @@ private static final long serialVersionUID = 0L;
       org.catmq.protocol.service.SendMessage2BrokerRequest result = new org.catmq.protocol.service.SendMessage2BrokerRequest(this);
       result.message_ = message_;
       result.topic_ = topic_;
+      result.producerId_ = producerId_;
       onBuilt();
       return result;
     }
@@ -406,6 +432,9 @@ private static final long serialVersionUID = 0L;
         topic_ = other.topic_;
         onChanged();
       }
+      if (other.getProducerId() != 0L) {
+        setProducerId(other.getProducerId());
+      }
       this.mergeUnknownFields(other.getUnknownFields());
       onChanged();
       return this;
@@ -442,6 +471,11 @@ private static final long serialVersionUID = 0L;
 
               break;
             } // case 18
+            case 24: {
+              producerId_ = input.readInt64();
+
+              break;
+            } // case 24
             default: {
               if (!super.parseUnknownField(input, extensionRegistry, tag)) {
                 done = true; // was an endgroup tag
@@ -606,6 +640,37 @@ private static final long serialVersionUID = 0L;
   checkByteStringIsUtf8(value);
       
       topic_ = value;
+      onChanged();
+      return this;
+    }
+
+    private long producerId_ ;
+    /**
+     * <code>int64 producerId = 3;</code>
+     * @return The producerId.
+     */
+    @java.lang.Override
+    public long getProducerId() {
+      return producerId_;
+    }
+    /**
+     * <code>int64 producerId = 3;</code>
+     * @param value The producerId to set.
+     * @return This builder for chaining.
+     */
+    public Builder setProducerId(long value) {
+      
+      producerId_ = value;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>int64 producerId = 3;</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearProducerId() {
+      
+      producerId_ = 0L;
       onChanged();
       return this;
     }

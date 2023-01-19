@@ -1,15 +1,15 @@
-package org.catmq;
+package org.catmq.client;
 
 import io.grpc.Grpc;
 import io.grpc.InsecureChannelCredentials;
 import io.grpc.ManagedChannel;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.cli.*;
+import org.catmq.client.producer.Producer;
+import org.catmq.client.producer.ProducerConfig;
+import org.catmq.client.producer.ProducerProxy;
 import org.catmq.constant.Command;
 import org.catmq.constant.SubCommand;
-import org.catmq.producer.Producer;
-import org.catmq.producer.ProducerConfig;
-import org.catmq.producer.ProducerProxy;
 import org.catmq.util.StringUtil;
 
 import java.net.InetSocketAddress;
@@ -17,10 +17,14 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Slf4j
 public class ProducerStartup {
     static final Map<String, Options> COMMAND_MAP = new HashMap<>();
+    // only for test
+    static final AtomicLong PRODUCER_ID = new AtomicLong(0);
 
     public static void main(String[] args) throws Exception {
         initCommand();
@@ -57,13 +61,25 @@ public class ProducerStartup {
         //
         // For the example we use plaintext insecure credentials to avoid needing TLS certificates. To
         // use TLS, use TlsChannelCredentials instead.
-        ManagedChannel channel = Grpc.newChannelBuilder(target, InsecureChannelCredentials.create()).build();
+        ManagedChannel channel = Grpc.newChannelBuilder(target, InsecureChannelCredentials.create())
+                .keepAliveTime(30, TimeUnit.SECONDS)
+                .keepAliveTimeout(10, TimeUnit.SECONDS)
+                .build();
+        Producer producer = new Producer(channel, PRODUCER_ID.incrementAndGet());
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            @Override
+            public void run() {
+                log.warn("*** shutting down gRPC client");
+                producer.close();
+                log.warn("*** producer shut down");
+            }
+        });
 
         // ManagedChannels use resources like threads and TCP connections. To prevent leaking these
         // resources the channel should be shut down when it will no longer be used. If it may be used
         // again leave it running.
         // channel.shutdownNow().awaitTermination(5, TimeUnit.SECONDS);
-        return new Producer(channel);
+        return producer;
     }
 
     public static void executeCommand(String[] args, Producer producer) {
@@ -90,24 +106,18 @@ public class ProducerStartup {
                     }
                     producer.sendMessage2Broker(topic, msg);
                 }
-                case GET -> {
-                    CommandLine getCmd = parser.parse(options, Arrays.copyOfRange(args, 1, args.length));
-                    String topic1 = getCmd.getOptionValue("t");
-                    if (StringUtil.isEmpty(topic1)) {
-                        printHelp();
-                        return;
-                    }
-                    log.info("topic: {}", topic1);
-                }
                 case TOPIC -> {
                     CommandLine topicCmd = parser.parse(options, Arrays.copyOfRange(args, 1, args.length));
-                    String topic2 = topicCmd.getOptionValue("t");
-                    String op = topicCmd.getOptionValue("o");
-                    if (StringUtil.isEmpty(topic2) || StringUtil.isEmpty(op)) {
-                        printHelp();
-                        return;
+                    if (topicCmd.hasOption("l")) {
+                        log.info("list topic");
+                    } else if (topicCmd.hasOption("c")) {
+                        String topicName = topicCmd.getOptionValue("c");
+                        if (StringUtil.isEmpty(topicName)) {
+                            printHelp();
+                            return;
+                        }
+                        producer.createTopic(topicName);
                     }
-                    log.info("topic: {}, op: {}", topic2, op);
                 }
                 default -> printHelp();
             }
