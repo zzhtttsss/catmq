@@ -32,6 +32,12 @@ public class ZkUtil {
         throw new RuntimeException("Can not connect to zk server.");
     }
 
+    /**
+     * Get the full path of broker address on zk.
+     *
+     * @param address the address of broker containing IP and Port.
+     * @return /address/broker/ip:port
+     */
     public static String getFullBrokerAddressPath(InetSocketAddress address) {
         return Concat2String.builder()
                 .concat(ZkConstant.BROKER_ADDRESS_PATH)

@@ -1,13 +1,11 @@
-package org.catmq.producer.zk;
+package org.catmq.client.producer;
 
-import com.google.common.annotations.VisibleForTesting;
 import lombok.extern.slf4j.Slf4j;
 import org.catmq.broker.BrokerInfo;
 import org.catmq.broker.topic.TopicName;
 import org.catmq.constant.FileConstant;
 import org.catmq.constant.ZkConstant;
 import org.catmq.entity.ISerialization;
-import org.catmq.producer.ProducerConfig;
 import org.catmq.util.Concat2String;
 import org.catmq.zk.BaseZookeeper;
 import org.catmq.zk.ZkUtil;
@@ -94,7 +92,6 @@ public class ProducerZooKeeper extends BaseZookeeper {
      * Get broker information where this producer connected from zk.
      * <strong>One producer connects with many brokers which has not been considered yet</strong>
      */
-    @VisibleForTesting
     private BrokerInfo getBrokerInfo() {
         String path = ZkUtil.getFullBrokerAddressPath(config.getBrokerAddress());
         try {

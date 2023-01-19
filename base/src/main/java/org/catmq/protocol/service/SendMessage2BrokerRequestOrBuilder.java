@@ -30,4 +30,10 @@ public interface SendMessage2BrokerRequestOrBuilder extends
    */
   com.google.protobuf.ByteString
       getTopicBytes();
+
+  /**
+   * <code>int64 producerId = 3;</code>
+   * @return The producerId.
+   */
+  long getProducerId();
 }

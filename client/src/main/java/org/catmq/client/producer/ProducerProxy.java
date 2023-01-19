@@ -1,10 +1,10 @@
-package org.catmq.producer;
+package org.catmq.client.producer;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.catmq.producer.balance.ILoadBalance;
-import org.catmq.producer.balance.LeastUsedStrategy;
-import org.catmq.producer.balance.RoundRobinStrategy;
+import org.catmq.client.producer.balance.ILoadBalance;
+import org.catmq.client.producer.balance.LeastUsedStrategy;
+import org.catmq.client.producer.balance.RoundRobinStrategy;
 
 import java.util.Optional;
 
