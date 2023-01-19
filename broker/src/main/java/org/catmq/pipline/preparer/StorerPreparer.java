@@ -11,14 +11,11 @@ public class StorerPreparer implements Preparer {
     }
 
     public enum StorerPreparerEnum {
-
         INSTANCE;
         private final StorerPreparer storerPreparer;
-
         StorerPreparerEnum() {
             storerPreparer = new StorerPreparer();
         }
-
         public StorerPreparer getInstance() {
             return storerPreparer;
         }

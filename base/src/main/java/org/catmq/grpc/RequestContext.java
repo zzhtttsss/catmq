@@ -24,6 +24,10 @@ public class RequestContext {
         return createForInner(clazz.getSimpleName());
     }
 
+    public Map<String, Object> getValue() {
+        return this.value;
+    }
+
     public RequestContext withVal(String key, Object val) {
         this.value.put(key, val);
         return this;
@@ -31,20 +35,6 @@ public class RequestContext {
 
     public <T> T getVal(String key) {
         return (T) this.value.get(key);
-    }
-
-    /**
-     * Wrap broker path on zk into ctx.
-     *
-     * @param brokerPath broker path brokerPath
-     * @return this
-     */
-    public RequestContext setBrokerPath(String brokerPath) {
-        return withVal(ContextVariable.BROKER_PATH, brokerPath);
-    }
-
-    public String getBrokerPath() {
-        return this.getVal(ContextVariable.BROKER_PATH);
     }
 
     public RequestContext setLocalAddress(String localAddress) {
@@ -65,31 +55,40 @@ public class RequestContext {
         return this.getVal(ContextVariable.REMOTE_ADDRESS);
     }
 
-    public RequestContext setProducerId(Long producerId) {
-        return withVal(ContextVariable.PRODUCER_ID, producerId);
+    public RequestContext setClientID(String clientID) {
+        this.withVal(ContextVariable.CLIENT_ID, clientID);
+        return this;
     }
 
-    public Long getProducerId() {
-        return this.getVal(ContextVariable.PRODUCER_ID);
+    public String getClientID() {
+        return this.getVal(ContextVariable.CLIENT_ID);
     }
 
-    public RequestContext setConsumerId(Long consumerId) {
-        return withVal(ContextVariable.CONSUMER_ID, consumerId);
+    public RequestContext setLanguage(String language) {
+        this.withVal(ContextVariable.LANGUAGE, language);
+        return this;
     }
 
-    public Long getConsumerId() {
-        return this.getVal(ContextVariable.CONSUMER_ID);
+    public String getLanguage() {
+        return this.getVal(ContextVariable.LANGUAGE);
+    }
+
+    public RequestContext setClientVersion(String clientVersion) {
+        this.withVal(ContextVariable.CLIENT_VERSION, clientVersion);
+        return this;
+    }
+
+    public String getClientVersion() {
+        return this.getVal(ContextVariable.CLIENT_VERSION);
     }
 
     public RequestContext setAction(String action) {
         this.withVal(ContextVariable.ACTION, action);
         return this;
     }
-
     public String getAction() {
         return this.getVal(ContextVariable.ACTION);
     }
-
 
     public long getSegmentId() {
         return Long.parseLong(this.getVal(ContextVariable.SEGMENT_ID));
@@ -109,10 +108,4 @@ public class RequestContext {
         return this;
     }
 
-
-    public void print() {
-        this.value.forEach((n, v) -> {
-            System.out.println(n + " : " + v);
-        });
-    }
 }

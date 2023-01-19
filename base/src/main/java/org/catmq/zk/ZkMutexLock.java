@@ -28,11 +28,7 @@ public class ZkMutexLock {
 
 
     public ZkMutexLock(String lockPath, String zkAddress) {
-        try (CuratorFramework client = ZkUtil.createClient(zkAddress)) {
-            this.lock = new InterProcessMutex(client, lockPath);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-
+        CuratorFramework client = ZkUtil.createClient(zkAddress);
+        this.lock = new InterProcessMutex(client, lockPath);
     }
 }
