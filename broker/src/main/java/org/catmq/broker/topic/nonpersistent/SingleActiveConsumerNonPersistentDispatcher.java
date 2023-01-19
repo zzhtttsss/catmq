@@ -7,7 +7,7 @@ import java.util.Collections;
 import java.util.List;
 
 @Slf4j
-public class NonPersistentDispatcherSingleActiveConsumer implements INonPersistentDispatcher {
+public class SingleActiveConsumerNonPersistentDispatcher implements NonPersistentDispatcher {
     private final NonPersistentSubscription subscription;
 
     //TODO: bug here
@@ -49,7 +49,7 @@ public class NonPersistentDispatcherSingleActiveConsumer implements INonPersiste
         return activeConsumer == consumer;
     }
 
-    public NonPersistentDispatcherSingleActiveConsumer(NonPersistentSubscription subscription, NonPersistentTopic topic) {
+    public SingleActiveConsumerNonPersistentDispatcher(NonPersistentSubscription subscription, NonPersistentTopic topic) {
         this.subscription = subscription;
         this.topic = topic;
     }

@@ -2,7 +2,7 @@ package org.catmq.pipline.processor;
 
 import lombok.extern.slf4j.Slf4j;
 import org.catmq.broker.service.TopicService;
-import org.catmq.broker.topic.ITopic;
+import org.catmq.broker.topic.Topic;
 import org.catmq.broker.topic.TopicName;
 import org.catmq.grpc.RequestContext;
 import org.catmq.pipline.Processor;
@@ -18,7 +18,7 @@ public class SendMessageProcessor implements Processor<SendMessage2BrokerRequest
     @Override
     public SendMessage2BrokerResponse process(RequestContext ctx, SendMessage2BrokerRequest request) {
         TopicName topicName = TopicName.get(request.getTopic());
-        ITopic topic = topicService.getTopic(topicName.getCompleteTopicName());
+        Topic topic = topicService.getTopic(topicName.getCompleteTopicName());
         topic.createSubscription(topicName.getCompleteTopicName());
         topic.putMessage(request.getMessage());
         return SendMessage2BrokerResponse

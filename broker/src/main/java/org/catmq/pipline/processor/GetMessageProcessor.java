@@ -3,7 +3,7 @@ package org.catmq.pipline.processor;
 import org.catmq.broker.common.Consumer;
 import org.catmq.broker.service.ClientManageService;
 import org.catmq.broker.service.TopicService;
-import org.catmq.broker.topic.ITopic;
+import org.catmq.broker.topic.Topic;
 import org.catmq.broker.topic.TopicName;
 import org.catmq.grpc.RequestContext;
 import org.catmq.pipline.Processor;
@@ -22,7 +22,7 @@ public class GetMessageProcessor implements Processor<GetMessageFromBrokerReques
     @Override
     public GetMessageFromBrokerResponse process(RequestContext ctx, GetMessageFromBrokerRequest request) {
         TopicName topicName = TopicName.get(request.getTopic());
-        ITopic topic = topicService.getTopic(topicName.getCompleteTopicName());
+        Topic topic = topicService.getTopic(topicName.getCompleteTopicName());
         if (!topic.isSubscribe(topicName.getCompleteTopicName(), request.getConsumerId())) {
             topic.subscribe(topicName.getCompleteTopicName(), request.getConsumerId());
         }

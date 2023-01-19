@@ -1,8 +1,8 @@
 package org.catmq.broker.topic.nonpersistent;
 
-import org.catmq.broker.topic.IDispatcher;
+import org.catmq.broker.topic.Dispatcher;
 
-public interface INonPersistentDispatcher extends IDispatcher {
+public interface NonPersistentDispatcher extends Dispatcher {
     /**
      * This dispatcher sends messages to all consumers connected.
      *

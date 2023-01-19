@@ -4,14 +4,14 @@ import com.alibaba.fastjson2.JSON;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
-import org.catmq.entity.ISerialization;
+import org.catmq.entity.Serialization;
 
 /**
  * @author HP
  */
 @Data
 @NoArgsConstructor
-public class BrokerInfo implements ISerialization {
+public class BrokerInfo implements Serialization {
     @NonNull
     private String brokerId;
     private String brokerName;

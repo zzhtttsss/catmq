@@ -3,7 +3,7 @@ package org.catmq.client.producer.balance;
 import java.util.Optional;
 
 @FunctionalInterface
-public interface ILoadBalance {
+public interface LoadBalance {
     /**
      * This method is used to select a broker address from the broker list.
      *

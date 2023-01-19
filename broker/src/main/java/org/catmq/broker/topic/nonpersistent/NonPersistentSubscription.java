@@ -2,19 +2,19 @@ package org.catmq.broker.topic.nonpersistent;
 
 import lombok.Getter;
 import org.catmq.broker.common.Consumer;
-import org.catmq.broker.topic.IDispatcher;
-import org.catmq.broker.topic.ISubscription;
+import org.catmq.broker.topic.Dispatcher;
+import org.catmq.broker.topic.Subscription;
 
 import java.util.Optional;
 
-public class NonPersistentSubscription implements ISubscription {
+public class NonPersistentSubscription implements Subscription {
     @Getter
     private final NonPersistentTopic topic;
 
     private final String subscriptionName;
     @Getter
     private final String topicName;
-    private volatile INonPersistentDispatcher dispatcher;
+    private volatile NonPersistentDispatcher dispatcher;
 
     @Override
     public String getName() {
@@ -24,13 +24,13 @@ public class NonPersistentSubscription implements ISubscription {
     @Override
     public void addConsumer(Consumer consumer) {
         if (dispatcher == null) {
-            dispatcher = new NonPersistentDispatcherSingleActiveConsumer(this, topic);
+            dispatcher = new SingleActiveConsumerNonPersistentDispatcher(this, topic);
         }
         dispatcher.addConsumer(consumer);
     }
 
     @Override
-    public Optional<IDispatcher> getDispatcher() {
+    public Optional<Dispatcher> getDispatcher() {
         return Optional.ofNullable(this.dispatcher);
     }
 

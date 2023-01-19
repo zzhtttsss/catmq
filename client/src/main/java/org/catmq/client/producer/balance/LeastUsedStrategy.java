@@ -5,7 +5,7 @@ import org.apache.curator.framework.CuratorFramework;
 import org.catmq.broker.BrokerInfo;
 import org.catmq.constant.FileConstant;
 import org.catmq.constant.ZkConstant;
-import org.catmq.entity.ISerialization;
+import org.catmq.entity.Serialization;
 import org.catmq.util.StringUtil;
 import org.catmq.zk.ZkUtil;
 
@@ -16,7 +16,7 @@ import java.util.Optional;
 
 @Slf4j
 @Deprecated
-public class LeastUsedStrategy implements ILoadBalance {
+public class LeastUsedStrategy implements LoadBalance {
     @Override
     public Optional<String> selectBroker(String zkAddress) {
         try (CuratorFramework client = ZkUtil.createClient(zkAddress)) {
@@ -26,7 +26,7 @@ public class LeastUsedStrategy implements ILoadBalance {
             String addressDirectory = StringUtil.concatString(ZkConstant.BROKER_ADDRESS_PATH, FileConstant.LEFT_SLASH);
             for (String path : paths) {
                 byte[] bytes = client.getData().forPath(StringUtil.concatString(addressDirectory, path));
-                BrokerInfo info = ISerialization.fromBytes(bytes, BrokerInfo.class);
+                BrokerInfo info = Serialization.fromBytes(bytes, BrokerInfo.class);
                 map.put(path, info.getLoad());
             }
 

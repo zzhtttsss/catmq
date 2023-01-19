@@ -4,14 +4,14 @@ import org.catmq.broker.common.Consumer;
 
 import java.util.Optional;
 
-public interface ISubscription {
-    ITopic getTopic();
+public interface Subscription {
+    Topic getTopic();
 
     String getName();
 
     String getTopicName();
 
-    Optional<IDispatcher> getDispatcher();
+    Optional<Dispatcher> getDispatcher();
 
     void addConsumer(Consumer consumer);
 }

@@ -4,7 +4,7 @@ import org.catmq.broker.common.Consumer;
 
 import java.util.List;
 
-public interface IDispatcher {
+public interface Dispatcher {
     /**
      * Add a consumer to the dispatcher.
      * <strong>String is temporary</strong>
