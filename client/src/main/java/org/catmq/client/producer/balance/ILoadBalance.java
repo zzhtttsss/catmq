@@ -1,4 +1,4 @@
-package org.catmq.producer.balance;
+package org.catmq.client.producer.balance;
 
 import java.util.Optional;
 

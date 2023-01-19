@@ -18,4 +18,10 @@ public interface CreateTopicRequestOrBuilder extends
    */
   com.google.protobuf.ByteString
       getTopicBytes();
+
+  /**
+   * <code>int64 producerId = 2;</code>
+   * @return The producerId.
+   */
+  long getProducerId();
 }

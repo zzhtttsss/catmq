@@ -6,14 +6,17 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 import org.catmq.constant.FileConstant;
 import org.catmq.util.StringUtil;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 @Getter
+@Slf4j
 public class TopicName {
     public static final String PUBLIC_TENANT = "public";
 
@@ -60,6 +63,17 @@ public class TopicName {
         } catch (ExecutionException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * Whether the basic topic name is valid.
+     * Should be updated to delete outdated keys.
+     *
+     * @param topic basic topic name
+     * @return true if valid
+     */
+    public static boolean containsKey(String topic) {
+        return Optional.of(topic).map(CACHE::getIfPresent).isPresent();
     }
 
     /**
@@ -130,6 +144,7 @@ public class TopicName {
      *             short type: [localName]
      */
     private TopicName(String name) {
+        log.info("create a new topic named {}", name);
         if (!name.contains(TOPIC_DOMAIN_SEPARATOR)) {
             // short name like <topic> with default TopicType.NON_PERSISTENT and default tenant
             // non-persistent://public/<name>

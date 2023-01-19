@@ -53,24 +53,27 @@ public final class Service {
       descriptor;
   static {
     java.lang.String[] descriptorData = {
-      "\n\rservice.proto\032\020definition.proto\";\n\031Sen" +
+      "\n\rservice.proto\032\020definition.proto\"O\n\031Sen" +
       "dMessage2BrokerRequest\022\017\n\007message\030\001 \001(\t\022" +
-      "\r\n\005topic\030\002 \001(\t\"O\n\032SendMessage2BrokerResp" +
-      "onse\022\013\n\003ack\030\001 \001(\010\022\013\n\003res\030\002 \001(\t\022\027\n\006status" +
-      "\030\003 \001(\0132\007.Status\".\n\033GetMessageFromBrokerR" +
-      "equest\022\017\n\007message\030\001 \001(\t\"Q\n\034GetMessageFro" +
-      "mBrokerResponse\022\013\n\003ack\030\001 \001(\010\022\013\n\003res\030\002 \001(" +
-      "\t\022\027\n\006status\030\003 \001(\0132\007.Status\"#\n\022CreateTopi" +
-      "cRequest\022\r\n\005topic\030\001 \001(\t\"H\n\023CreateTopicRe" +
-      "sponse\022\013\n\003ack\030\001 \001(\010\022\013\n\003res\030\002 \001(\t\022\027\n\006stat" +
-      "us\030\003 \001(\0132\007.Status2\363\001\n\rBrokerService\022O\n\022S" +
-      "endMessage2Broker\022\032.SendMessage2BrokerRe" +
-      "quest\032\033.SendMessage2BrokerResponse\"\000\022U\n\024" +
-      "GetMessageFromBroker\022\034.GetMessageFromBro" +
-      "kerRequest\032\035.GetMessageFromBrokerRespons" +
-      "e\"\000\022:\n\013CreateTopic\022\023.CreateTopicRequest\032" +
-      "\024.CreateTopicResponse\"\000B\'\n\032org.catmq.pro" +
-      "tocol.serviceP\001\210\001\001\240\001\001\330\001\001b\006proto3"
+      "\r\n\005topic\030\002 \001(\t\022\022\n\nproducerId\030\003 \001(\003\"O\n\032Se" +
+      "ndMessage2BrokerResponse\022\013\n\003ack\030\001 \001(\010\022\013\n" +
+      "\003res\030\002 \001(\t\022\027\n\006status\030\003 \001(\0132\007.Status\"Q\n\033G" +
+      "etMessageFromBrokerRequest\022\017\n\007message\030\001 " +
+      "\001(\t\022\r\n\005topic\030\002 \001(\t\022\022\n\nconsumerId\030\003 \001(\003\"b" +
+      "\n\034GetMessageFromBrokerResponse\022\013\n\003ack\030\001 " +
+      "\001(\010\022\013\n\003res\030\002 \001(\t\022\027\n\006status\030\003 \001(\0132\007.Statu" +
+      "s\022\017\n\007message\030\004 \001(\t\"7\n\022CreateTopicRequest" +
+      "\022\r\n\005topic\030\001 \001(\t\022\022\n\nproducerId\030\002 \001(\003\"H\n\023C" +
+      "reateTopicResponse\022\013\n\003ack\030\001 \001(\010\022\013\n\003res\030\002" +
+      " \001(\t\022\027\n\006status\030\003 \001(\0132\007.Status2\363\001\n\rBroker" +
+      "Service\022O\n\022SendMessage2Broker\022\032.SendMess" +
+      "age2BrokerRequest\032\033.SendMessage2BrokerRe" +
+      "sponse\"\000\022U\n\024GetMessageFromBroker\022\034.GetMe" +
+      "ssageFromBrokerRequest\032\035.GetMessageFromB" +
+      "rokerResponse\"\000\022:\n\013CreateTopic\022\023.CreateT" +
+      "opicRequest\032\024.CreateTopicResponse\"\000B\'\n\032o" +
+      "rg.catmq.protocol.serviceP\001\210\001\001\240\001\001\330\001\001b\006pr" +
+      "oto3"
     };
     descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
@@ -82,7 +85,7 @@ public final class Service {
     internal_static_SendMessage2BrokerRequest_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_SendMessage2BrokerRequest_descriptor,
-        new java.lang.String[] { "Message", "Topic", });
+        new java.lang.String[] { "Message", "Topic", "ProducerId", });
     internal_static_SendMessage2BrokerResponse_descriptor =
       getDescriptor().getMessageTypes().get(1);
     internal_static_SendMessage2BrokerResponse_fieldAccessorTable = new
@@ -94,19 +97,19 @@ public final class Service {
     internal_static_GetMessageFromBrokerRequest_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_GetMessageFromBrokerRequest_descriptor,
-        new java.lang.String[] { "Message", });
+        new java.lang.String[] { "Message", "Topic", "ConsumerId", });
     internal_static_GetMessageFromBrokerResponse_descriptor =
       getDescriptor().getMessageTypes().get(3);
     internal_static_GetMessageFromBrokerResponse_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_GetMessageFromBrokerResponse_descriptor,
-        new java.lang.String[] { "Ack", "Res", "Status", });
+        new java.lang.String[] { "Ack", "Res", "Status", "Message", });
     internal_static_CreateTopicRequest_descriptor =
       getDescriptor().getMessageTypes().get(4);
     internal_static_CreateTopicRequest_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_CreateTopicRequest_descriptor,
-        new java.lang.String[] { "Topic", });
+        new java.lang.String[] { "Topic", "ProducerId", });
     internal_static_CreateTopicResponse_descriptor =
       getDescriptor().getMessageTypes().get(5);
     internal_static_CreateTopicResponse_fieldAccessorTable = new

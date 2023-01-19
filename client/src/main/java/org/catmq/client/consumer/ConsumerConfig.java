@@ -1,4 +1,4 @@
-package org.catmq.producer;
+package org.catmq.client.consumer;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -15,7 +15,7 @@ import java.util.Properties;
 @Setter
 @Getter
 @Slf4j
-public class ProducerConfig {
+public class ConsumerConfig {
     private String zkAddress;
     /**
      * broker ip and port without clusters which
@@ -23,8 +23,8 @@ public class ProducerConfig {
      */
     private InetSocketAddress brokerAddress;
 
-    private ProducerConfig() {
-        String filePath = Path.of(ConfigConstant.PRODUCER_CONFIG_PATH).toAbsolutePath().normalize().toString();
+    private ConsumerConfig() {
+        String filePath = Path.of(ConfigConstant.CONSUMER_CONFIG_PATH).toAbsolutePath().normalize().toString();
         Properties properties = new Properties();
         try (InputStream inputStream = new FileInputStream(filePath)) {
             properties.load(inputStream);
@@ -35,20 +35,19 @@ public class ProducerConfig {
         zkAddress = properties.getProperty(ConfigConstant.ZK_ADDRESS, ZkConstant.ZK_DEFAULT_ADDRESS);
     }
 
-    public enum ProducerConfigEnum {
+    public enum ConsumerConfigEnum {
         /**
          * Singleton
          */
         INSTANCE;
-        private final ProducerConfig producerConfig;
+        private final ConsumerConfig consumerConfig;
 
-
-        ProducerConfigEnum() {
-            producerConfig = new ProducerConfig();
+        ConsumerConfigEnum() {
+            consumerConfig = new ConsumerConfig();
         }
 
-        public ProducerConfig getInstance() {
-            return producerConfig;
+        public ConsumerConfig getInstance() {
+            return consumerConfig;
         }
     }
 }

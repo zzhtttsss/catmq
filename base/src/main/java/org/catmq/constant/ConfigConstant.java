@@ -14,5 +14,7 @@ public class ConfigConstant {
      */
     public static final String BROKER_CONFIG_PATH = "/broker.properties";
 
-    public static final String PRODUCER_CONFIG_PATH = "../conf/producer.properties";
+    public static final String PRODUCER_CONFIG_PATH = "./conf/producer.properties";
+
+    public static final String CONSUMER_CONFIG_PATH = "./conf/consumer.properties";
 }

@@ -1,9 +1,11 @@
-package org.catmq.producer.balance;
+package org.catmq.client.producer.balance;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.curator.framework.CuratorFramework;
+import org.catmq.broker.BrokerInfo;
 import org.catmq.constant.FileConstant;
 import org.catmq.constant.ZkConstant;
+import org.catmq.entity.ISerialization;
 import org.catmq.util.StringUtil;
 import org.catmq.zk.ZkUtil;
 
@@ -24,7 +26,8 @@ public class LeastUsedStrategy implements ILoadBalance {
             String addressDirectory = StringUtil.concatString(ZkConstant.BROKER_ADDRESS_PATH, FileConstant.LEFT_SLASH);
             for (String path : paths) {
                 byte[] bytes = client.getData().forPath(StringUtil.concatString(addressDirectory, path));
-                map.put(path, Integer.parseInt(new String(bytes)));
+                BrokerInfo info = ISerialization.fromBytes(bytes, BrokerInfo.class);
+                map.put(path, info.getLoad());
             }
 
             return map.entrySet().stream()

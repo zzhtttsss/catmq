@@ -19,9 +19,10 @@ public abstract class BaseZookeeper {
      * This method is used to close resources.
      */
     protected abstract void close();
-    
+
     protected BaseZookeeper(String zkAddress) {
         RetryPolicy policy = new ExponentialBackoffRetry(1000, 3);
         this.client = CuratorFrameworkFactory.newClient(zkAddress, policy);
+        client.start();
     }
 }
