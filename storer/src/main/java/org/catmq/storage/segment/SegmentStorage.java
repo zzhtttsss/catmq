@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.catmq.storage.MessageEntry;
 
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicStampedReference;
 import java.util.concurrent.locks.ReentrantLock;
@@ -45,14 +46,14 @@ public class SegmentStorage {
      */
     private final AtomicStampedReference<Boolean> canSwap = new AtomicStampedReference<>(false, 1);
     @Getter
-    private final CopyOnWriteArrayList<Segment> segments;
+    private final ConcurrentHashMap<Long, Segment> segments;
 
     public SegmentStorage() {
         this.path = STORER_CONFIG.getSegmentStoragePath();
         this.writeCache4Append = new WriteCache(MAX_CACHE_SIZE);
         this.writeCache4Flush = new WriteCache(MAX_CACHE_SIZE);
         this.readCache = new ReadCache();
-        this.segments = new CopyOnWriteArrayList<>();
+        segments = new ConcurrentHashMap<>();
         this.flushWriteCacheService = new FlushWriteCacheService(this);
         entryPositionIndex = new EntryPositionIndex(KeyValueStorageRocksDB.factory,
                 STORER_CONFIG.getSegmentIndexStoragePath());

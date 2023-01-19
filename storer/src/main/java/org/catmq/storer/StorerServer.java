@@ -15,6 +15,7 @@ import org.catmq.protocol.definition.Code;
 import org.catmq.protocol.definition.Status;
 import org.catmq.protocol.service.*;
 import org.catmq.thread.OrderedExecutor;
+import org.catmq.zk.StorerZooKeeperClient;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
@@ -37,19 +38,21 @@ public class StorerServer extends StorerServiceGrpc.StorerServiceImplBase {
      */
     protected OrderedExecutor readThreadPoolExecutor;
 
+    private StorerZooKeeperClient storerZooKeeperClient;
+
 
     public StorerServer() {
         writeOrderedExecutor = createExecutor(STORER_CONFIG.getWriteOrderedExecutorThreadNums(), WRITE_ORDERED_EXECUTOR_NAME,
                 NO_TASK_LIMIT);
         readThreadPoolExecutor = createExecutor(STORER_CONFIG.getReadOrderedExecutorThreadNums(), READ_ORDERED_EXECUTOR_NAME,
                 NO_TASK_LIMIT);
-
+        storerZooKeeperClient = new StorerZooKeeperClient("127.0.0.1:2181");
 
         this.init();
     }
 
     protected void init() {
-
+        storerZooKeeperClient.register2Zk();
     }
 
     private OrderedExecutor createExecutor(
@@ -85,6 +88,21 @@ public class StorerServer extends StorerServiceGrpc.StorerServiceImplBase {
         }
     }
 
+    @Override
+    public void createSegment(CreateSegmentRequest request, StreamObserver<CreateSegmentResponse> responseObserver) {
+        Function<Status, CreateSegmentResponse> statusResponseCreator =
+                status -> CreateSegmentResponse.newBuilder().setStatus(status).build();
+        log.debug("receive a request to create a segment, id: {}", request.getSegmentId());
+        RequestContext ctx = createContext();
+
+        try {
+            this.writeOrderedExecutor.executeOrdered(ctx.getSegmentId(), new GrpcTask<>(ctx, request,
+                    TaskPlan.CREATE_SEGMENT_TASK_PLAN, responseObserver, statusResponseCreator));
+        } catch (Throwable t) {
+            writeResponse(ctx, request, null, responseObserver, t, statusResponseCreator);
+        }
+    }
+
     /**
      * Handle and write response to the {@link StreamObserver}.
      *
@@ -94,8 +112,8 @@ public class StorerServer extends StorerServiceGrpc.StorerServiceImplBase {
      * @param responseObserver {@link StreamObserver} to handle the response
      * @param t exception
      * @param errorResponseCreator {@link Function} to handle error
-     * @param <V>
-     * @param <T>
+     * @param <V> class of grpc request
+     * @param <T> class of grpc response
      */
     protected <V, T> void writeResponse(RequestContext context, V request, T response, StreamObserver<T> responseObserver,
                                         Throwable t, Function<Status, T> errorResponseCreator) {

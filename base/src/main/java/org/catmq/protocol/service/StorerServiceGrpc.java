@@ -46,6 +46,37 @@ public final class StorerServiceGrpc {
     return getSendMessage2StorerMethod;
   }
 
+  private static volatile io.grpc.MethodDescriptor<org.catmq.protocol.service.CreateSegmentRequest,
+      org.catmq.protocol.service.CreateSegmentResponse> getCreateSegmentMethod;
+
+  @io.grpc.stub.annotations.RpcMethod(
+      fullMethodName = SERVICE_NAME + '/' + "CreateSegment",
+      requestType = org.catmq.protocol.service.CreateSegmentRequest.class,
+      responseType = org.catmq.protocol.service.CreateSegmentResponse.class,
+      methodType = io.grpc.MethodDescriptor.MethodType.UNARY)
+  public static io.grpc.MethodDescriptor<org.catmq.protocol.service.CreateSegmentRequest,
+      org.catmq.protocol.service.CreateSegmentResponse> getCreateSegmentMethod() {
+    io.grpc.MethodDescriptor<org.catmq.protocol.service.CreateSegmentRequest, org.catmq.protocol.service.CreateSegmentResponse> getCreateSegmentMethod;
+    if ((getCreateSegmentMethod = StorerServiceGrpc.getCreateSegmentMethod) == null) {
+      synchronized (StorerServiceGrpc.class) {
+        if ((getCreateSegmentMethod = StorerServiceGrpc.getCreateSegmentMethod) == null) {
+          StorerServiceGrpc.getCreateSegmentMethod = getCreateSegmentMethod =
+              io.grpc.MethodDescriptor.<org.catmq.protocol.service.CreateSegmentRequest, org.catmq.protocol.service.CreateSegmentResponse>newBuilder()
+              .setType(io.grpc.MethodDescriptor.MethodType.UNARY)
+              .setFullMethodName(generateFullMethodName(SERVICE_NAME, "CreateSegment"))
+              .setSampledToLocalTracing(true)
+              .setRequestMarshaller(io.grpc.protobuf.ProtoUtils.marshaller(
+                  org.catmq.protocol.service.CreateSegmentRequest.getDefaultInstance()))
+              .setResponseMarshaller(io.grpc.protobuf.ProtoUtils.marshaller(
+                  org.catmq.protocol.service.CreateSegmentResponse.getDefaultInstance()))
+              .setSchemaDescriptor(new StorerServiceMethodDescriptorSupplier("CreateSegment"))
+              .build();
+        }
+      }
+    }
+    return getCreateSegmentMethod;
+  }
+
   /**
    * Creates a new async stub that supports all call types for the service
    */
@@ -101,6 +132,13 @@ public final class StorerServiceGrpc {
       io.grpc.stub.ServerCalls.asyncUnimplementedUnaryCall(getSendMessage2StorerMethod(), responseObserver);
     }
 
+    /**
+     */
+    public void createSegment(org.catmq.protocol.service.CreateSegmentRequest request,
+        io.grpc.stub.StreamObserver<org.catmq.protocol.service.CreateSegmentResponse> responseObserver) {
+      io.grpc.stub.ServerCalls.asyncUnimplementedUnaryCall(getCreateSegmentMethod(), responseObserver);
+    }
+
     @java.lang.Override public final io.grpc.ServerServiceDefinition bindService() {
       return io.grpc.ServerServiceDefinition.builder(getServiceDescriptor())
           .addMethod(
@@ -110,6 +148,13 @@ public final class StorerServiceGrpc {
                 org.catmq.protocol.service.SendMessage2StorerRequest,
                 org.catmq.protocol.service.SendMessage2StorerResponse>(
                   this, METHODID_SEND_MESSAGE2STORER)))
+          .addMethod(
+            getCreateSegmentMethod(),
+            io.grpc.stub.ServerCalls.asyncUnaryCall(
+              new MethodHandlers<
+                org.catmq.protocol.service.CreateSegmentRequest,
+                org.catmq.protocol.service.CreateSegmentResponse>(
+                  this, METHODID_CREATE_SEGMENT)))
           .build();
     }
   }
@@ -135,6 +180,14 @@ public final class StorerServiceGrpc {
       io.grpc.stub.ClientCalls.asyncUnaryCall(
           getChannel().newCall(getSendMessage2StorerMethod(), getCallOptions()), request, responseObserver);
     }
+
+    /**
+     */
+    public void createSegment(org.catmq.protocol.service.CreateSegmentRequest request,
+        io.grpc.stub.StreamObserver<org.catmq.protocol.service.CreateSegmentResponse> responseObserver) {
+      io.grpc.stub.ClientCalls.asyncUnaryCall(
+          getChannel().newCall(getCreateSegmentMethod(), getCallOptions()), request, responseObserver);
+    }
   }
 
   /**
@@ -156,6 +209,13 @@ public final class StorerServiceGrpc {
     public org.catmq.protocol.service.SendMessage2StorerResponse sendMessage2Storer(org.catmq.protocol.service.SendMessage2StorerRequest request) {
       return io.grpc.stub.ClientCalls.blockingUnaryCall(
           getChannel(), getSendMessage2StorerMethod(), getCallOptions(), request);
+    }
+
+    /**
+     */
+    public org.catmq.protocol.service.CreateSegmentResponse createSegment(org.catmq.protocol.service.CreateSegmentRequest request) {
+      return io.grpc.stub.ClientCalls.blockingUnaryCall(
+          getChannel(), getCreateSegmentMethod(), getCallOptions(), request);
     }
   }
 
@@ -180,9 +240,18 @@ public final class StorerServiceGrpc {
       return io.grpc.stub.ClientCalls.futureUnaryCall(
           getChannel().newCall(getSendMessage2StorerMethod(), getCallOptions()), request);
     }
+
+    /**
+     */
+    public com.google.common.util.concurrent.ListenableFuture<org.catmq.protocol.service.CreateSegmentResponse> createSegment(
+        org.catmq.protocol.service.CreateSegmentRequest request) {
+      return io.grpc.stub.ClientCalls.futureUnaryCall(
+          getChannel().newCall(getCreateSegmentMethod(), getCallOptions()), request);
+    }
   }
 
   private static final int METHODID_SEND_MESSAGE2STORER = 0;
+  private static final int METHODID_CREATE_SEGMENT = 1;
 
   private static final class MethodHandlers<Req, Resp> implements
       io.grpc.stub.ServerCalls.UnaryMethod<Req, Resp>,
@@ -204,6 +273,10 @@ public final class StorerServiceGrpc {
         case METHODID_SEND_MESSAGE2STORER:
           serviceImpl.sendMessage2Storer((org.catmq.protocol.service.SendMessage2StorerRequest) request,
               (io.grpc.stub.StreamObserver<org.catmq.protocol.service.SendMessage2StorerResponse>) responseObserver);
+          break;
+        case METHODID_CREATE_SEGMENT:
+          serviceImpl.createSegment((org.catmq.protocol.service.CreateSegmentRequest) request,
+              (io.grpc.stub.StreamObserver<org.catmq.protocol.service.CreateSegmentResponse>) responseObserver);
           break;
         default:
           throw new AssertionError();
@@ -267,6 +340,7 @@ public final class StorerServiceGrpc {
           serviceDescriptor = result = io.grpc.ServiceDescriptor.newBuilder(SERVICE_NAME)
               .setSchemaDescriptor(new StorerServiceFileDescriptorSupplier())
               .addMethod(getSendMessage2StorerMethod())
+              .addMethod(getCreateSegmentMethod())
               .build();
         }
       }

@@ -41,4 +41,7 @@ public class ConfigConstant {
     public static final String SEGMENT_STORAGE_PATH = "segment.storagePath";
     public static final String SEGMENT_MAX_FILE_SIZE = "segment.maxFileSize";
     public static final String SEGMENT_INDEX_STORAGE_PATH = "segment.indexStoragePath";
+
+    public static final String MAX_SEGMENT_ENTRY_NUM = "segment.maxSegmentEntryNum";
+
 }

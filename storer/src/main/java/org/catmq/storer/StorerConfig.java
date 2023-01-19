@@ -12,7 +12,8 @@ import java.util.Properties;
 
 import static org.catmq.constant.FileConstant.MB;
 import static org.catmq.util.ConfigUtil.PROCESSOR_NUMBER;
-
+@Getter
+@Setter
 public class StorerConfig {
 
     public static StorerConfig STORER_CONFIG;
@@ -29,31 +30,21 @@ public class StorerConfig {
     public static final String READ_ORDERED_EXECUTOR_NAME = "readOrderedExecutor";
     private static final String CONFIG_PATH = "/storer.properties";
 
-    @Getter@Setter
+
     private String storerName;
-    @Getter@Setter
     private String storerIp;
-    @Getter@Setter
     private int storerPort;
 
-    @Getter@Setter
     private int writeOrderedExecutorThreadNums;
-    @Getter@Setter
     private int readOrderedExecutorThreadNums;
-    @Getter@Setter
     private boolean needWarmMappedFile;
-    @Getter@Setter
     private int flushMessageEntryQueueCapacity;
-    @Getter@Setter
     private String messageLogStoragePath;
-    @Getter@Setter
     private int messageLogMaxFileSize;
-    @Getter@Setter
     private String segmentStoragePath;
-    @Getter@Setter
     private long segmentMaxFileSize;
-    @Getter@Setter
     private String segmentIndexStoragePath;
+    private long maxSegmentEntryNum;
 
     public void readConfig() {
         InputStream stream = this.getClass().getResourceAsStream(CONFIG_PATH);
@@ -81,5 +72,6 @@ public class StorerConfig {
         segmentMaxFileSize = Long.parseLong(properties.getProperty(ConfigConstant.SEGMENT_MAX_FILE_SIZE,
                 String.valueOf(0.25 * PlatformDependent.estimateMaxDirectMemory())));
         segmentIndexStoragePath = properties.getProperty(ConfigConstant.SEGMENT_INDEX_STORAGE_PATH, "storer/src/index");
+        maxSegmentEntryNum = Long.parseLong(properties.getProperty(ConfigConstant.MAX_SEGMENT_ENTRY_NUM, String.valueOf(100000)));
     }
 }

@@ -16,4 +16,8 @@ public class ZkConstant {
     public static final String ZK_DEFAULT_ADDRESS = "127.0.0.1:2181";
 
 
+    public static final String STORER_ROOT_PATH = "/storer";
+
+    public static final String TMP_STORER_PATH = "/storer/tmp";
+
 }
