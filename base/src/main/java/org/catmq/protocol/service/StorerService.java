@@ -19,6 +19,14 @@ public  abstract class StorerService
         org.catmq.protocol.service.SendMessage2StorerRequest request,
         com.google.protobuf.RpcCallback<org.catmq.protocol.service.SendMessage2StorerResponse> done);
 
+    /**
+     * <code>rpc CreateSegment(.CreateSegmentRequest) returns (.CreateSegmentResponse);</code>
+     */
+    public abstract void createSegment(
+        com.google.protobuf.RpcController controller,
+        org.catmq.protocol.service.CreateSegmentRequest request,
+        com.google.protobuf.RpcCallback<org.catmq.protocol.service.CreateSegmentResponse> done);
+
   }
 
   public static com.google.protobuf.Service newReflectiveService(
@@ -30,6 +38,14 @@ public  abstract class StorerService
           org.catmq.protocol.service.SendMessage2StorerRequest request,
           com.google.protobuf.RpcCallback<org.catmq.protocol.service.SendMessage2StorerResponse> done) {
         impl.sendMessage2Storer(controller, request, done);
+      }
+
+      @java.lang.Override
+      public  void createSegment(
+          com.google.protobuf.RpcController controller,
+          org.catmq.protocol.service.CreateSegmentRequest request,
+          com.google.protobuf.RpcCallback<org.catmq.protocol.service.CreateSegmentResponse> done) {
+        impl.createSegment(controller, request, done);
       }
 
     };
@@ -56,6 +72,8 @@ public  abstract class StorerService
         switch(method.getIndex()) {
           case 0:
             return impl.sendMessage2Storer(controller, (org.catmq.protocol.service.SendMessage2StorerRequest)request);
+          case 1:
+            return impl.createSegment(controller, (org.catmq.protocol.service.CreateSegmentRequest)request);
           default:
             throw new java.lang.AssertionError("Can't get here.");
         }
@@ -72,6 +90,8 @@ public  abstract class StorerService
         switch(method.getIndex()) {
           case 0:
             return org.catmq.protocol.service.SendMessage2StorerRequest.getDefaultInstance();
+          case 1:
+            return org.catmq.protocol.service.CreateSegmentRequest.getDefaultInstance();
           default:
             throw new java.lang.AssertionError("Can't get here.");
         }
@@ -88,6 +108,8 @@ public  abstract class StorerService
         switch(method.getIndex()) {
           case 0:
             return org.catmq.protocol.service.SendMessage2StorerResponse.getDefaultInstance();
+          case 1:
+            return org.catmq.protocol.service.CreateSegmentResponse.getDefaultInstance();
           default:
             throw new java.lang.AssertionError("Can't get here.");
         }
@@ -103,6 +125,14 @@ public  abstract class StorerService
       com.google.protobuf.RpcController controller,
       org.catmq.protocol.service.SendMessage2StorerRequest request,
       com.google.protobuf.RpcCallback<org.catmq.protocol.service.SendMessage2StorerResponse> done);
+
+  /**
+   * <code>rpc CreateSegment(.CreateSegmentRequest) returns (.CreateSegmentResponse);</code>
+   */
+  public abstract void createSegment(
+      com.google.protobuf.RpcController controller,
+      org.catmq.protocol.service.CreateSegmentRequest request,
+      com.google.protobuf.RpcCallback<org.catmq.protocol.service.CreateSegmentResponse> done);
 
   public static final
       com.google.protobuf.Descriptors.ServiceDescriptor
@@ -131,6 +161,11 @@ public  abstract class StorerService
           com.google.protobuf.RpcUtil.<org.catmq.protocol.service.SendMessage2StorerResponse>specializeCallback(
             done));
         return;
+      case 1:
+        this.createSegment(controller, (org.catmq.protocol.service.CreateSegmentRequest)request,
+          com.google.protobuf.RpcUtil.<org.catmq.protocol.service.CreateSegmentResponse>specializeCallback(
+            done));
+        return;
       default:
         throw new java.lang.AssertionError("Can't get here.");
     }
@@ -147,6 +182,8 @@ public  abstract class StorerService
     switch(method.getIndex()) {
       case 0:
         return org.catmq.protocol.service.SendMessage2StorerRequest.getDefaultInstance();
+      case 1:
+        return org.catmq.protocol.service.CreateSegmentRequest.getDefaultInstance();
       default:
         throw new java.lang.AssertionError("Can't get here.");
     }
@@ -163,6 +200,8 @@ public  abstract class StorerService
     switch(method.getIndex()) {
       case 0:
         return org.catmq.protocol.service.SendMessage2StorerResponse.getDefaultInstance();
+      case 1:
+        return org.catmq.protocol.service.CreateSegmentResponse.getDefaultInstance();
       default:
         throw new java.lang.AssertionError("Can't get here.");
     }
@@ -198,6 +237,21 @@ public  abstract class StorerService
           org.catmq.protocol.service.SendMessage2StorerResponse.class,
           org.catmq.protocol.service.SendMessage2StorerResponse.getDefaultInstance()));
     }
+
+    public  void createSegment(
+        com.google.protobuf.RpcController controller,
+        org.catmq.protocol.service.CreateSegmentRequest request,
+        com.google.protobuf.RpcCallback<org.catmq.protocol.service.CreateSegmentResponse> done) {
+      channel.callMethod(
+        getDescriptor().getMethods().get(1),
+        controller,
+        request,
+        org.catmq.protocol.service.CreateSegmentResponse.getDefaultInstance(),
+        com.google.protobuf.RpcUtil.generalizeCallback(
+          done,
+          org.catmq.protocol.service.CreateSegmentResponse.class,
+          org.catmq.protocol.service.CreateSegmentResponse.getDefaultInstance()));
+    }
   }
 
   public static BlockingInterface newBlockingStub(
@@ -209,6 +263,11 @@ public  abstract class StorerService
     public org.catmq.protocol.service.SendMessage2StorerResponse sendMessage2Storer(
         com.google.protobuf.RpcController controller,
         org.catmq.protocol.service.SendMessage2StorerRequest request)
+        throws com.google.protobuf.ServiceException;
+
+    public org.catmq.protocol.service.CreateSegmentResponse createSegment(
+        com.google.protobuf.RpcController controller,
+        org.catmq.protocol.service.CreateSegmentRequest request)
         throws com.google.protobuf.ServiceException;
   }
 
@@ -228,6 +287,18 @@ public  abstract class StorerService
         controller,
         request,
         org.catmq.protocol.service.SendMessage2StorerResponse.getDefaultInstance());
+    }
+
+
+    public org.catmq.protocol.service.CreateSegmentResponse createSegment(
+        com.google.protobuf.RpcController controller,
+        org.catmq.protocol.service.CreateSegmentRequest request)
+        throws com.google.protobuf.ServiceException {
+      return (org.catmq.protocol.service.CreateSegmentResponse) channel.callBlockingMethod(
+        getDescriptor().getMethods().get(1),
+        controller,
+        request,
+        org.catmq.protocol.service.CreateSegmentResponse.getDefaultInstance());
     }
 
   }

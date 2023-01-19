@@ -56,7 +56,7 @@ public class FlushMessageEntryService extends ServiceThread {
                     continue;
                 }
 
-                MessageLog messageLog = Storer.STORER.messageLogStorage.getLatestMessageLog();
+                MessageLog messageLog = Storer.STORER.getMessageLogStorage().getLatestMessageLog();
                 RecyclableArrayList<MessageEntry> currentMessageEntries = entryListRecycler.newInstance();
                 // Move all messageEntry in the queue to a array.
                 FlushMessageEntryQueue.drainTo(currentMessageEntries);
@@ -75,7 +75,7 @@ public class FlushMessageEntryService extends ServiceThread {
                         // Unlock the full mapped file.
                         messageLog.unlockMappedFile();
                         byteBuf.clear();
-                        messageLog = Storer.STORER.messageLogStorage.getLastMessageLog(BEGIN_OFFSET);
+                        messageLog = Storer.STORER.getMessageLogStorage().getLastMessageLog(BEGIN_OFFSET);
                         messageLog.appendMessageEntry(msgBytes, byteBuf, nextBeginIndex, msgLength);
                     }
                 }
