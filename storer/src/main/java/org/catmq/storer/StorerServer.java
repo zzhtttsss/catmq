@@ -148,9 +148,6 @@ public class StorerServer extends StorerServiceGrpc.StorerServiceImplBase {
                 .setSegmentId(getValueFromMetadata(headers, InterceptorConstants.SEGMENT_ID))
                 .setLocalAddress(getValueFromMetadata(headers, InterceptorConstants.LOCAL_ADDRESS))
                 .setRemoteAddress(getValueFromMetadata(headers, InterceptorConstants.REMOTE_ADDRESS))
-                .setClientID(getValueFromMetadata(headers, InterceptorConstants.CLIENT_ID))
-                .setLanguage(getValueFromMetadata(headers, InterceptorConstants.LANGUAGE))
-                .setClientVersion(getValueFromMetadata(headers, InterceptorConstants.CLIENT_VERSION))
                 .setAction(getValueFromMetadata(headers, InterceptorConstants.RPC_NAME));
         return context;
     }

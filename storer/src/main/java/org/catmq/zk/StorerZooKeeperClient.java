@@ -20,7 +20,6 @@ public class StorerZooKeeperClient extends BaseZookeeper {
     public StorerZooKeeperClient(String zkAddress) {
         super(zkAddress);
         this.storerPath = "/storer/" + STORER.getStorerInfo().getStorerId();
-        this.client.start();
     }
 
     @Override
@@ -32,10 +31,6 @@ public class StorerZooKeeperClient extends BaseZookeeper {
         }
     }
 
-    @Override
-    protected String getOptimalConnection() {
-        return null;
-    }
 
     @Override
     protected void close() {
