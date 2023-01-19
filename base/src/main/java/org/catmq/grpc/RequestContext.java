@@ -90,11 +90,6 @@ public class RequestContext {
         return this.getVal(ContextVariable.ACTION);
     }
 
-    public void print() {
-        this.value.forEach((n, v) -> {
-            System.out.println(n + " : " + v);
-        });
-    }
 
     public long getSegmentId() {
         return Long.parseLong(this.getVal(ContextVariable.SEGMENT_ID));
