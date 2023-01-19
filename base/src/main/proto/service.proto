@@ -28,8 +28,23 @@ message GetMessageFromBrokerResponse {
   Status status = 3;
 }
 
+message SendMessage2StorerRequest {
+  bytes body = 1;
+}
+
+message SendMessage2StorerResponse {
+  bool ack = 1;
+  string res = 2;
+  Status status = 3;
+}
+
 service BrokerService{
   rpc SendMessage2Broker (SendMessage2BrokerRequest) returns (SendMessage2BrokerResponse) {}
   rpc GetMessageFromBroker (GetMessageFromBrokerRequest) returns (GetMessageFromBrokerResponse) {}
+
 }
 
+service StorerService{
+  rpc SendMessage2Storer (SendMessage2StorerRequest) returns (SendMessage2StorerResponse) {}
+
+}
