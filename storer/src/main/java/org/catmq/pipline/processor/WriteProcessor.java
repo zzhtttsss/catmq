@@ -1,10 +1,11 @@
 package org.catmq.pipline.processor;
 
 import lombok.extern.slf4j.Slf4j;
+import org.catmq.common.MessageEntry;
 import org.catmq.grpc.RequestContext;
 import org.catmq.pipline.Processor;
-import org.catmq.protocol.service.*;
-import org.catmq.storage.MessageEntry;
+import org.catmq.protocol.service.SendMessage2StorerRequest;
+import org.catmq.protocol.service.SendMessage2StorerResponse;
 import org.catmq.storer.Storer;
 
 @Slf4j
@@ -13,9 +14,11 @@ public class WriteProcessor implements Processor<SendMessage2StorerRequest, Send
     public enum WriteProcessorEnum {
         INSTANCE;
         private final WriteProcessor writeProcessor;
+
         WriteProcessorEnum() {
             writeProcessor = new WriteProcessor();
         }
+
         public WriteProcessor getInstance() {
             return writeProcessor;
         }
@@ -24,7 +27,10 @@ public class WriteProcessor implements Processor<SendMessage2StorerRequest, Send
     @Override
     public SendMessage2StorerResponse process(RequestContext ctx, SendMessage2StorerRequest request) {
         Storer storer = Storer.STORER;
-        MessageEntry messageEntry = new MessageEntry(ctx.getEntryId(), ctx.getSegmentId(), request.getBody().toByteArray());
+        long segmentId = ctx.getSegmentId();
+        long entryId = ctx.getEntryId();
+        log.info("write {}@{}", segmentId, entryId);
+        MessageEntry messageEntry = new MessageEntry(segmentId, entryId, request.getBody().toByteArray());
         storer.getSegmentStorage().appendEntry2WriteCache(messageEntry);
         storer.getFlushMessageEntryService().putMessageEntry2Queue(messageEntry);
 //        try {

@@ -4,13 +4,13 @@ import io.grpc.Context;
 import io.grpc.Metadata;
 import io.grpc.stub.StreamObserver;
 import lombok.extern.slf4j.Slf4j;
-import org.catmq.pipline.Finisher;
-import org.catmq.pipline.Preparer;
-import org.catmq.pipline.TaskPlan;
 import org.catmq.grpc.InterceptorConstants;
 import org.catmq.grpc.RequestContext;
 import org.catmq.grpc.ResponseBuilder;
 import org.catmq.grpc.ResponseWriter;
+import org.catmq.pipline.Finisher;
+import org.catmq.pipline.Preparer;
+import org.catmq.pipline.TaskPlan;
 import org.catmq.protocol.definition.Code;
 import org.catmq.protocol.definition.Status;
 import org.catmq.protocol.service.*;
@@ -42,10 +42,10 @@ public class StorerServer extends StorerServiceGrpc.StorerServiceImplBase {
 
 
     public StorerServer() {
-        writeOrderedExecutor = createExecutor(STORER_CONFIG.getWriteOrderedExecutorThreadNums(), WRITE_ORDERED_EXECUTOR_NAME,
-                NO_TASK_LIMIT);
-        readThreadPoolExecutor = createExecutor(STORER_CONFIG.getReadOrderedExecutorThreadNums(), READ_ORDERED_EXECUTOR_NAME,
-                NO_TASK_LIMIT);
+        writeOrderedExecutor = createExecutor(STORER_CONFIG.getWriteOrderedExecutorThreadNums(),
+                WRITE_ORDERED_EXECUTOR_NAME, NO_TASK_LIMIT);
+        readThreadPoolExecutor = createExecutor(STORER_CONFIG.getReadOrderedExecutorThreadNums(),
+                READ_ORDERED_EXECUTOR_NAME, NO_TASK_LIMIT);
         storerZooKeeperClient = new StorerZooKeeperClient("127.0.0.1:2181");
 
         this.init();
@@ -55,10 +55,7 @@ public class StorerServer extends StorerServiceGrpc.StorerServiceImplBase {
         storerZooKeeperClient.register2Zk();
     }
 
-    private OrderedExecutor createExecutor(
-            int numThreads,
-            String nameFormat,
-            int maxTasksInQueue) {
+    private OrderedExecutor createExecutor(int numThreads, String nameFormat, int maxTasksInQueue) {
         if (numThreads <= 0) {
             return null;
         } else {
@@ -103,17 +100,32 @@ public class StorerServer extends StorerServiceGrpc.StorerServiceImplBase {
         }
     }
 
+    @Override
+    public void getMessageFromStorer(GetMessageFromStorerRequest request, StreamObserver<GetMessageFromStorerResponse> responseObserver) {
+        Function<Status, GetMessageFromStorerResponse> statusResponseCreator =
+                status -> GetMessageFromStorerResponse.newBuilder().setStatus(status).build();
+        log.debug("receive a request to get message from storer, segmentId: {}", request.getSegmentId());
+        RequestContext ctx = createContext();
+
+        try {
+            this.readThreadPoolExecutor.executeOrdered(request.getSegmentId(), new GrpcTask<>(ctx, request,
+                    TaskPlan.GET_MESSAGE_FROM_STORER_TASK_PLAN, responseObserver, statusResponseCreator));
+        } catch (Throwable t) {
+            writeResponse(ctx, request, null, responseObserver, t, statusResponseCreator);
+        }
+    }
+
     /**
      * Handle and write response to the {@link StreamObserver}.
      *
-     * @param context the context of the request
-     * @param request the grpc request
-     * @param response the grpc response
-     * @param responseObserver {@link StreamObserver} to handle the response
-     * @param t exception
+     * @param context              the context of the request
+     * @param request              the grpc request
+     * @param response             the grpc response
+     * @param responseObserver     {@link StreamObserver} to handle the response
+     * @param t                    exception
      * @param errorResponseCreator {@link Function} to handle error
-     * @param <V> class of grpc request
-     * @param <T> class of grpc response
+     * @param <V>                  class of grpc request
+     * @param <T>                  class of grpc response
      */
     protected <V, T> void writeResponse(RequestContext context, V request, T response, StreamObserver<T> responseObserver,
                                         Throwable t, Function<Status, T> errorResponseCreator) {
@@ -185,12 +197,12 @@ public class StorerServer extends StorerServiceGrpc.StorerServiceImplBase {
         /**
          * Process the grpc request like a pipeline.
          *
-         * @param ctx the context of the grpc request
-         * @param request the grpc request
+         * @param ctx      the context of the grpc request
+         * @param request  the grpc request
          * @param taskPlan the plan of the pipeline
          * @return {@link CompletableFuture} with response to be handled
          */
-        public CompletableFuture<T> execute(RequestContext ctx, V request, TaskPlan<V, T> taskPlan){
+        public CompletableFuture<T> execute(RequestContext ctx, V request, TaskPlan<V, T> taskPlan) {
             CompletableFuture<T> future = new CompletableFuture<>();
             try {
                 for (Preparer p : taskPlan.preparers()) {

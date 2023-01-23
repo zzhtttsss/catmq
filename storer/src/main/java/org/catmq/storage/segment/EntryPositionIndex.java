@@ -1,13 +1,12 @@
 package org.catmq.storage.segment;
 
 import lombok.extern.slf4j.Slf4j;
+import org.catmq.storage.segment.KeyValueStorage.Batch;
+import org.catmq.util.ByteUtil;
 
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Map.Entry;
-
-import org.catmq.storage.segment.KeyValueStorage.*;
-import org.catmq.util.ByteUtil;
 
 /**
  * Manage the index of all message.
@@ -15,13 +14,13 @@ import org.catmq.util.ByteUtil;
 @Slf4j
 public class EntryPositionIndex implements Closeable {
 
-    private static final String subPath = "positions";
+    private static final String SUB_PATH = "positions";
 
     private KeyValueStorage positionsDb;
 
     public EntryPositionIndex(KeyValueStorageFactory storageFactory, String basePath) {
         try {
-            positionsDb = storageFactory.newKeyValueStorage(basePath, subPath,
+            positionsDb = storageFactory.newKeyValueStorage(basePath, SUB_PATH,
                     KeyValueStorageFactory.DbConfigType.EntryPosition);
         } catch (IOException e) {
             positionsDb = null;
@@ -91,10 +90,10 @@ public class EntryPositionIndex implements Closeable {
     /**
      * Add an index entry into the batch.
      *
-     * @param batch batch manager
+     * @param batch     batch manager
      * @param segmentId id of segment
-     * @param entryId id of message entry
-     * @param position offset in the segment file.
+     * @param entryId   id of message entry
+     * @param position  offset in the segment file.
      * @throws IOException
      */
     public void addPosition(Batch batch, long segmentId, long entryId, long position) throws IOException {

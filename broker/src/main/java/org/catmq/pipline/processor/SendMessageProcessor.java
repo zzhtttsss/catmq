@@ -19,7 +19,7 @@ public class SendMessageProcessor implements Processor<SendMessage2BrokerRequest
     public SendMessage2BrokerResponse process(RequestContext ctx, SendMessage2BrokerRequest request) {
         TopicName topicName = TopicName.get(request.getTopic());
         Topic topic = topicService.getTopic(topicName.getCompleteTopicName());
-        topic.createSubscription(topicName.getCompleteTopicName());
+        //topic.createSubscription(topicName.getCompleteTopicName());
         topic.putMessage(request.getMessage());
         return SendMessage2BrokerResponse
                 .newBuilder()

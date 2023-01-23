@@ -2,7 +2,7 @@ package org.catmq.storage.segment;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.catmq.storage.MessageEntry;
+import org.catmq.common.MessageEntry;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;

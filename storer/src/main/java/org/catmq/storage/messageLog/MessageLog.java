@@ -5,6 +5,7 @@ import com.sun.jna.Pointer;
 import io.netty.buffer.ByteBuf;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.catmq.common.MessageEntry;
 import org.catmq.util.CUtil;
 import sun.nio.ch.DirectBuffer;
 
@@ -16,7 +17,6 @@ import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
-import org.catmq.storage.MessageEntry;
 
 import static org.catmq.constant.FileConstant.RANDOM_ACCESS_FILE_READ_WRITE_MODE;
 
@@ -77,9 +77,9 @@ public class MessageLog {
      * Write the specified part of a {@link MessageEntry} to the buffer.
      *
      * @param messageBytes byte array of a {@link MessageEntry}
-     * @param byteBuf where the {@link MessageEntry} be written to
-     * @param beginIndex the beginning index
-     * @param endIndex the end index
+     * @param byteBuf      where the {@link MessageEntry} be written to
+     * @param beginIndex   the beginning index
+     * @param endIndex     the end index
      * @return The length of bytes that could not be written because current {@link MessageLog} is full.
      */
     public int appendMessageEntry(byte[] messageBytes, ByteBuf byteBuf, int beginIndex, int endIndex) {
@@ -139,7 +139,7 @@ public class MessageLog {
         log.debug("Mapped file warm-up done, force to disk, mappedFile={}, costTime={}",
                 this.getFileName(), System.currentTimeMillis() - beginTime);
         mappedByteBuffer.force();
-        this.mlock();
+        //this.mlock();
     }
 
     public boolean isFull() {
@@ -154,7 +154,7 @@ public class MessageLog {
         setWritePosition(0);
     }
 
-    public void unlockMappedFile(){
+    public void unlockMappedFile() {
         munlock();
     }
 

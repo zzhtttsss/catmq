@@ -1,7 +1,6 @@
 package org.catmq.storer;
 
 import io.netty.util.internal.PlatformDependent;
-import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import org.catmq.constant.ConfigConstant;
@@ -12,6 +11,7 @@ import java.util.Properties;
 
 import static org.catmq.constant.FileConstant.MB;
 import static org.catmq.util.ConfigUtil.PROCESSOR_NUMBER;
+
 @Getter
 @Setter
 public class StorerConfig {
@@ -46,6 +46,10 @@ public class StorerConfig {
     private String segmentIndexStoragePath;
     private long maxSegmentEntryNum;
 
+    private long readCacheExpireTime;
+
+    private long readCacheCleanUpInterval;
+
     public void readConfig() {
         InputStream stream = this.getClass().getResourceAsStream(CONFIG_PATH);
         if (stream == null) {
@@ -62,7 +66,7 @@ public class StorerConfig {
         storerPort = Integer.parseInt(properties.getProperty(ConfigConstant.STORER_PORT, "4321"));
         writeOrderedExecutorThreadNums = Integer.parseInt(properties.getProperty(ConfigConstant.WRITE_ORDERED_EXECUTOR_THREAD_NUMS, "1"));
         readOrderedExecutorThreadNums = Integer.parseInt(properties.getProperty(ConfigConstant.READ_ORDERED_EXECUTOR_THREAD_NUMS,
-                        String.valueOf(PROCESSOR_NUMBER)));
+                String.valueOf(PROCESSOR_NUMBER)));
         needWarmMappedFile = Boolean.parseBoolean(properties.getProperty(ConfigConstant.NEED_WARM_MAPPED_FILE, "false"));
         flushMessageEntryQueueCapacity = Integer.parseInt(properties.getProperty(ConfigConstant.FLUSH_MESSAGE_ENTRY_QUEUE_CAPACITY, "100000"));
         messageLogStoragePath = properties.getProperty(ConfigConstant.MESSAGE_LOG_STORAGE_PATH, "storer/src/messageLog");
@@ -73,5 +77,7 @@ public class StorerConfig {
                 String.valueOf(0.25 * PlatformDependent.estimateMaxDirectMemory())));
         segmentIndexStoragePath = properties.getProperty(ConfigConstant.SEGMENT_INDEX_STORAGE_PATH, "storer/src/index");
         maxSegmentEntryNum = Long.parseLong(properties.getProperty(ConfigConstant.MAX_SEGMENT_ENTRY_NUM, String.valueOf(100000)));
+        readCacheExpireTime = Long.parseLong(properties.getProperty(ConfigConstant.READ_CACHE_EXPIRE_TIME, String.valueOf(5000)));
+        readCacheCleanUpInterval = Long.parseLong(properties.getProperty(ConfigConstant.READ_CACHE_CLEAN_UP_INTERVAL, String.valueOf(60000)));
     }
 }
