@@ -20,7 +20,7 @@ public class NonPersistentTopic extends BaseTopic implements Topic {
     private final ClientManageService clientManageService;
 
     @Override
-    public void putMessage(String message) {
+    public void putMessage(byte[] message) {
         subscriptions.forEach((name, subscription) -> {
             subscription.getDispatcher().ifPresent(dispatcher -> {
                 if (dispatcher instanceof SingleActiveConsumerNonPersistentDispatcher singleActiveConsumer) {
@@ -44,7 +44,7 @@ public class NonPersistentTopic extends BaseTopic implements Topic {
     }
 
     @Override
-    public Subscription createSubscription(String subscriptionName) {
+    public Subscription getOrCreateSubscription(String subscriptionName) {
         log.info("[{}] topic created new subscription [{}]", topicName, subscriptionName);
         return this.subscriptions.computeIfAbsent(subscriptionName,
                 name -> new NonPersistentSubscription(this, subscriptionName));

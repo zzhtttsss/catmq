@@ -1,21 +1,35 @@
 package org.catmq.broker;
 
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.curator.framework.CuratorFramework;
+import org.catmq.zk.ZkUtil;
+
+import static org.catmq.broker.BrokerConfig.BROKER_CONFIG;
 
 /**
  * Broker with every service
  */
+@Slf4j
+@Getter
 public class Broker {
-  
 
-    public enum BrokerEnum {
-        INSTANCE;
-        @Getter
-        private Broker broker;
+    private BrokerInfo brokerInfo;
 
-        BrokerEnum() {
-            broker = new Broker();
-        }
+
+    public static final Broker BROKER;
+
+    static {
+        BROKER = new Broker();
+    }
+
+
+    private Broker() {
+
+    }
+
+    public void init() {
+        this.brokerInfo = new BrokerInfo(BROKER_CONFIG);
     }
 }
 

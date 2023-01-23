@@ -126,6 +126,6 @@ public class BrokerZooKeeper extends BaseZookeeper {
     public BrokerZooKeeper(String host, BrokerServer broker) {
         super(host);
         this.broker = broker;
-        this.brokerPath = String.format("/broker/%s", this.broker.brokerInfo.getBrokerName());
+        this.brokerPath = String.format("/broker/%s", this.broker.brokerInfo.getBrokerId());
     }
 }

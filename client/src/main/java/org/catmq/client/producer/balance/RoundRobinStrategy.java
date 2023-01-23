@@ -1,6 +1,7 @@
 package org.catmq.client.producer.balance;
 
 
+import org.apache.curator.framework.CuratorFramework;
 import org.catmq.thread.ThreadFactoryWithIndex;
 
 import java.util.ArrayList;
@@ -32,7 +33,7 @@ public class RoundRobinStrategy implements LoadBalance {
     }
 
     @Override
-    public Optional<String> selectBroker(String zkAddress) {
+    public Optional<String[]> selectBroker(CuratorFramework client, int num) {
         return Optional.empty();
     }
 

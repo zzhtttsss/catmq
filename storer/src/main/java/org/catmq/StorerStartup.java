@@ -26,8 +26,8 @@ public class StorerStartup {
     private static final int WAIT_TIMEOUT = 30;
 
     public static void start() throws IOException {
-        STORER.init();
         int port = STORER_CONFIG.getStorerPort();
+        STORER.init();
         server = Grpc.newServerBuilderForPort(port, InsecureServerCredentials.create())
                 .addService(new StorerServer())
                 .addService(ChannelzService.newInstance(100))

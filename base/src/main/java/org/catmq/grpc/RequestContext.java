@@ -89,6 +89,15 @@ public class RequestContext {
         return this.getVal(ContextVariable.ACTION);
     }
 
+    public String getTenantId() {
+        return this.getVal(ContextVariable.TENANT_ID);
+    }
+
+    public RequestContext setTenantId(String tenantId) {
+        this.withVal(ContextVariable.TENANT_ID, tenantId);
+        return this;
+    }
+
     public long getSegmentId() {
         return Long.parseLong(this.getVal(ContextVariable.SEGMENT_ID));
     }

@@ -7,11 +7,11 @@ public interface Topic {
      *
      * @param message message
      */
-    void putMessage(String message);
+    void putMessage(byte[] message);
 
     void subscribe(String subscriptionName, long consumerId);
 
-    Subscription createSubscription(String subscriptionName);
+    Subscription getOrCreateSubscription(String subscriptionName);
 
     String getTopicName();
     

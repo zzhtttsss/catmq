@@ -1,15 +1,17 @@
 package org.catmq.pipline.processor;
 
+import com.google.protobuf.ByteString;
 import org.catmq.broker.common.Consumer;
 import org.catmq.broker.service.ClientManageService;
 import org.catmq.broker.service.TopicService;
 import org.catmq.broker.topic.Topic;
-import org.catmq.broker.topic.TopicName;
+import org.catmq.common.TopicDetail;
 import org.catmq.grpc.RequestContext;
 import org.catmq.pipline.Processor;
 import org.catmq.protocol.service.GetMessageFromBrokerRequest;
 import org.catmq.protocol.service.GetMessageFromBrokerResponse;
 
+import java.util.Arrays;
 import java.util.Optional;
 
 public class GetMessageProcessor implements Processor<GetMessageFromBrokerRequest, GetMessageFromBrokerResponse> {
@@ -21,18 +23,19 @@ public class GetMessageProcessor implements Processor<GetMessageFromBrokerReques
 
     @Override
     public GetMessageFromBrokerResponse process(RequestContext ctx, GetMessageFromBrokerRequest request) {
-        TopicName topicName = TopicName.get(request.getTopic());
-        Topic topic = topicService.getTopic(topicName.getCompleteTopicName());
-        if (!topic.isSubscribe(topicName.getCompleteTopicName(), request.getConsumerId())) {
-            topic.subscribe(topicName.getCompleteTopicName(), request.getConsumerId());
+        TopicDetail topicDetail = TopicDetail.get(request.getTopic());
+        Topic topic = topicService.getTopic(topicDetail.getCompleteTopicName());
+        if (!topic.isSubscribe(topicDetail.getCompleteTopicName(), request.getConsumerId())) {
+            topic.subscribe(topicDetail.getCompleteTopicName(), request.getConsumerId());
         }
         Consumer consumer = clientManageService.getConsumer(request.getConsumerId());
-        Optional<String> message = consumer.getMessage();
+        Optional<byte[]> message = consumer.getMessage();
         return message
                 .map(s -> GetMessageFromBrokerResponse
                         .newBuilder()
                         .setAck(true)
-                        .setRes(s)
+                        .setRes(Arrays.toString(s))
+                        .setMessage(ByteString.copyFrom(s))
                         .build())
                 .orElseGet(() -> GetMessageFromBrokerResponse
                         .newBuilder()

@@ -58,7 +58,7 @@ public class FlushMessageEntryService extends ServiceThread {
 
                 MessageLog messageLog = Storer.STORER.getMessageLogStorage().getLatestMessageLog();
                 RecyclableArrayList<MessageEntry> currentMessageEntries = entryListRecycler.newInstance();
-                // Move all messageEntry in the queue to a array.
+                // Move all messageEntry in the queue to an array.
                 FlushMessageEntryQueue.drainTo(currentMessageEntries);
 
                 ByteBuf byteBuf = Unpooled.directBuffer();

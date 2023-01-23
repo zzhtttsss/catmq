@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.catmq.constant.ConfigConstant;
 import org.catmq.constant.ZkConstant;
+import org.catmq.zk.ZkIdGenerator;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -16,10 +17,15 @@ import static org.catmq.util.ConfigUtil.PROCESSOR_NUMBER;
 @Getter
 public class BrokerConfig {
 
-    private String brokerId = UUID.randomUUID().toString();
+    public static final BrokerConfig BROKER_CONFIG;
+
+    static {
+        BROKER_CONFIG = new BrokerConfig();
+    }
+
+    private long brokerId;
     private String brokerName;
     private String brokerIp;
-
     private String zkAddress;
     private int brokerPort = 5432;
     private int grpcProducerThreadQueueCapacity = 10000;
@@ -43,22 +49,5 @@ public class BrokerConfig {
         grpcProducerThreadQueueCapacity = Integer.parseInt(properties.getProperty(ConfigConstant.GRPC_PRODUCER_THREAD_QUEUE_CAPACITY, String.valueOf(grpcProducerThreadQueueCapacity)));
         grpcProducerThreadPoolNums = Integer.parseInt(properties.getProperty(ConfigConstant.GRPC_PRODUCER_THREAD_POOL_NUMS, String.valueOf(grpcProducerThreadPoolNums)));
         zkAddress = properties.getProperty(ConfigConstant.ZK_ADDRESS, ZkConstant.ZK_DEFAULT_ADDRESS);
-    }
-
-    public enum BrokerConfigEnum {
-        /**
-         * Singleton
-         */
-        INSTANCE;
-        private final BrokerConfig brokerConfig;
-
-
-        BrokerConfigEnum() {
-            brokerConfig = new BrokerConfig();
-        }
-
-        public BrokerConfig getInstance() {
-            return brokerConfig;
-        }
     }
 }

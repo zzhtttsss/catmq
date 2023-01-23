@@ -2,7 +2,7 @@ package org.catmq.broker.service;
 
 import lombok.Getter;
 import org.catmq.broker.topic.Topic;
-import org.catmq.broker.topic.TopicName;
+import org.catmq.common.TopicDetail;
 import org.catmq.broker.topic.nonpersistent.NonPersistentTopic;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -24,7 +24,19 @@ public class TopicService {
      * @param brokerPath broker path like /broker/[brokerName]
      */
     public void createTopic(String topicName, String brokerPath) {
-        TopicName topic = TopicName.get(topicName);
+        TopicDetail topic = TopicDetail.get(topicName);
+        topics.computeIfAbsent(topic.getCompleteTopicName(), name -> {
+            if (topic.isPersistent()) {
+                throw new UnsupportedOperationException("Persistent topic is not supported yet");
+            } else {
+                zkService.createTopic(topic.getCompleteTopicName(), brokerPath);
+                return new NonPersistentTopic(topic.getCompleteTopicName());
+            }
+        });
+    }
+
+    public void createPartition(String topicName, String brokerPath) {
+        TopicDetail topic = TopicDetail.get(topicName);
         topics.computeIfAbsent(topic.getCompleteTopicName(), name -> {
             if (topic.isPersistent()) {
                 throw new UnsupportedOperationException("Persistent topic is not supported yet");
