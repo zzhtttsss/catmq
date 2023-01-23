@@ -2,10 +2,10 @@ package org.catmq.client.producer;
 
 import lombok.extern.slf4j.Slf4j;
 import org.catmq.broker.BrokerInfo;
-import org.catmq.broker.topic.TopicName;
+import org.catmq.common.TopicDetail;
 import org.catmq.constant.FileConstant;
 import org.catmq.constant.ZkConstant;
-import org.catmq.entity.Serialization;
+import org.catmq.entity.JsonSerializable;
 import org.catmq.util.Concat2String;
 import org.catmq.zk.BaseZookeeper;
 import org.catmq.zk.ZkUtil;
@@ -19,15 +19,15 @@ public class ProducerZooKeeper extends BaseZookeeper {
      */
     private final BrokerInfo brokerInfo;
 
-    public boolean checkTopicExists(TopicName topicName) {
+    public boolean checkTopicExists(TopicDetail topicDetail) {
         String brokerPath = Concat2String.builder()
                 .concat(ZkConstant.BROKER_ROOT_PATH)
                 .concat(FileConstant.LEFT_SLASH)
                 .concat(brokerInfo.getBrokerName())
                 .concat(FileConstant.LEFT_SLASH)
-                .concat(topicName.getTenant())
+                .concat(topicDetail.getTenant())
                 .concat(FileConstant.LEFT_SLASH)
-                .concat(topicName.getLocalName())
+                .concat(topicDetail.getLocalName())
                 .build();
         try {
             return client.checkExists().forPath(brokerPath) != null;
@@ -96,7 +96,7 @@ public class ProducerZooKeeper extends BaseZookeeper {
         String path = ZkUtil.getFullBrokerAddressPath(config.getBrokerAddress());
         try {
             byte[] bytes = client.getData().forPath(path);
-            return Serialization.fromBytes(bytes, BrokerInfo.class);
+            return JsonSerializable.fromBytes(bytes, BrokerInfo.class);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

@@ -14,6 +14,9 @@ import org.catmq.grpc.ContextInterceptor;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
+import static org.catmq.broker.Broker.BROKER;
+import static org.catmq.broker.BrokerConfig.BROKER_CONFIG;
+
 @Slf4j
 public class BrokerStartup {
     private static Server server;
@@ -21,9 +24,9 @@ public class BrokerStartup {
 
     public static void start() throws IOException {
         // read config first
-        BrokerConfig config = BrokerConfig.BrokerConfigEnum.INSTANCE.getInstance();
+        BROKER.init();
         // The port on which the server should run
-        int port = config.getBrokerPort();
+        int port = BROKER_CONFIG.getBrokerPort();
         brokerServer = new BrokerServer();
         server = Grpc.newServerBuilderForPort(port, InsecureServerCredentials.create())
                 .addService(brokerServer)

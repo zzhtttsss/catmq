@@ -27,8 +27,8 @@ public class StorerStartup {
 
     public static void start() throws IOException {
         directoryInit();
-        STORER.init();
         int port = STORER_CONFIG.getStorerPort();
+        STORER.init();
         server = Grpc.newServerBuilderForPort(port, InsecureServerCredentials.create())
                 .addService(new StorerServer())
                 .addService(ChannelzService.newInstance(100))

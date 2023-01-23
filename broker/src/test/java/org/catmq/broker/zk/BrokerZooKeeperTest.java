@@ -10,6 +10,8 @@ import org.mockito.Mockito;
 
 import java.io.IOException;
 
+import static org.catmq.broker.BrokerConfig.BROKER_CONFIG;
+
 @FixMethodOrder(org.junit.runners.MethodSorters.NAME_ASCENDING)
 public class BrokerZooKeeperTest {
 
@@ -19,8 +21,8 @@ public class BrokerZooKeeperTest {
     @BeforeClass
     public static void beforeClass() throws Exception {
         server = new TestingServer(2222);
-        config = BrokerConfig.BrokerConfigEnum.INSTANCE.getInstance();
-        config.setBrokerId("1");
+        config = BROKER_CONFIG;
+//        config.setBrokerId("1");
         config.setBrokerName("broker1");
         config.setBrokerIp("185.25.12.2");
         config.setBrokerPort(5464);

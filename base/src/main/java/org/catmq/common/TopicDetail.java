@@ -1,4 +1,4 @@
-package org.catmq.broker.topic;
+package org.catmq.common;
 
 import com.google.common.base.Splitter;
 import com.google.common.cache.CacheBuilder;
@@ -6,6 +6,7 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.catmq.constant.FileConstant;
 import org.catmq.util.StringUtil;
@@ -17,7 +18,7 @@ import java.util.concurrent.TimeUnit;
 
 @Getter
 @Slf4j
-public class TopicName {
+public class TopicDetail {
     public static final String PUBLIC_TENANT = "public";
 
     public static final String PARTITIONED_TOPIC_SUFFIX = "-partition-";
@@ -34,30 +35,33 @@ public class TopicName {
 
     private final int partitionIndex;
 
-    private static final LoadingCache<String, TopicName> CACHE = CacheBuilder
+    @Setter
+    private String brokerAddress;
+
+    private static final LoadingCache<String, TopicDetail> CACHE = CacheBuilder
             .newBuilder()
             .maximumSize(100)
             .expireAfterAccess(30, TimeUnit.MINUTES)
             .build(new CacheLoader<>() {
                 @Override
-                public @NonNull TopicName load(@NonNull String name) {
-                    return new TopicName(name);
+                public @NonNull TopicDetail load(@NonNull String name) {
+                    return new TopicDetail(name);
                 }
             });
 
-    public static TopicName get(String domain, String topic) {
+    public static TopicDetail get(String domain, String topic) {
         String name = StringUtil.concatString(domain, TOPIC_DOMAIN_SEPARATOR, PUBLIC_TENANT,
                 FileConstant.LEFT_SLASH, topic);
-        return TopicName.get(name);
+        return TopicDetail.get(name);
     }
 
-    public static TopicName get(String domain, String tenant, String topic) {
+    public static TopicDetail get(String domain, String tenant, String topic) {
         String name = StringUtil.concatString(domain, TOPIC_DOMAIN_SEPARATOR, tenant,
                 FileConstant.LEFT_SLASH, topic);
-        return TopicName.get(name);
+        return TopicDetail.get(name);
     }
 
-    public static TopicName get(String topic) {
+    public static TopicDetail get(String topic) {
         try {
             return CACHE.get(topic);
         } catch (ExecutionException e) {
@@ -140,10 +144,10 @@ public class TopicName {
     /**
      * Create a topic name from a string.
      *
-     * @param name long type: [TopicType]://[tenant]/[namespace]/[localName]<br/>
+     * @param name long type: [TopicType]://[tenant]/[localName]<br/>
      *             short type: [localName]
      */
-    private TopicName(String name) {
+    private TopicDetail(String name) {
         log.info("create a new topic named {}", name);
         if (!name.contains(TOPIC_DOMAIN_SEPARATOR)) {
             // short name like <topic> with default TopicType.NON_PERSISTENT and default tenant

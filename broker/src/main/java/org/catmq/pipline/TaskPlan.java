@@ -4,6 +4,7 @@ import org.catmq.pipline.finisher.ExampleFinisher;
 import org.catmq.pipline.preparer.ExamplePreparer;
 import org.catmq.pipline.preparer.RegisterClientPreparer;
 import org.catmq.pipline.preparer.StorerPreparer;
+import org.catmq.pipline.processor.CreatePartitionProcessor;
 import org.catmq.pipline.processor.CreateTopicProcessor;
 import org.catmq.pipline.processor.GetMessageProcessor;
 import org.catmq.pipline.processor.SendMessageProcessor;
@@ -28,6 +29,13 @@ public record TaskPlan<V, T>(Preparer[] preparers, Processor<V, T> processor, Fi
                     CreateTopicProcessor.CreateTopicProcessorEnum.INSTANCE.getInstance(),
                     new Finisher[]{}
             );
+
+    public static final TaskPlan<CreatePartitionRequest, CreatePartitionResponse> CREATE_PARTITION_TASK_PLAN =
+            new TaskPlan<>(new Preparer[]{},
+                    CreatePartitionProcessor.CreatePartitionProcessorEnum.INSTANCE.getInstance(),
+                    new Finisher[]{}
+            );
+
     public static final TaskPlan<GetMessageFromBrokerRequest, GetMessageFromBrokerResponse>
             GET_MESSAGE_FROM_BROKER_TASK_PLAN = new TaskPlan<>(new Preparer[]{
             RegisterClientPreparer.RegisterClientPreparerEnum.INSTANCE.getInstance()

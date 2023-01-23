@@ -8,6 +8,6 @@ public interface NonPersistentDispatcher extends Dispatcher {
      *
      * @param msg msg, this should be Entry in bk
      */
-    void sendMessages(String msg);
+    void sendMessages(byte[] msg);
 
 }

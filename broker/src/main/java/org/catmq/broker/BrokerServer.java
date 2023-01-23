@@ -21,6 +21,7 @@ import org.catmq.zk.BrokerZooKeeper;
 import java.util.concurrent.*;
 import java.util.function.Function;
 
+import static org.catmq.broker.BrokerConfig.BROKER_CONFIG;
 import static org.catmq.util.StringUtil.defaultString;
 
 @Slf4j
@@ -77,6 +78,21 @@ public class BrokerServer extends BrokerServiceGrpc.BrokerServiceImplBase {
     }
 
     @Override
+    public void createPartition(CreatePartitionRequest request, StreamObserver<CreatePartitionResponse> responseObserver) {
+        Function<Status, CreatePartitionResponse> statusResponseCreator = status -> CreatePartitionResponse
+                .newBuilder()
+                .setStatus(status)
+                .build();
+        RequestContext ctx = createContext().setBrokerPath(this.brokerZooKeeper.getBrokerPath());
+        try {
+            this.producerThreadPoolExecutor.submit(new GrpcTask<>(ctx, request,
+                    TaskPlan.CREATE_PARTITION_TASK_PLAN, responseObserver, statusResponseCreator));
+        } catch (Throwable t) {
+            writeResponse(ctx, request, null, responseObserver, t, statusResponseCreator);
+        }
+    }
+
+    @Override
     public void getMessageFromBroker(GetMessageFromBrokerRequest request, StreamObserver<GetMessageFromBrokerResponse> responseObserver) {
         Function<Status, GetMessageFromBrokerResponse> statusResponseCreator = status -> GetMessageFromBrokerResponse
                 .newBuilder()
@@ -117,7 +133,8 @@ public class BrokerServer extends BrokerServiceGrpc.BrokerServiceImplBase {
         return RequestContext.create()
                 .setLocalAddress(getValueFromMetadata(headers, InterceptorConstants.LOCAL_ADDRESS))
                 .setRemoteAddress(getValueFromMetadata(headers, InterceptorConstants.REMOTE_ADDRESS))
-                .setAction(getValueFromMetadata(headers, InterceptorConstants.RPC_NAME));
+                .setAction(getValueFromMetadata(headers, InterceptorConstants.RPC_NAME))
+                .setTenantId(getValueFromMetadata(headers, InterceptorConstants.TENANT_ID));
     }
 
     protected String getValueFromMetadata(Metadata headers, Metadata.Key<String> key) {
@@ -125,17 +142,15 @@ public class BrokerServer extends BrokerServiceGrpc.BrokerServiceImplBase {
     }
 
     public BrokerServer() {
-        BrokerConfig config = BrokerConfig.BrokerConfigEnum.INSTANCE.getInstance();
         this.producerThreadPoolExecutor = ThreadPoolMonitor.createAndMonitor(
-                config.getGrpcProducerThreadPoolNums(),
-                config.getGrpcProducerThreadPoolNums(),
+                BROKER_CONFIG.getGrpcProducerThreadPoolNums(),
+                BROKER_CONFIG.getGrpcProducerThreadPoolNums(),
                 1,
                 TimeUnit.MINUTES,
                 "GrpcProducerThreadPool",
-                config.getGrpcProducerThreadQueueCapacity()
+                BROKER_CONFIG.getGrpcProducerThreadQueueCapacity()
         );
-        this.brokerInfo = new BrokerInfo(config);
-        this.brokerZooKeeper = new BrokerZooKeeper(config.getZkAddress(), this);
+        this.brokerZooKeeper = new BrokerZooKeeper(BROKER_CONFIG.getZkAddress(), this);
         this.timeExecutor = new ScheduledThreadPoolExecutor(4,
                 new ThreadFactoryWithIndex("BrokerTimerThread_"));
         this.init();

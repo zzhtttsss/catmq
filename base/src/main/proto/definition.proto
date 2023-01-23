@@ -18,19 +18,11 @@ enum Permission {
 }
 
 enum MessageType {
-  MESSAGE_TYPE_UNSPECIFIED = 0;
+  NON_PERSISTENT = 0;
 
   NORMAL = 1;
 
-  // Sequenced message
-  FIFO = 2;
-
-  // Messages that are delivered after the specified duration.
-  DELAY = 3;
-
-  // Messages that are transactional. Only committed messages are delivered to
-  // subscribers.
-  TRANSACTION = 4;
+  BATCH = 2;
 }
 
 enum Encoding {
@@ -289,4 +281,10 @@ enum Code {
 message Status {
   Code code = 1;
   string message = 2;
+}
+
+message Message{
+  MessageType type = 1;
+  bytes body = 2;
+  string topic = 3;
 }
