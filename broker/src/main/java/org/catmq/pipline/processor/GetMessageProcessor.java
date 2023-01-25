@@ -2,7 +2,7 @@ package org.catmq.pipline.processor;
 
 import com.google.protobuf.ByteString;
 import org.catmq.broker.common.Consumer;
-import org.catmq.broker.service.ClientManageService;
+import org.catmq.broker.service.ClientManager;
 import org.catmq.broker.service.TopicService;
 import org.catmq.broker.topic.Topic;
 import org.catmq.common.TopicDetail;
@@ -19,7 +19,7 @@ public class GetMessageProcessor implements Processor<GetMessageFromBrokerReques
     public static final String CONSUME_PROCESSOR_NAME = "ConsumeProcessor";
 
     private final TopicService topicService = TopicService.TopicServiceEnum.INSTANCE.getInstance();
-    private final ClientManageService clientManageService = ClientManageService.ClientManageServiceEnum.INSTANCE.getInstance();
+    private final ClientManager clientManager = ClientManager.ClientManagerEnum.INSTANCE.getInstance();
 
     @Override
     public GetMessageFromBrokerResponse process(RequestContext ctx, GetMessageFromBrokerRequest request) {
@@ -28,7 +28,7 @@ public class GetMessageProcessor implements Processor<GetMessageFromBrokerReques
         if (!topic.isSubscribe(topicDetail.getCompleteTopicName(), request.getConsumerId())) {
             topic.subscribe(topicDetail.getCompleteTopicName(), request.getConsumerId());
         }
-        Consumer consumer = clientManageService.getConsumer(request.getConsumerId());
+        Consumer consumer = clientManager.getConsumer(request.getConsumerId());
         Optional<byte[]> message = consumer.getMessage();
         return message
                 .map(s -> GetMessageFromBrokerResponse

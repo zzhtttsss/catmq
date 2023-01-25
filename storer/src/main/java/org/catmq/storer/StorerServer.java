@@ -22,6 +22,7 @@ import java.util.function.Function;
 
 import static org.catmq.storer.StorerConfig.*;
 import static org.catmq.thread.OrderedExecutor.NO_TASK_LIMIT;
+import static org.catmq.thread.OrderedExecutor.createExecutor;
 import static org.catmq.util.StringUtil.defaultString;
 
 /**

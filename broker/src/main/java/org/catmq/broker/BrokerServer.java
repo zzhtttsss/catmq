@@ -1,5 +1,6 @@
 package org.catmq.broker;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.grpc.Context;
 import io.grpc.Metadata;
 import io.grpc.stub.StreamObserver;
@@ -14,6 +15,7 @@ import org.catmq.pipline.TaskPlan;
 import org.catmq.protocol.definition.Code;
 import org.catmq.protocol.definition.Status;
 import org.catmq.protocol.service.*;
+import org.catmq.thread.OrderedExecutor;
 import org.catmq.thread.ThreadFactoryWithIndex;
 import org.catmq.thread.ThreadPoolMonitor;
 import org.catmq.zk.BrokerZooKeeper;
@@ -22,6 +24,8 @@ import java.util.concurrent.*;
 import java.util.function.Function;
 
 import static org.catmq.broker.BrokerConfig.BROKER_CONFIG;
+import static org.catmq.thread.OrderedExecutor.NO_TASK_LIMIT;
+import static org.catmq.thread.OrderedExecutor.createExecutor;
 import static org.catmq.util.StringUtil.defaultString;
 
 @Slf4j
@@ -32,11 +36,23 @@ public class BrokerServer extends BrokerServiceGrpc.BrokerServiceImplBase {
 
     private ScheduledExecutorService timeExecutor;
 
-    protected ThreadPoolExecutor producerThreadPoolExecutor;
+    protected OrderedExecutor producerThreadPoolExecutor;
+
+    protected ThreadPoolExecutor adminThreadPoolExecutor;
+
+
 
     protected void init() {
-        GrpcTaskRejectedExecutionHandler rejectedExecutionHandler = new GrpcTaskRejectedExecutionHandler();
-        this.producerThreadPoolExecutor.setRejectedExecutionHandler(rejectedExecutionHandler);
+        producerThreadPoolExecutor = createExecutor(1, "producerThreadPoolExecutor",
+                NO_TASK_LIMIT);
+        this.adminThreadPoolExecutor = new ThreadPoolExecutor(
+                BROKER_CONFIG.getGrpcProducerThreadPoolNums(),
+                BROKER_CONFIG.getGrpcProducerThreadPoolNums(),
+                1,
+                TimeUnit.MINUTES,
+                new LinkedBlockingQueue<>(BROKER_CONFIG.getGrpcProducerThreadQueueCapacity()),
+                new ThreadFactoryBuilder().setNameFormat("GrpcProducerThreadPool" + "-%d").build(),
+                new ThreadPoolExecutor.DiscardOldestPolicy());
 
         this.brokerZooKeeper.register2Zk();
         log.info("BrokerServer init success");
@@ -54,8 +70,9 @@ public class BrokerServer extends BrokerServiceGrpc.BrokerServiceImplBase {
                 .setStatus(status)
                 .build();
         RequestContext ctx = createContext();
+        // TODO 获取segment id， 用该id hash
         try {
-            this.producerThreadPoolExecutor.submit(new GrpcTask<>(ctx, request,
+            this.producerThreadPoolExecutor.executeOrdered(1, new GrpcTask<>(ctx, request,
                     TaskPlan.SEND_MESSAGE_2_BROKER_TASK_PLAN, responseObserver, statusResponseCreator));
         } catch (Throwable t) {
             writeResponse(ctx, request, null, responseObserver, t, statusResponseCreator);
@@ -85,7 +102,7 @@ public class BrokerServer extends BrokerServiceGrpc.BrokerServiceImplBase {
                 .build();
         RequestContext ctx = createContext().setBrokerPath(this.brokerZooKeeper.getBrokerPath());
         try {
-            this.producerThreadPoolExecutor.submit(new GrpcTask<>(ctx, request,
+            this.adminThreadPoolExecutor.submit(new GrpcTask<>(ctx, request,
                     TaskPlan.CREATE_PARTITION_TASK_PLAN, responseObserver, statusResponseCreator));
         } catch (Throwable t) {
             writeResponse(ctx, request, null, responseObserver, t, statusResponseCreator);
@@ -142,14 +159,6 @@ public class BrokerServer extends BrokerServiceGrpc.BrokerServiceImplBase {
     }
 
     public BrokerServer() {
-        this.producerThreadPoolExecutor = ThreadPoolMonitor.createAndMonitor(
-                BROKER_CONFIG.getGrpcProducerThreadPoolNums(),
-                BROKER_CONFIG.getGrpcProducerThreadPoolNums(),
-                1,
-                TimeUnit.MINUTES,
-                "GrpcProducerThreadPool",
-                BROKER_CONFIG.getGrpcProducerThreadQueueCapacity()
-        );
         this.brokerZooKeeper = new BrokerZooKeeper(BROKER_CONFIG.getZkAddress(), this);
         this.timeExecutor = new ScheduledThreadPoolExecutor(4,
                 new ThreadFactoryWithIndex("BrokerTimerThread_"));
