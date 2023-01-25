@@ -33,7 +33,6 @@ public class CatClient {
 
     private final ThreadPoolExecutor producerHandleResponseExecutor;
 
-    private final ThreadPoolExecutor producerHandleGrpcResponseExecutor;
 
     public static final GrpcConnectCache GRPC_CONNECT_CACHE = new GrpcConnectCache(100);
 
@@ -60,14 +59,6 @@ public class CatClient {
                 new ThreadFactoryBuilder().setNameFormat("producerHandleResponseExecutor" + "-%d").build(),
                 new ThreadPoolExecutor.DiscardOldestPolicy());
 
-        this.producerHandleGrpcResponseExecutor = new ThreadPoolExecutor(
-                4,
-                4,
-                1,
-                TimeUnit.MINUTES,
-                new LinkedBlockingQueue<>(10000),
-                new ThreadFactoryBuilder().setNameFormat("producerHandleResponseExecutor" + "-%d").build(),
-                new ThreadPoolExecutor.DiscardOldestPolicy());
     }
 
     public static CatClientBuilder builder() {
@@ -75,8 +66,7 @@ public class CatClient {
     }
 
     public DefaultCatProducer.DefaultCatProducerBuilder createProducer() {
-        return DefaultCatProducer.builder(tenantId, client, producerHandleRequestExecutor, producerHandleResponseExecutor,
-                producerHandleGrpcResponseExecutor);
+        return DefaultCatProducer.builder(tenantId, client, producerHandleRequestExecutor, producerHandleResponseExecutor);
     }
 
     public void createSinglePartitionTopic(String topic, TopicType type) {

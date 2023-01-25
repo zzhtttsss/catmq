@@ -39,17 +39,15 @@ public class DefaultCatProducer extends ClientConfig {
     private final CuratorFramework client;
     private PartitionSelector partitionSelector;
 
-    private final ThreadPoolExecutor handleResultExecutor;
+    private final ThreadPoolExecutor handleResponseExecutor;
 
-    private final ThreadPoolExecutor handleSendExecutor;
-
-    private final ThreadPoolExecutor handleGrpcResponseExecutor;
+    private final ThreadPoolExecutor handleRequestExecutor;
 
 
 
     private DefaultCatProducer(String tenantId, String producerGroup, String topic, CuratorFramework client,
-                               PartitionSelector partitionSelector, ThreadPoolExecutor handleResultExecutor,
-                               ThreadPoolExecutor handleSendExecutor, ThreadPoolExecutor handleGrpcResponseExecutor) {
+                               PartitionSelector partitionSelector, ThreadPoolExecutor handleResponseExecutor,
+                               ThreadPoolExecutor handleRequestExecutor) {
         this.tenantId = tenantId;
         this.producerGroup = producerGroup;
         this.topicDetail = TopicDetail.get(topic);
@@ -57,9 +55,8 @@ public class DefaultCatProducer extends ClientConfig {
         this.partitionSelector = partitionSelector;
         this.topicDetail.setBrokerAddress("127.0.0.1:5432");
         this.producerId = 1111L;
-        this.handleSendExecutor = handleSendExecutor;
-        this.handleResultExecutor = handleResultExecutor;
-        this.handleGrpcResponseExecutor = handleGrpcResponseExecutor;
+        this.handleRequestExecutor = handleRequestExecutor;
+        this.handleResponseExecutor = handleResponseExecutor;
     }
 
 
@@ -89,7 +86,7 @@ public class DefaultCatProducer extends ClientConfig {
 
     private void asyncExecuteMessageSend(Runnable runnable) {
         try {
-            handleSendExecutor.submit(runnable);
+            handleRequestExecutor.submit(runnable);
         } catch (RejectedExecutionException e) {
             runnable.run();
         }
@@ -153,7 +150,7 @@ public class DefaultCatProducer extends ClientConfig {
                     log.warn("fail to send message", t);
                     sendCallback.onException(t);
                 }
-            }, handleResultExecutor);
+            }, handleResponseExecutor);
         }
 
 
@@ -163,10 +160,8 @@ public class DefaultCatProducer extends ClientConfig {
 
     protected static DefaultCatProducerBuilder builder(String tenantId, CuratorFramework client,
                                                        ThreadPoolExecutor handleRequestExecutor,
-                                                       ThreadPoolExecutor handleResponseExecutor,
-                                                       ThreadPoolExecutor handleGrpcResponseExecutor) {
-        return new DefaultCatProducerBuilder(tenantId, client, handleRequestExecutor, handleResponseExecutor,
-                handleGrpcResponseExecutor);
+                                                       ThreadPoolExecutor handleResponseExecutor) {
+        return new DefaultCatProducerBuilder(tenantId, client, handleRequestExecutor, handleResponseExecutor);
     }
 
     public static class DefaultCatProducerBuilder {
@@ -179,22 +174,19 @@ public class DefaultCatProducer extends ClientConfig {
 
         private PartitionSelector partitionSelector;
 
-        private final ThreadPoolExecutor handleResultExecutor;
+        private final ThreadPoolExecutor handleResponseExecutor;
 
-        private final ThreadPoolExecutor handleSendExecutor;
+        private final ThreadPoolExecutor handleRequestExecutor;
 
-        private final ThreadPoolExecutor handleGrpcResponseExecutor;
 
 
         protected DefaultCatProducerBuilder(String tenantId, CuratorFramework client,
-                                            ThreadPoolExecutor handleSendExecutor,
-                                            ThreadPoolExecutor handleResultExecutor,
-                                            ThreadPoolExecutor handleGrpcResponseExecutor) {
+                                            ThreadPoolExecutor handleRequestExecutor,
+                                            ThreadPoolExecutor handleResponseExecutor) {
             this.tenantId = tenantId;
             this.client = client;
-            this.handleSendExecutor = handleSendExecutor;
-            this.handleResultExecutor = handleResultExecutor;
-            this.handleGrpcResponseExecutor = handleGrpcResponseExecutor;
+            this.handleRequestExecutor = handleRequestExecutor;
+            this.handleResponseExecutor = handleResponseExecutor;
         }
 
         public DefaultCatProducerBuilder setProducerGroup(String producerGroup) {
@@ -221,7 +213,7 @@ public class DefaultCatProducer extends ClientConfig {
 
         public DefaultCatProducer build() {
             return new DefaultCatProducer(tenantId, producerGroup, topic, client, partitionSelector,
-                    handleSendExecutor, handleResultExecutor, handleGrpcResponseExecutor);
+                    handleRequestExecutor, handleResponseExecutor);
         }
     }
 
