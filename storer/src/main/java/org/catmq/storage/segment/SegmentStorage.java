@@ -100,17 +100,16 @@ public class SegmentStorage {
     public Optional<MessageEntry> getEntryFromFileById(long segmentId, long entryId) {
         try {
             long offset = entryPositionIndex.getPosition(segmentId, entryId);
-            log.info("Get offset {} with {}@{}", offset, segmentId, entryId);
-            try (MessageEntryBatch batch = segmentFileManager.getSegmentBatchByOffset(offset)) {
-                if (batch.isEmpty()) {
-                    return Optional.empty();
-                }
-                readCache.putBatch(batch);
-                log.info("Put into read cache with size: {}", batch.getTotalSize());
-                return Optional.ofNullable(batch.get(0));
+            MessageEntryBatch batch = segmentFileManager.getSegmentBatchByOffset(offset);
+            if (batch.isEmpty()) {
+                log.info("Batch is empty.");
+                return Optional.empty();
             }
+            readCache.putBatch(batch);
+            MessageEntry entry = batch.get(0);
+            return Optional.ofNullable(entry);
         } catch (Exception e) {
-            log.error("Get entry from file by id error.", e);
+            log.error("Get entry from file err, ", e);
             return Optional.empty();
         }
     }

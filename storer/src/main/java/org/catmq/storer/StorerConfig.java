@@ -49,6 +49,7 @@ public class StorerConfig {
     private long readCacheExpireTime;
 
     private long readCacheCleanUpInterval;
+    private float readCacheRemainingThreshold;
 
     public void readConfig() {
         InputStream stream = this.getClass().getResourceAsStream(CONFIG_PATH);
@@ -79,5 +80,6 @@ public class StorerConfig {
         maxSegmentEntryNum = Long.parseLong(properties.getProperty(ConfigConstant.MAX_SEGMENT_ENTRY_NUM, String.valueOf(100000)));
         readCacheExpireTime = Long.parseLong(properties.getProperty(ConfigConstant.READ_CACHE_EXPIRE_TIME, String.valueOf(5000)));
         readCacheCleanUpInterval = Long.parseLong(properties.getProperty(ConfigConstant.READ_CACHE_CLEAN_UP_INTERVAL, String.valueOf(60000)));
+        readCacheRemainingThreshold = Float.parseFloat(properties.getProperty(ConfigConstant.READ_CACHE_REMAINING_THRESHOLD, String.valueOf(0.9)));
     }
 }

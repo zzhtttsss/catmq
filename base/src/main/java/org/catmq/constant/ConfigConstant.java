@@ -45,4 +45,5 @@ public class ConfigConstant {
     public static final String READ_CACHE_EXPIRE_TIME = "readCache.expireTime";
 
     public static final String READ_CACHE_CLEAN_UP_INTERVAL = "readCache.cleanUpInterval";
+    public static final String READ_CACHE_REMAINING_THRESHOLD = "readCache.remainingThreshold";
 }

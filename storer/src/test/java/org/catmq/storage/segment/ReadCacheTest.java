@@ -1,66 +1,103 @@
 package org.catmq.storage.segment;
 
-import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
 import org.catmq.common.MessageEntry;
+import org.catmq.common.MessageEntryBatch;
+import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
-import org.openjdk.jmh.annotations.*;
-import org.openjdk.jmh.runner.Runner;
-import org.openjdk.jmh.runner.RunnerException;
-import org.openjdk.jmh.runner.options.Options;
-import org.openjdk.jmh.runner.options.OptionsBuilder;
 
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.CountDownLatch;
 
 import static org.catmq.storer.StorerConfig.STORER_CONFIG;
 
-@State(Scope.Benchmark)
-@BenchmarkMode({Mode.Throughput, Mode.AverageTime})
+
 public class ReadCacheTest {
 
-    ReadCache cache;
-    String defaultValue;
+    static ReadCache cache;
+    static String defaultValue;
 
-    @Setup
-    public void setup() {
+
+    @BeforeClass
+    public static void beforeClass() {
         cache = new ReadCache(STORER_CONFIG.getSegmentMaxFileSize());
         defaultValue = "hello world 2023";
     }
 
-    @Benchmark
-    public void put() {
-        int key = ThreadLocalRandom.current().nextInt();
-        cache.putEntry(new MessageEntry(key, key, defaultValue.getBytes()));
-    }
-
-    @Benchmark
-    public MessageEntry get() {
-        int key = ThreadLocalRandom.current().nextInt();
-        return cache.getEntry(key, key);
-    }
-
-
-    public static void main(String[] args) throws RunnerException {
-        Options opt = new OptionsBuilder()
-                .include(ReadCacheTest.class.getSimpleName())
-                .forks(1)
-                .threads(8)
-                .build();
-
-        new Runner(opt).run();
+    @Test
+    public void testPutWithoutThread() {
+        SegmentBatchKey key1 = new SegmentBatchKey(1);
+        SegmentBatchKey key2 = new SegmentBatchKey(1);
+        Assert.assertEquals(key1, key2);
+        SegmentBatchKey key3 = new SegmentBatchKey(2);
+        Assert.assertNotEquals(key1, key3);
+        cache.putEntry(new MessageEntry(1, 1, defaultValue.getBytes()));
+        cache.putEntry(new MessageEntry(2, 1, defaultValue.getBytes()));
+        MessageEntry entry = cache.getEntry(1, 1);
+        Assert.assertEquals(entry.getSegmentId(), 1);
     }
 
     @Test
-    public void testCaffeine() {
-        ConcurrentLinkedHashMap<Integer, Integer> map = new ConcurrentLinkedHashMap.Builder<Integer, Integer>()
-                .maximumWeightedCapacity(1000)
-                .build();
-        map.put(1, 1);
-        map.put(2, 2);
-        map.put(3, 3);
-        map.put(4, 4);
-        map.get(1);
-        map.ascendingKeySet().forEach(k -> {
-            System.out.println(k + " " + map.get(k));
-        });
+    public void testAccess() {
+        cache.putEntry(new MessageEntry(1, 1, defaultValue.getBytes()));
+        cache.putEntry(new MessageEntry(2, 1, defaultValue.getBytes()));
+        cache.putEntry(new MessageEntry(3, 1, defaultValue.getBytes()));
+        cache.putEntry(new MessageEntry(4, 1, defaultValue.getBytes()));
+        cache.getEntry(1, 1);
+        SegmentBatchKey[] keys = cache.getCache().ascendingKeySet().toArray(SegmentBatchKey[]::new);
+        int n = keys.length;
+        Assert.assertEquals(1, keys[n - 1].getSegmentId());
+    }
+
+    @Test
+    public void testBatchWithThread() throws InterruptedException {
+        class PutThread extends Thread {
+            final int segmentId;
+            final CountDownLatch latch;
+
+            PutThread(int segmentId, CountDownLatch latch) {
+                this.segmentId = segmentId;
+                this.latch = latch;
+            }
+
+            @Override
+            public void run() {
+                MessageEntryBatch batch = new MessageEntryBatch();
+                for (int i = 0; i < 10; i++) {
+                    MessageEntry messageEntry = new MessageEntry(segmentId, i,
+                            String.format("%d@%d", segmentId, i).getBytes());
+                    batch.put(messageEntry);
+                }
+                cache.putBatch(batch);
+                latch.countDown();
+            }
+        }
+        CountDownLatch latch = new CountDownLatch(3);
+        for (int i = 0; i < 3; i++) {
+            new PutThread(i, latch).start();
+        }
+        latch.await();
+        MessageEntry entry = cache.getEntry(0, 1);
+        Assert.assertEquals("0@1", new String(entry.getMessage()));
+        SegmentBatchKey[] keys = cache.getCache().ascendingKeySet().toArray(SegmentBatchKey[]::new);
+        int n = keys.length;
+        Assert.assertEquals(0, keys[n - 1].getSegmentId());
+    }
+
+    @Test
+    public void testCleanup() throws InterruptedException {
+        cache.start();
+        CountDownLatch latch = new CountDownLatch(5);
+        for (int i = 0; i < 5; i++) {
+            int finalI = i;
+            new Thread(() -> {
+                for (int j = 0; j < 100; j++) {
+                    MessageEntry messageEntry = new MessageEntry(finalI, j, defaultValue.getBytes());
+                    cache.putEntry(messageEntry);
+                }
+                latch.countDown();
+            }).start();
+        }
+        latch.await();
+        Thread.sleep(1000);
     }
 }

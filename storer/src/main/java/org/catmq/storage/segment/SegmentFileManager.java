@@ -17,6 +17,7 @@ import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import static org.catmq.storer.StorerConfig.STORER_CONFIG;
 
@@ -24,13 +25,13 @@ import static org.catmq.storer.StorerConfig.STORER_CONFIG;
 @Getter
 public class SegmentFileManager {
     private final String directory;
-    private final List<Long> paths;
+    private final CopyOnWriteArrayList<Long> paths;
 
     public FileChannelWrapper getOrCreateSegmentFileByOffset(long offset, boolean isCreated) throws IOException {
         String fileName = buildSegmentFilePath(offset);
-        paths.add(offset);
         File file = new File(fileName);
         if (!file.exists() && isCreated) {
+            paths.add(offset);
             file.createNewFile();
         }
         return new FileChannelWrapper(file, "rw");
@@ -44,13 +45,14 @@ public class SegmentFileManager {
         MessageEntryBatch batch = new MessageEntryBatch();
         try (FileChannelWrapper wrapper = getOrCreateSegmentFileByOffset(fileOffset, false)) {
             FileChannel fc = wrapper.getFileChannel();
-            //TODO: 4MB
-            var mapped = fc.map(FileChannel.MapMode.READ_ONLY, segmentOffset, 4 * FileConstant.MB);
-            batch.putAll(readFromByteBuf(mapped));
+            //TODO: 4KB
+            var mapped = fc.map(FileChannel.MapMode.READ_ONLY, segmentOffset, 4 * FileConstant.KB);
+            List<MessageEntry> entries = readFromByteBuf(mapped);
+            batch.putAll(entries);
             //TODO: invoke unmap method
-
+            return batch;
         } catch (IOException e) {
-            log.error("get segment batch by offset error, offset: {}", offset, e);
+            log.error("Get segment batch by offset error, offset: {}", offset, e);
         }
         return batch;
     }
@@ -59,10 +61,11 @@ public class SegmentFileManager {
         List<MessageEntry> entries = new ArrayList<>();
         long firstSegmentId = -1;
         boolean isFirst = true;
-        while (buf.remaining() + CommonConstant.BYTES_LENGTH_OF_INT < buf.limit()) {
+        while (buf.position() + CommonConstant.BYTES_LENGTH_OF_INT < buf.limit()) {
             int length = buf.getInt();
             // 1. Remaining bytes is not enough to read a message, break.
-            if (buf.remaining() + length > buf.capacity()) {
+            if (buf.position() + length > buf.limit()) {
+                // It should not happen.
                 break;
             }
             long segmentId = buf.getLong();
@@ -78,6 +81,10 @@ public class SegmentFileManager {
             byte[] bytes = new byte[length - 16];
             buf.get(bytes);
             entries.add(new MessageEntry(segmentId, entryId, bytes));
+            // 3. Read at most 500 messages once.
+            if (entries.size() >= 500) {
+                break;
+            }
         }
         return entries;
     }
@@ -104,7 +111,7 @@ public class SegmentFileManager {
 
     public SegmentFileManager() {
         this.directory = STORER_CONFIG.getSegmentStoragePath();
-        this.paths = new ArrayList<>(8);
+        this.paths = new CopyOnWriteArrayList<>();
         File dir = new File(this.directory);
         File[] files = dir.listFiles();
         if (files != null) {

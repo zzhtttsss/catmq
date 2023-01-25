@@ -99,9 +99,8 @@ public class EntryPositionIndex implements Closeable {
     public void addPosition(Batch batch, long segmentId, long entryId, long position) throws IOException {
         byte[] key = ByteUtil.convLong2Bytes(segmentId, entryId);
         byte[] value = ByteUtil.convLong2Bytes(position);
-
         if (log.isDebugEnabled()) {
-            log.debug("Add position - segment: {} -- entry: {} -- position: {}.", segmentId, entryId, position);
+            log.debug("Add position index: segmentId: {}, entryId: {}, position: {}.", segmentId, entryId, position);
         }
         batch.put(key, value);
     }

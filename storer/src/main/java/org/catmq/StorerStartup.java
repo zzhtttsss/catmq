@@ -26,8 +26,8 @@ public class StorerStartup {
     private static final int WAIT_TIMEOUT = 30;
 
     public static void start() throws IOException {
-        STORER.init();
         directoryInit();
+        STORER.init();
         int port = STORER_CONFIG.getStorerPort();
         server = Grpc.newServerBuilderForPort(port, InsecureServerCredentials.create())
                 .addService(new StorerServer())

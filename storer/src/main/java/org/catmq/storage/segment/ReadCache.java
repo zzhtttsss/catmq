@@ -1,16 +1,13 @@
 package org.catmq.storage.segment;
 
+import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
 import lombok.Getter;
-import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.catmq.common.MessageEntry;
 import org.catmq.common.MessageEntryBatch;
 import org.catmq.thread.ServiceThread;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import static org.catmq.storer.StorerConfig.STORER_CONFIG;
 
@@ -22,9 +19,9 @@ public class ReadCache extends ServiceThread {
     @Getter
     private AtomicLong cacheSize;
 
-    private final ReentrantReadWriteLock lock;
     @Getter
-    private final LinkedHashMap<ReadCacheKey, ReadCacheValue> cache;
+    private final ConcurrentLinkedHashMap<SegmentBatchKey, ConcurrentLinkedHashMap<Long, MessageEntry>> cache;
+
 
     /**
      * Put a {@link MessageEntry} into cache whose key are segmentId and entryId.
@@ -33,179 +30,143 @@ public class ReadCache extends ServiceThread {
      */
     public void putEntry(MessageEntry messageEntry) {
         if (this.cacheSize.addAndGet(messageEntry.getTotalSize()) > maxCacheSize) {
-            cleanCache();
+            this.cleanCache(messageEntry.getTotalSize());
         }
-        ReadCacheKey key = new ReadCacheKey(messageEntry.getSegmentId(), messageEntry.getEntryId());
-        ReadCacheValue value = new ReadCacheValue(messageEntry);
-        lock.writeLock().lock();
-        try {
-            cache.put(key, value);
-        } finally {
-            lock.writeLock().unlock();
-        }
+        SegmentBatchKey key = new SegmentBatchKey(messageEntry.getSegmentId());
+        key.addSize(messageEntry.getTotalSize());
+        cache.computeIfAbsent(key, k -> new ConcurrentLinkedHashMap.Builder<Long, MessageEntry>()
+                        .maximumWeightedCapacity(maxCacheSize)
+                        .build())
+                .put(messageEntry.getEntryId(), messageEntry);
     }
 
     public void putBatch(MessageEntryBatch batch) {
-        long totalSize = batch.getTotalSize();
-        if (this.cacheSize.addAndGet(totalSize) > maxCacheSize) {
-            cleanCache();
+        if (this.cacheSize.addAndGet(batch.getTotalSize()) > maxCacheSize) {
+            log.info("ReadCache is full when putting {} with size {}.", batch.getBatchSegmentId(), batch.getTotalSize());
+            this.cleanCache(batch.getTotalSize());
         }
-        lock.writeLock().lock();
-        try {
-            for (MessageEntry messageEntry : batch.getBatch()) {
-                ReadCacheKey key = new ReadCacheKey(messageEntry.getSegmentId(), messageEntry.getEntryId());
-                ReadCacheValue value = new ReadCacheValue(messageEntry);
-                cache.put(key, value);
-            }
-        } finally {
-            lock.writeLock().unlock();
+        SegmentBatchKey key = new SegmentBatchKey(batch.getBatchSegmentId());
+        for (MessageEntry messageEntry : batch.getBatch()) {
+            cache.computeIfAbsent(key, k -> new ConcurrentLinkedHashMap.Builder<Long, MessageEntry>()
+                            .maximumWeightedCapacity(maxCacheSize)
+                            .build())
+                    .put(messageEntry.getEntryId(), messageEntry);
+            key.addSize(messageEntry.getTotalSize());
         }
     }
 
     public MessageEntry getEntry(long segmentId, long entryId) {
-        ReadCacheKey key = new ReadCacheKey(segmentId, entryId);
-        lock.readLock().lock();
-        try {
-            ReadCacheValue value = cache.get(key);
-            if (value == null) {
-                return null;
-            }
-            value.setDeletable();
-            return value.getMessage();
-        } finally {
-            lock.readLock().unlock();
+        var cacheSegment = cache.get(new SegmentBatchKey(segmentId));
+        if (cacheSegment == null) {
+            return null;
         }
+        return cacheSegment.get(entryId);
     }
 
     @Override
     public String getServiceName() {
-        return this.getClass().getCanonicalName();
+        return this.getClass().getName();
     }
 
     @Override
     public void run() {
-        log.info("{} start to clean up expired keys.", this.getServiceName());
+        long lastFlushTime = System.currentTimeMillis();
         while (!this.isStopped()) {
-            try {
-                Thread.sleep(STORER_CONFIG.getReadCacheCleanUpInterval());
-            } catch (InterruptedException e) {
-                log.error("ReadCache thread is interrupted.");
-            }
-            lock.writeLock().lock();
-            try {
-                for (Map.Entry<ReadCacheKey, ReadCacheValue> entry : cache.entrySet()) {
-                    if (entry.getValue().isExpired() || entry.getValue().deletable()) {
-                        cache.remove(entry.getKey());
-                        cacheSize.addAndGet(-entry.getValue().getMessageSize());
-                    }
-                }
-            } finally {
-                lock.writeLock().unlock();
+            // Big Clean-up occurs when time is up or there are too many batch in queue.
+            if (System.currentTimeMillis() - lastFlushTime > STORER_CONFIG.getReadCacheCleanUpInterval()) {
+                this.cleanCache(-1);
+                log.info("{} has cleaned up.", this.getServiceName());
+                lastFlushTime = System.currentTimeMillis();
             }
         }
-        log.info("{} has cleaned up expired keys.", this.getServiceName());
     }
 
-    private void cleanCache() {
-        lock.writeLock().lock();
-        try {
+    private void cleanCache(long batchSize) {
+        if (batchSize < 0) {
+            // Big clean-up occurs
             // Clean up an expired or deletable key.
-            for (Map.Entry<ReadCacheKey, ReadCacheValue> entry : cache.entrySet()) {
-                if (entry.getValue().deletable()) {
-                    cache.remove(entry.getKey());
-                    cacheSize.addAndGet(-entry.getValue().getMessageSize());
-                    if (cacheSize.get() <= maxCacheSize) {
-                        return;
-                    }
-                }
-            }
-            // If the cache is still full, delete the remaining.
-            var iterator = cache.entrySet().iterator();
-            while (cacheSize.get() > maxCacheSize && iterator.hasNext()) {
-                var entry = iterator.next();
-                cache.remove(entry.getKey());
-                cacheSize.addAndGet(-entry.getValue().getMessageSize());
-            }
+            final long threshold = (long) (maxCacheSize * STORER_CONFIG.getReadCacheRemainingThreshold());
+            cleanup0(threshold);
+        } else {
+            // double check
             if (cacheSize.get() > maxCacheSize) {
-                log.error("ReadCache is still full after cleaning up.");
+                cleanup0(maxCacheSize);
             }
-        } finally {
-            lock.writeLock().unlock();
+
+        }
+    }
+
+    private synchronized void cleanup0(long threshold) {
+        // Just clean up the oldest segment with its entries.
+        for (var key : cache.ascendingKeySet()) {
+            cacheSize.addAndGet(-key.getBatchSegmentSize());
+            cache.remove(key);
+            if (cacheSize.get() <= threshold) {
+                return;
+            }
+        }
+        // If the cache is still full, delete the oldest.
+        var iterator = cache.ascendingKeySet().iterator();
+        while (cacheSize.get() > threshold && iterator.hasNext()) {
+            var key = iterator.next();
+            cacheSize.addAndGet(-key.getBatchSegmentSize());
+            cache.remove(key);
+        }
+        if (cacheSize.get() > threshold) {
+            log.error("ReadCache is still full after cleaning up.");
         }
     }
 
     public ReadCache(long cacheSize) {
         this.maxCacheSize = cacheSize;
         this.cacheSize = new AtomicLong(0);
-        this.lock = new ReentrantReadWriteLock();
-        this.cache = new LinkedHashMap<>(8, 0.75f, true);
+        this.cache = new ConcurrentLinkedHashMap.Builder<SegmentBatchKey,
+                ConcurrentLinkedHashMap<Long, MessageEntry>>()
+                .maximumWeightedCapacity(maxCacheSize)
+                .build();
+
     }
 }
 
 
-record ReadCacheKey(long segmentId, long entryId) {
+class SegmentBatchKey implements Comparable<SegmentBatchKey> {
+    @Getter
+    private final long segmentId;
+    @Getter
+    private long batchSegmentSize;
 
-    @Override
-    public boolean equals(Object obj) {
-        if (obj == this) {
-            return true;
-        }
-        if (obj == null || obj.getClass() != this.getClass()) {
-            return false;
-        }
-        ReadCacheKey readCacheKey = (ReadCacheKey) obj;
-        return readCacheKey.segmentId == this.segmentId && readCacheKey.entryId == this.entryId;
+    public SegmentBatchKey(long segmentId) {
+        this.segmentId = segmentId;
+        this.batchSegmentSize = 0;
+    }
+
+    public void addSize(long size) {
+        this.batchSegmentSize += size;
     }
 
     @Override
     public int hashCode() {
-        return Long.hashCode(segmentId) + Long.hashCode(entryId);
-    }
-}
-
-class ReadCacheValue implements Comparable<ReadCacheValue> {
-    private final MessageEntry messageEntry;
-    private final long expiredTime;
-
-    private boolean deleted;
-
-    public boolean isExpired() {
-        return System.currentTimeMillis() > expiredTime;
-    }
-
-    public MessageEntry getMessage() {
-        return messageEntry;
-    }
-
-    public void setDeletable() {
-        this.deleted = true;
-    }
-
-    public boolean deletable() {
-        return deleted;
-    }
-
-    public long getMessageSize() {
-        return messageEntry.getTotalSize();
+        return Long.hashCode(segmentId);
     }
 
     @Override
-    public int compareTo(@NonNull ReadCacheValue o) {
-        if (this.deletable() && !o.deletable()) {
-            return 1;
-        } else if (!this.deletable() && o.deletable()) {
-            return -1;
-        } else if (this.expiredTime == o.expiredTime) {
-            return 0;
-        } else {
-            return this.expiredTime > o.expiredTime ? 1 : -1;
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
         }
+        if (obj instanceof SegmentBatchKey) {
+            return ((SegmentBatchKey) obj).segmentId == this.segmentId;
+        }
+        return false;
     }
 
-    ReadCacheValue(MessageEntry messageEntry) {
-        this.messageEntry = messageEntry;
-        long createdTime = System.currentTimeMillis();
-        this.expiredTime = createdTime + STORER_CONFIG.getReadCacheExpireTime();
-        this.deleted = false;
+    @Override
+    public String toString() {
+        return String.format("Segment %d with size %d", segmentId, batchSegmentSize);
+    }
+
+    @Override
+    public int compareTo(SegmentBatchKey o) {
+        return Long.compare(this.segmentId, o.segmentId);
     }
 }
