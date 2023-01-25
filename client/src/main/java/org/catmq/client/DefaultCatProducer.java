@@ -1,28 +1,28 @@
 package org.catmq.client;
 
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.ByteString;
-import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
 import io.grpc.*;
 import io.grpc.stub.MetadataUtils;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.curator.framework.CuratorFramework;
-import org.catmq.client.common.ClientConfig;
-import org.catmq.client.common.MessageEntry;
-import org.catmq.client.common.PartitionSelector;
-import org.catmq.client.producer.ProducerProxy;
-import org.catmq.common.ConnectCache;
+import org.catmq.client.common.*;
 import org.catmq.common.TopicDetail;
-import org.catmq.common.TopicType;
 import org.catmq.protocol.definition.Message;
 import org.catmq.protocol.definition.MessageType;
 import org.catmq.protocol.service.*;
-import org.catmq.zk.ZkUtil;
 
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.TimeUnit;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ThreadPoolExecutor;
+
+import static org.catmq.client.CatClient.GRPC_CONNECT_CACHE;
 
 @Slf4j
 public class DefaultCatProducer extends ClientConfig {
@@ -39,8 +39,17 @@ public class DefaultCatProducer extends ClientConfig {
     private final CuratorFramework client;
     private PartitionSelector partitionSelector;
 
+    private final ThreadPoolExecutor handleResultExecutor;
+
+    private final ThreadPoolExecutor handleSendExecutor;
+
+    private final ThreadPoolExecutor handleGrpcResponseExecutor;
+
+
+
     private DefaultCatProducer(String tenantId, String producerGroup, String topic, CuratorFramework client,
-                               PartitionSelector partitionSelector) {
+                               PartitionSelector partitionSelector, ThreadPoolExecutor handleResultExecutor,
+                               ThreadPoolExecutor handleSendExecutor, ThreadPoolExecutor handleGrpcResponseExecutor) {
         this.tenantId = tenantId;
         this.producerGroup = producerGroup;
         this.topicDetail = TopicDetail.get(topic);
@@ -48,52 +57,116 @@ public class DefaultCatProducer extends ClientConfig {
         this.partitionSelector = partitionSelector;
         this.topicDetail.setBrokerAddress("127.0.0.1:5432");
         this.producerId = 1111L;
+        this.handleSendExecutor = handleSendExecutor;
+        this.handleResultExecutor = handleResultExecutor;
+        this.handleGrpcResponseExecutor = handleGrpcResponseExecutor;
     }
 
 
-    public void sendMessage(MessageEntry messageEntry) {
-        // TODO 选择partition
-        ManagedChannel channel = ConnectCache.get(topicDetail.getBrokerAddress());
+    public void sendMessage(MessageEntry messageEntry, long timeout) {
+        doSend(messageEntry, ProcessMode.SYNC, null, timeout);
+    }
+
+
+    public void sendMessage(Collection<? extends MessageEntry> messages, long timeout) {
+        BatchMessageEntry batchMessageEntry = BatchMessageEntry.generateFromList(messages);
+        sendMessage(batchMessageEntry, timeout);
+    }
+
+    public void sendMessage(final MessageEntry messageEntry, final SendCallback sendCallback, final long timeout) {
+        final long beginStartTime = System.currentTimeMillis();
+        Runnable runnable = () -> {
+            long costTime = System.currentTimeMillis() - beginStartTime;
+            if (timeout > costTime) {
+                doSend(messageEntry, ProcessMode.ASYNC, sendCallback, timeout - costTime);
+            } else {
+                sendCallback.onException(
+                        new Exception("time out!"));
+            }
+        };
+        asyncExecuteMessageSend(runnable);
+    }
+
+    private void asyncExecuteMessageSend(Runnable runnable) {
+        try {
+            handleSendExecutor.submit(runnable);
+        } catch (RejectedExecutionException e) {
+            runnable.run();
+        }
+    }
+
+    public void sendMessage(Collection<? extends MessageEntry> messages, final SendCallback sendCallback, final long timeout) {
+        BatchMessageEntry batchMessageEntry = BatchMessageEntry.generateFromList(messages);
+        sendMessage(batchMessageEntry, sendCallback, timeout);
+    }
+
+    private void doSend(MessageEntry messageEntry, ProcessMode processMode, SendCallback sendCallback, long timeout) {
+        ManagedChannel channel = GRPC_CONNECT_CACHE.get(topicDetail.getBrokerAddress());
         Metadata metadata = new Metadata();
         metadata.put(Metadata.Key.of("action", Metadata.ASCII_STRING_MARSHALLER), "sendMessage");
         Channel headChannel = ClientInterceptors.intercept(channel, MetadataUtils.newAttachHeadersInterceptor(metadata));
-        BrokerServiceGrpc.BrokerServiceBlockingStub blockingStub = BrokerServiceGrpc.newBlockingStub(headChannel);
+        BrokerServiceGrpc.BrokerServiceFutureStub futureStub = BrokerServiceGrpc.newFutureStub(headChannel);
 
-        Message message = Message.newBuilder()
-                .setTopic(topicDetail.getCompleteTopicName())
-                .setBody(ByteString.copyFrom(messageEntry.getBody()))
-                .setType(MessageType.NORMAL)
-                .build();
+        List<Message> messages = new ArrayList<>();
+        if (messageEntry instanceof BatchMessageEntry batchMessageEntry) {
+            for (MessageEntry me : batchMessageEntry) {
+                Message message = Message.newBuilder()
+                        .setTopic(topicDetail.getCompleteTopicName())
+                        .setBody(ByteString.copyFrom(messageEntry.getBody()))
+                        .setType(MessageType.NORMAL)
+                        .build();
+                messages.add(message);
+            }
+        }
+        else {
+            Message message = Message.newBuilder()
+                    .setTopic(topicDetail.getCompleteTopicName())
+                    .setBody(ByteString.copyFrom(messageEntry.getBody()))
+                    .setType(MessageType.NORMAL)
+                    .build();
+            messages.add(message);
+        }
+
         SendMessage2BrokerRequest request = SendMessage2BrokerRequest.newBuilder()
-                .setMessage(message)
+                .addAllMessage(messages)
                 .setProducerId(this.producerId)
                 .build();
-        SendMessage2BrokerResponse response;
-        try {
-            response = blockingStub.sendMessage2Broker(request);
-        } catch (StatusRuntimeException e) {
-            log.warn("RPC failed: {}", e.getMessage());
-            return;
+        ListenableFuture<SendMessage2BrokerResponse> responseFuture = futureStub.sendMessage2Broker(request);
+
+        switch (processMode) {
+            case SYNC -> {
+                try {
+                    responseFuture.get();
+                } catch (ExecutionException | InterruptedException e) {
+                    log.error("Fail to get response.", e);
+                }
+            }
+            case ASYNC -> Futures.addCallback(responseFuture, new FutureCallback<>() {
+                @Override
+                public void onSuccess(SendMessage2BrokerResponse result) {
+                    log.info("success to send message");
+                    sendCallback.onSuccess(new SendResult());
+                }
+
+                @Override
+                public void onFailure(Throwable t) {
+                    log.warn("fail to send message", t);
+                    sendCallback.onException(t);
+                }
+            }, handleResultExecutor);
         }
-        log.info("ack: {} \nresponse: {} \nstatus msg: {} \nstatus code: {}",
-                response.getAck(), response.getRes(), response.getStatus().getMessage(),
-                response.getStatus().getCode().getNumber());
-    }
 
 
-    public void sendMessage(Iterable<MessageEntry> messages) {
-        for (MessageEntry messageEntry : messages) {
-            sendMessage(messageEntry);
-        }
-    }
-
-    public void AsyncSendMessage(MessageEntry messageEntry) {
 
     }
 
 
-    protected static DefaultCatProducerBuilder builder(String tenantId, CuratorFramework client) {
-        return new DefaultCatProducerBuilder(tenantId, client);
+    protected static DefaultCatProducerBuilder builder(String tenantId, CuratorFramework client,
+                                                       ThreadPoolExecutor handleRequestExecutor,
+                                                       ThreadPoolExecutor handleResponseExecutor,
+                                                       ThreadPoolExecutor handleGrpcResponseExecutor) {
+        return new DefaultCatProducerBuilder(tenantId, client, handleRequestExecutor, handleResponseExecutor,
+                handleGrpcResponseExecutor);
     }
 
     public static class DefaultCatProducerBuilder {
@@ -106,9 +179,22 @@ public class DefaultCatProducer extends ClientConfig {
 
         private PartitionSelector partitionSelector;
 
-        protected DefaultCatProducerBuilder(String tenantId, CuratorFramework client) {
+        private final ThreadPoolExecutor handleResultExecutor;
+
+        private final ThreadPoolExecutor handleSendExecutor;
+
+        private final ThreadPoolExecutor handleGrpcResponseExecutor;
+
+
+        protected DefaultCatProducerBuilder(String tenantId, CuratorFramework client,
+                                            ThreadPoolExecutor handleSendExecutor,
+                                            ThreadPoolExecutor handleResultExecutor,
+                                            ThreadPoolExecutor handleGrpcResponseExecutor) {
             this.tenantId = tenantId;
             this.client = client;
+            this.handleSendExecutor = handleSendExecutor;
+            this.handleResultExecutor = handleResultExecutor;
+            this.handleGrpcResponseExecutor = handleGrpcResponseExecutor;
         }
 
         public DefaultCatProducerBuilder setProducerGroup(String producerGroup) {
@@ -134,7 +220,8 @@ public class DefaultCatProducer extends ClientConfig {
         }
 
         public DefaultCatProducer build() {
-            return new DefaultCatProducer(tenantId, producerGroup, topic, client, partitionSelector);
+            return new DefaultCatProducer(tenantId, producerGroup, topic, client, partitionSelector,
+                    handleSendExecutor, handleResultExecutor, handleGrpcResponseExecutor);
         }
     }
 

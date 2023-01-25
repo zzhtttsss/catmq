@@ -1,13 +1,13 @@
 package org.catmq.client;
 
-import com.alibaba.fastjson2.JSONObject;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.grpc.*;
 import io.grpc.stub.MetadataUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.zookeeper.CreateMode;
 import org.catmq.client.producer.ProducerProxy;
-import org.catmq.common.ConnectCache;
+import org.catmq.common.GrpcConnectCache;
 import org.catmq.common.TopicType;
 import org.catmq.constant.FileConstant;
 import org.catmq.constant.ZkConstant;
@@ -18,6 +18,7 @@ import org.catmq.zk.ZkUtil;
 
 import java.util.HashMap;
 import java.util.NoSuchElementException;
+import java.util.concurrent.*;
 
 @Slf4j
 public class CatClient {
@@ -28,11 +29,45 @@ public class CatClient {
 
     private ProducerProxy producerProxy;
 
+    private final ThreadPoolExecutor producerHandleRequestExecutor;
+
+    private final ThreadPoolExecutor producerHandleResponseExecutor;
+
+    private final ThreadPoolExecutor producerHandleGrpcResponseExecutor;
+
+    public static final GrpcConnectCache GRPC_CONNECT_CACHE = new GrpcConnectCache(100);
+
 
     private CatClient(String zkAddress, String tenantId, ProducerProxy producerProxy) {
         this.client = ZkUtil.createClient(zkAddress);
         this.tenantId = tenantId;
         this.producerProxy = producerProxy;
+        this.producerHandleRequestExecutor = new ThreadPoolExecutor(
+                4,
+                4,
+                1,
+                TimeUnit.MINUTES,
+                new LinkedBlockingQueue<>(10000),
+                new ThreadFactoryBuilder().setNameFormat("producerHandleRequestExecutor" + "-%d").build(),
+                new ThreadPoolExecutor.DiscardOldestPolicy());
+
+        this.producerHandleResponseExecutor = new ThreadPoolExecutor(
+                4,
+                4,
+                1,
+                TimeUnit.MINUTES,
+                new LinkedBlockingQueue<>(10000),
+                new ThreadFactoryBuilder().setNameFormat("producerHandleResponseExecutor" + "-%d").build(),
+                new ThreadPoolExecutor.DiscardOldestPolicy());
+
+        this.producerHandleGrpcResponseExecutor = new ThreadPoolExecutor(
+                4,
+                4,
+                1,
+                TimeUnit.MINUTES,
+                new LinkedBlockingQueue<>(10000),
+                new ThreadFactoryBuilder().setNameFormat("producerHandleResponseExecutor" + "-%d").build(),
+                new ThreadPoolExecutor.DiscardOldestPolicy());
     }
 
     public static CatClientBuilder builder() {
@@ -40,7 +75,8 @@ public class CatClient {
     }
 
     public DefaultCatProducer.DefaultCatProducerBuilder createProducer() {
-        return DefaultCatProducer.builder(tenantId, client);
+        return DefaultCatProducer.builder(tenantId, client, producerHandleRequestExecutor, producerHandleResponseExecutor,
+                producerHandleGrpcResponseExecutor);
     }
 
     public void createSinglePartitionTopic(String topic, TopicType type) {
@@ -84,7 +120,7 @@ public class CatClient {
 
     public void createPartition(String topic, TopicType type, int partitionNum, String[] brokers) {
         for (int i = 0; i < partitionNum; i++) {
-            Channel channel = ConnectCache.get(brokers[i]);
+            Channel channel = GRPC_CONNECT_CACHE.get(brokers[i]);
             Metadata metadata = new Metadata();
             metadata.put(Metadata.Key.of("action", Metadata.ASCII_STRING_MARSHALLER), "createPartition");
             metadata.put(Metadata.Key.of("tenant-id", Metadata.ASCII_STRING_MARSHALLER), tenantId);

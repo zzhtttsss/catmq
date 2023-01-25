@@ -14,7 +14,7 @@ public class Producer {
 
 
     public void publishMessage(long producerId, long sequenceId, String message) {
-        topic.putMessage(message);
+        topic.putMessage(message.getBytes());
     }
 
     public Producer(Topic topic, String producerName, long producerId) {

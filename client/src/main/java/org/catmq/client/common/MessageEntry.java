@@ -12,6 +12,8 @@ public class MessageEntry {
     private Map<String, String> properties;
     private byte[] body;
 
+    public MessageEntry() {
+    }
 
     public MessageEntry(byte[] body) {
         this.properties = new HashMap<>();
