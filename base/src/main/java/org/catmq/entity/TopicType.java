@@ -1,4 +1,4 @@
-package org.catmq.common;
+package org.catmq.entity;
 
 import lombok.Getter;
 

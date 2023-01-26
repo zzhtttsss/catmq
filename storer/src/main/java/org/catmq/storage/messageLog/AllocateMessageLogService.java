@@ -11,7 +11,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import static org.catmq.storer.StorerConfig.STORER_CONFIG;
+import static org.catmq.entity.StorerConfig.STORER_CONFIG;
 
 /**
  * Service thread to allocate {@link MessageLog}.

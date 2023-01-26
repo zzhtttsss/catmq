@@ -1,5 +1,7 @@
-package org.catmq.common;
+package org.catmq.entity;
 
+import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONObject;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -8,15 +10,18 @@ import io.grpc.InsecureChannelCredentials;
 import io.grpc.ManagedChannel;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.curator.framework.CuratorFramework;
 
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
-public class GrpcConnectCache {
+@Slf4j
+public class GrpcConnectManager {
     @Getter
     private final LoadingCache<String, ManagedChannel> cache;
 
-    public GrpcConnectCache(int maxSize) {
+    public GrpcConnectManager(int maxSize) {
         this.cache = CacheBuilder
                 .newBuilder()
                 .maximumSize(maxSize)

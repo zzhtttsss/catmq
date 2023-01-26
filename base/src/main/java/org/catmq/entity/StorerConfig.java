@@ -1,7 +1,6 @@
-package org.catmq.storer;
+package org.catmq.entity;
 
 import io.netty.util.internal.PlatformDependent;
-import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import org.catmq.constant.ConfigConstant;
@@ -45,6 +44,7 @@ public class StorerConfig {
     private long segmentMaxFileSize;
     private String segmentIndexStoragePath;
     private long maxSegmentEntryNum;
+    private FlushMode flushMode;
 
     public void readConfig() {
         InputStream stream = this.getClass().getResourceAsStream(CONFIG_PATH);
@@ -73,5 +73,7 @@ public class StorerConfig {
                 String.valueOf(0.25 * PlatformDependent.estimateMaxDirectMemory())));
         segmentIndexStoragePath = properties.getProperty(ConfigConstant.SEGMENT_INDEX_STORAGE_PATH, "storer/src/index");
         maxSegmentEntryNum = Long.parseLong(properties.getProperty(ConfigConstant.MAX_SEGMENT_ENTRY_NUM, String.valueOf(100000)));
+        flushMode = FlushMode.fromString(properties.getProperty(ConfigConstant.FLUSH_MODE, "async"));
+
     }
 }

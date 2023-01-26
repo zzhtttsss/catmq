@@ -2,7 +2,7 @@ package org.catmq.client.producer.balance;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.curator.framework.CuratorFramework;
-import org.catmq.broker.BrokerInfo;
+import org.catmq.entity.BrokerInfo;
 import org.catmq.constant.FileConstant;
 import org.catmq.constant.ZkConstant;
 import org.catmq.entity.JsonSerializable;
@@ -22,10 +22,10 @@ public class LeastUsedStrategy implements LoadBalance {
 
     public Optional<String[]> selectBroker(CuratorFramework client, int num, String topic) {
         try {
-            Map<String, Integer> map = new HashMap<>(4);
+            Map<String, Integer> map = new HashMap<>();
 
-            List<String> paths = client.getChildren().forPath(ZkConstant.BROKER_ADDRESS_PATH);
-            String addressDirectory = StringUtil.concatString(ZkConstant.BROKER_ADDRESS_PATH, FileConstant.LEFT_SLASH);
+            List<String> paths = client.getChildren().forPath(ZkConstant.BROKER_ROOT_PATH);
+            String addressDirectory = StringUtil.concatString(ZkConstant.BROKER_ROOT_PATH, FileConstant.LEFT_SLASH);
             for (String path : paths) {
                 String fullPath = StringUtil.concatString(addressDirectory, path);
                 byte[] bytes = client.getData().forPath(fullPath);

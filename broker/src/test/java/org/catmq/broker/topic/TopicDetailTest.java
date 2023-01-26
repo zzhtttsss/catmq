@@ -1,6 +1,6 @@
 package org.catmq.broker.topic;
 
-import org.catmq.common.TopicType;
+import org.catmq.entity.TopicType;
 import org.junit.Assert;
 import org.junit.Test;
 

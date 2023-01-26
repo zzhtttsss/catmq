@@ -2,7 +2,7 @@ package org.catmq.pipline.preparer;
 
 import lombok.extern.slf4j.Slf4j;
 import org.catmq.broker.common.Consumer;
-import org.catmq.broker.service.ClientManager;
+import org.catmq.broker.manager.ClientManager;
 import org.catmq.grpc.RequestContext;
 import org.catmq.pipline.Preparer;
 

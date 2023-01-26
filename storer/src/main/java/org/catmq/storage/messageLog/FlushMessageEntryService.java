@@ -8,10 +8,11 @@ import org.catmq.storage.MessageEntry;
 import org.catmq.thread.ServiceThread;
 import org.catmq.storer.Storer;
 
+import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
-import static org.catmq.storer.StorerConfig.STORER_CONFIG;
+import static org.catmq.entity.StorerConfig.STORER_CONFIG;
 
 /**
  * Service thread to flush {@link MessageEntry} to {@link MessageLog}.
@@ -24,14 +25,14 @@ public class FlushMessageEntryService extends ServiceThread {
     /**
      * cache all pending {@link MessageEntry}.
      */
-    private final BlockingQueue<MessageEntry> FlushMessageEntryQueue;
+    private final BlockingQueue<MessageEntry> flushMessageEntryQueue;
 
     private static final RecyclableArrayList.Recycler<MessageEntry> entryListRecycler =
             new RecyclableArrayList.Recycler<>();
 
     public FlushMessageEntryService() {
         // TODO 忙等待优化 BlockingMpscQueue
-        this.FlushMessageEntryQueue = new ArrayBlockingQueue<>(STORER_CONFIG.getFlushMessageEntryQueueCapacity());
+        this.flushMessageEntryQueue = new ArrayBlockingQueue<>(STORER_CONFIG.getFlushMessageEntryQueueCapacity());
     }
 
     @Override
@@ -51,15 +52,15 @@ public class FlushMessageEntryService extends ServiceThread {
             // There are two situations that we need flush all messageEntry in queue to the disk:
             // 1. A certain amount of time has elapsed since the last flush.
             // 2. The number of messageEntry in the queue reaches a certain number.
-            if (System.currentTimeMillis() - lastFlushTime > 20 || FlushMessageEntryQueue.size() >= 10000) {
-                if (FlushMessageEntryQueue.isEmpty()) {
+            if (System.currentTimeMillis() - lastFlushTime > 20 || flushMessageEntryQueue.size() >= 10000) {
+                if (flushMessageEntryQueue.isEmpty()) {
                     continue;
                 }
 
                 MessageLog messageLog = Storer.STORER.getMessageLogStorage().getLatestMessageLog();
                 RecyclableArrayList<MessageEntry> currentMessageEntries = entryListRecycler.newInstance();
                 // Move all messageEntry in the queue to an array.
-                FlushMessageEntryQueue.drainTo(currentMessageEntries);
+                flushMessageEntryQueue.drainTo(currentMessageEntries);
 
                 ByteBuf byteBuf = Unpooled.directBuffer();
                 for (MessageEntry me : currentMessageEntries) {
@@ -95,9 +96,20 @@ public class FlushMessageEntryService extends ServiceThread {
 
     public void putMessageEntry2Queue(MessageEntry messageEntry) {
         try {
-            FlushMessageEntryQueue.put(messageEntry);
+            flushMessageEntryQueue.put(messageEntry);
         } catch (InterruptedException e) {
             log.warn("Interrupted! exception : {}", e.getMessage());
         }
+    }
+
+    public void batchPutMessageEntry2Queue(List<MessageEntry> messageEntries) {
+        try {
+            for (MessageEntry me: messageEntries) {
+                flushMessageEntryQueue.put(me);
+            }
+        } catch (InterruptedException e) {
+            log.warn("Interrupted!", e);
+        }
+
     }
 }

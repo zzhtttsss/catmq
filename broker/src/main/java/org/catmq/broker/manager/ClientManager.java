@@ -1,4 +1,4 @@
-package org.catmq.broker.service;
+package org.catmq.broker.manager;
 
 import lombok.Getter;
 import org.catmq.broker.common.Consumer;

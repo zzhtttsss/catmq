@@ -6,20 +6,19 @@ import org.apache.zookeeper.CreateMode;
 import org.catmq.command.BooleanError;
 import org.catmq.constant.FileConstant;
 import org.catmq.constant.ZkConstant;
-import org.catmq.storer.Storer;
 import org.catmq.util.StringUtil;
 
 import static org.catmq.storer.Storer.STORER;
 
 @Slf4j
-public class StorerZooKeeperClient extends BaseZookeeper {
+public class StorerZkManager extends BaseZookeeper {
 
     @Getter
     private final String storerPath;
 
-    public StorerZooKeeperClient(String zkAddress) {
-        super(zkAddress);
-        this.storerPath = "/storer/" + STORER.getStorerInfo().getStorerId();
+    public StorerZkManager() {
+        super(STORER.getClient());
+        this.storerPath = "/storer/" + STORER.getStorerInfo().getStorerAddress();
     }
 
     @Override
@@ -54,9 +53,17 @@ public class StorerZooKeeperClient extends BaseZookeeper {
                     .withMode(CreateMode.EPHEMERAL)
                     .forPath(StringUtil.concatString(ZkConstant.TMP_STORER_PATH, FileConstant.LEFT_SLASH, STORER.getStorerInfo().getStorerId()));
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Fail to register storer information to zookeeper.", e);
             return BooleanError.fail(e.getMessage());
         }
         return BooleanError.ok();
+    }
+
+    public void updateStorerInfo() {
+        try {
+            this.client.setData().forPath(storerPath, STORER.getStorerInfo().toBytes());
+        } catch (Exception e) {
+            log.error("Fail to update storer information to zookeeper.", e);
+        }
     }
 }

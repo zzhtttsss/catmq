@@ -2,12 +2,20 @@ package org.catmq.broker.topic.nonpersistent;
 
 import lombok.extern.slf4j.Slf4j;
 import org.catmq.broker.common.Consumer;
-import org.catmq.broker.service.ClientManager;
+import org.catmq.broker.common.MessageEntry;
+import org.catmq.broker.manager.ClientManager;
 import org.catmq.broker.topic.BaseTopic;
 import org.catmq.broker.topic.Subscription;
 import org.catmq.broker.topic.Topic;
+import org.catmq.entity.TopicDetail;
+import org.catmq.protocol.definition.OriginMessage;
+import org.catmq.protocol.service.SendMessage2BrokerResponse;
 
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static org.catmq.broker.Broker.BROKER;
 
 @Slf4j
 public class NonPersistentTopic extends BaseTopic implements Topic {
@@ -20,16 +28,17 @@ public class NonPersistentTopic extends BaseTopic implements Topic {
     private final ClientManager clientManager;
 
     @Override
-    public void putMessage(byte[] message) {
+    public CompletableFuture<SendMessage2BrokerResponse> putMessage(List<OriginMessage> messages) {
         subscriptions.forEach((name, subscription) -> {
             subscription.getDispatcher().ifPresent(dispatcher -> {
                 if (dispatcher instanceof SingleActiveConsumerNonPersistentDispatcher singleActiveConsumer) {
-                    singleActiveConsumer.sendMessages(message);
+                    singleActiveConsumer.sendMessages(messages.get(0).toByteArray());
                 } else {
                     log.error("Unknown dispatcher type {}", dispatcher.getClass());
                 }
             });
         });
+        return new CompletableFuture<>();
     }
 
     @Override
@@ -68,9 +77,9 @@ public class NonPersistentTopic extends BaseTopic implements Topic {
     }
 
 
-    public NonPersistentTopic(String topic) {
-        super(topic);
+    public NonPersistentTopic(TopicDetail topicDetail) {
+        super(topicDetail);
         this.subscriptions = new ConcurrentHashMap<>();
-        this.clientManager = ClientManager.ClientManagerEnum.INSTANCE.getInstance();
+        this.clientManager = BROKER.getClientManager();
     }
 }

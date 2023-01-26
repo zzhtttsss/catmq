@@ -2,7 +2,8 @@ package org.catmq.client;
 
 import org.catmq.client.common.MessageEntry;
 import org.catmq.client.producer.ProducerProxy;
-import org.catmq.common.TopicType;
+import org.catmq.entity.TopicMode;
+import org.catmq.entity.TopicType;
 
 public class TestClient {
 
@@ -19,14 +20,13 @@ public class TestClient {
                 .setTopic("test")
                 .build();
 
-        client.createTopic("test", TopicType.NON_PERSISTENT, 1);
+        client.createTopic("test", TopicType.NON_PERSISTENT, TopicMode.NORMAL, 1);
 
         MessageEntry messageEntry = MessageEntry.builder()
                 .setBody("hello world".getBytes())
                 .setProperties("key", "value")
                 .build();
 
-        producer.sendMessage(messageEntry);
 
 
     }

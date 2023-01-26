@@ -3,6 +3,7 @@ package org.catmq.client;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.google.protobuf.ByteString;
 import io.grpc.*;
 import io.grpc.stub.MetadataUtils;
@@ -10,9 +11,10 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.curator.framework.CuratorFramework;
 import org.catmq.client.common.*;
-import org.catmq.common.TopicDetail;
-import org.catmq.protocol.definition.Message;
-import org.catmq.protocol.definition.MessageType;
+import org.catmq.entity.GrpcConnectManager;
+import org.catmq.entity.TopicDetail;
+import org.catmq.protocol.definition.OriginMessage;
+import org.catmq.protocol.definition.ProcessMode;
 import org.catmq.protocol.service.*;
 
 import java.util.ArrayList;
@@ -22,15 +24,12 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 
-import static org.catmq.client.CatClient.GRPC_CONNECT_CACHE;
 
 @Slf4j
 public class DefaultCatProducer extends ClientConfig {
 
     @Getter
     private final String tenantId;
-    @Getter
-    private final String producerGroup;
     @Getter
     private final TopicDetail topicDetail;
     @Getter
@@ -43,20 +42,22 @@ public class DefaultCatProducer extends ClientConfig {
 
     private final ThreadPoolExecutor handleRequestExecutor;
 
+    private final GrpcConnectManager grpcConnectManager;
 
 
-    private DefaultCatProducer(String tenantId, String producerGroup, String topic, CuratorFramework client,
+
+    private DefaultCatProducer(String tenantId, String topic, CuratorFramework client,
                                PartitionSelector partitionSelector, ThreadPoolExecutor handleResponseExecutor,
-                               ThreadPoolExecutor handleRequestExecutor) {
+                               ThreadPoolExecutor handleRequestExecutor, GrpcConnectManager grpcConnectManager) {
         this.tenantId = tenantId;
-        this.producerGroup = producerGroup;
         this.topicDetail = TopicDetail.get(topic);
         this.client = client;
         this.partitionSelector = partitionSelector;
-        this.topicDetail.setBrokerAddress("127.0.0.1:5432");
         this.producerId = 1111L;
         this.handleRequestExecutor = handleRequestExecutor;
         this.handleResponseExecutor = handleResponseExecutor;
+        this.grpcConnectManager = grpcConnectManager;
+
     }
 
 
@@ -70,7 +71,7 @@ public class DefaultCatProducer extends ClientConfig {
         sendMessage(batchMessageEntry, timeout);
     }
 
-    public void sendMessage(final MessageEntry messageEntry, final SendCallback sendCallback, final long timeout) {
+    public void asyncSendMessage(final MessageEntry messageEntry, final SendCallback sendCallback, final long timeout) {
         final long beginStartTime = System.currentTimeMillis();
         Runnable runnable = () -> {
             long costTime = System.currentTimeMillis() - beginStartTime;
@@ -94,41 +95,39 @@ public class DefaultCatProducer extends ClientConfig {
 
     public void sendMessage(Collection<? extends MessageEntry> messages, final SendCallback sendCallback, final long timeout) {
         BatchMessageEntry batchMessageEntry = BatchMessageEntry.generateFromList(messages);
-        sendMessage(batchMessageEntry, sendCallback, timeout);
+        asyncSendMessage(batchMessageEntry, sendCallback, timeout);
     }
 
     private void doSend(MessageEntry messageEntry, ProcessMode processMode, SendCallback sendCallback, long timeout) {
-        ManagedChannel channel = GRPC_CONNECT_CACHE.get(topicDetail.getBrokerAddress());
+        ManagedChannel channel = grpcConnectManager.get("111");
         Metadata metadata = new Metadata();
         metadata.put(Metadata.Key.of("action", Metadata.ASCII_STRING_MARSHALLER), "sendMessage");
         Channel headChannel = ClientInterceptors.intercept(channel, MetadataUtils.newAttachHeadersInterceptor(metadata));
         BrokerServiceGrpc.BrokerServiceFutureStub futureStub = BrokerServiceGrpc.newFutureStub(headChannel);
-
-        List<Message> messages = new ArrayList<>();
+        List<OriginMessage> messages = new ArrayList<>();
         if (messageEntry instanceof BatchMessageEntry batchMessageEntry) {
             for (MessageEntry me : batchMessageEntry) {
-                Message message = Message.newBuilder()
-                        .setTopic(topicDetail.getCompleteTopicName())
-                        .setBody(ByteString.copyFrom(messageEntry.getBody()))
-                        .setType(MessageType.NORMAL)
+                OriginMessage message = OriginMessage.newBuilder()
+                        .setBody(ByteString.copyFrom(me.getBody()))
                         .build();
                 messages.add(message);
             }
         }
         else {
-            Message message = Message.newBuilder()
-                    .setTopic(topicDetail.getCompleteTopicName())
+            OriginMessage message = OriginMessage.newBuilder()
                     .setBody(ByteString.copyFrom(messageEntry.getBody()))
-                    .setType(MessageType.NORMAL)
                     .build();
             messages.add(message);
         }
 
         SendMessage2BrokerRequest request = SendMessage2BrokerRequest.newBuilder()
                 .addAllMessage(messages)
+                .setTopic(topicDetail.getCompleteTopicName())
                 .setProducerId(this.producerId)
                 .build();
         ListenableFuture<SendMessage2BrokerResponse> responseFuture = futureStub.sendMessage2Broker(request);
+
+
 
         switch (processMode) {
             case SYNC -> {
@@ -150,23 +149,20 @@ public class DefaultCatProducer extends ClientConfig {
                     log.warn("fail to send message", t);
                     sendCallback.onException(t);
                 }
-            }, handleResponseExecutor);
+            }, MoreExecutors.directExecutor());
         }
-
-
-
     }
 
 
     protected static DefaultCatProducerBuilder builder(String tenantId, CuratorFramework client,
                                                        ThreadPoolExecutor handleRequestExecutor,
-                                                       ThreadPoolExecutor handleResponseExecutor) {
-        return new DefaultCatProducerBuilder(tenantId, client, handleRequestExecutor, handleResponseExecutor);
+                                                       ThreadPoolExecutor handleResponseExecutor,
+                                                       GrpcConnectManager grpcConnectManager) {
+        return new DefaultCatProducerBuilder(tenantId, client, handleRequestExecutor, handleResponseExecutor, grpcConnectManager);
     }
 
     public static class DefaultCatProducerBuilder {
         private final String tenantId;
-        private String producerGroup;
 
         private String topic;
 
@@ -178,20 +174,15 @@ public class DefaultCatProducer extends ClientConfig {
 
         private final ThreadPoolExecutor handleRequestExecutor;
 
+        private final GrpcConnectManager grpcConnectManager;
 
-
-        protected DefaultCatProducerBuilder(String tenantId, CuratorFramework client,
-                                            ThreadPoolExecutor handleRequestExecutor,
-                                            ThreadPoolExecutor handleResponseExecutor) {
+        protected DefaultCatProducerBuilder(String tenantId, CuratorFramework client, ThreadPoolExecutor handleRequestExecutor,
+                                            ThreadPoolExecutor handleResponseExecutor, GrpcConnectManager grpcConnectManager) {
             this.tenantId = tenantId;
             this.client = client;
             this.handleRequestExecutor = handleRequestExecutor;
             this.handleResponseExecutor = handleResponseExecutor;
-        }
-
-        public DefaultCatProducerBuilder setProducerGroup(String producerGroup) {
-            this.producerGroup = producerGroup;
-            return this;
+            this.grpcConnectManager = grpcConnectManager;
         }
 
         public DefaultCatProducerBuilder setTopic(String topic) {
@@ -204,16 +195,14 @@ public class DefaultCatProducer extends ClientConfig {
             return this;
         }
 
-
-
         public DefaultCatProducerBuilder setPartitionSelector(PartitionSelector partitionSelector) {
             this.partitionSelector = partitionSelector;
             return this;
         }
 
         public DefaultCatProducer build() {
-            return new DefaultCatProducer(tenantId, producerGroup, topic, client, partitionSelector,
-                    handleRequestExecutor, handleResponseExecutor);
+            return new DefaultCatProducer(tenantId, topic, client, partitionSelector,
+                    handleRequestExecutor, handleResponseExecutor, grpcConnectManager);
         }
     }
 

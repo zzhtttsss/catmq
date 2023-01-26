@@ -14,8 +14,11 @@ import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
 import java.util.concurrent.ArrayBlockingQueue;
 
+
 @Slf4j
 public class FlushWriteCacheService extends ServiceThread {
+
+    public static long lastSegmentOffset = 0L;
 
     private final SegmentStorage segmentStorage;
 
@@ -76,14 +79,14 @@ public class FlushWriteCacheService extends ServiceThread {
             FileChannel fileChannel = new RandomAccessFile(file, "rw").getChannel();
             EntryPositionIndex entryPositionIndex = segmentStorage.getEntryPositionIndex();
             KeyValueStorage.Batch batch = entryPositionIndex.newBatch();
-
             writeCache.getCache().forEach((segmentId, map) -> {
                 map.forEach((entryId, messageEntry) -> {
                     ByteBuf byteBuf = Unpooled.directBuffer(messageEntry.getTotalSize());
                     messageEntry.dump2ByteBuf(byteBuf);
                     try {
                         fileChannel.write(byteBuf.internalNioBuffer(0, byteBuf.readableBytes()));
-                        entryPositionIndex.addPosition(batch, segmentId, entryId, messageEntry.getOffset());
+                        entryPositionIndex.addPosition(batch, segmentId, entryId, lastSegmentOffset);
+                        lastSegmentOffset += messageEntry.getTotalSize();
                     } catch (IOException e) {
                         this.hasException = true;
                         log.error("write file " + fileName + " error or add index error.", e);

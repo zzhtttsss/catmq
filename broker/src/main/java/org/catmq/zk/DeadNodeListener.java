@@ -3,7 +3,7 @@ package org.catmq.zk;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.curator.framework.recipes.cache.ChildData;
 import org.apache.curator.framework.recipes.cache.CuratorCacheListener;
-import org.catmq.broker.BrokerInfo;
+import org.catmq.entity.BrokerInfo;
 
 /**
  * @author BYL

@@ -1,6 +1,6 @@
 package org.catmq.client.common;
 
-import org.catmq.broker.BrokerInfo;
+import org.catmq.entity.BrokerInfo;
 
 public interface ClientProxy {
     /**
