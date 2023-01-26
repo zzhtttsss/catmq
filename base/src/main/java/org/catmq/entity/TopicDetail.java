@@ -1,4 +1,4 @@
-package org.catmq.common;
+package org.catmq.entity;
 
 import com.google.common.base.Splitter;
 import com.google.common.cache.CacheBuilder;
@@ -25,18 +25,22 @@ public class TopicDetail {
 
     private static final String TOPIC_DOMAIN_SEPARATOR = "://";
 
+    private static final String TOPIC_DOMAIN_INNER_SEPARATOR = ":";
+
+
     // full name of topic
-    // <topicType>://<tenant>/<topic>
+    // <topicType>:<topicMode>://<tenant>/<topic>
     private final String completeTopicName;
 
     private final TopicType type;
+    private final TopicMode mode;
     private final String tenant;
     private final String localName;
 
     private final int partitionIndex;
 
     @Setter
-    private String brokerAddress;
+    private String brokerZkPath;
 
     private static final LoadingCache<String, TopicDetail> CACHE = CacheBuilder
             .newBuilder()
@@ -57,6 +61,12 @@ public class TopicDetail {
 
     public static TopicDetail get(String domain, String tenant, String topic) {
         String name = StringUtil.concatString(domain, TOPIC_DOMAIN_SEPARATOR, tenant,
+                FileConstant.LEFT_SLASH, topic);
+        return TopicDetail.get(name);
+    }
+
+    public static TopicDetail get(String type, String mode, String tenant, String topic) {
+        String name = StringUtil.concatString(type, TOPIC_DOMAIN_INNER_SEPARATOR, mode, TOPIC_DOMAIN_SEPARATOR, tenant,
                 FileConstant.LEFT_SLASH, topic);
         return TopicDetail.get(name);
     }
@@ -147,12 +157,13 @@ public class TopicDetail {
      * @param name long type: [TopicType]://[tenant]/[localName]<br/>
      *             short type: [localName]
      */
-    private TopicDetail(String name) {
+    protected TopicDetail(String name) {
         log.info("create a new topic named {}", name);
         if (!name.contains(TOPIC_DOMAIN_SEPARATOR)) {
             // short name like <topic> with default TopicType.NON_PERSISTENT and default tenant
             // non-persistent://public/<name>
             this.type = TopicType.NON_PERSISTENT;
+            this.mode = TopicMode.NORMAL;
             this.tenant = PUBLIC_TENANT;
             this.localName = name;
             this.completeTopicName = StringUtil.concatString(TopicType.NON_PERSISTENT.getName(),
@@ -164,7 +175,8 @@ public class TopicDetail {
             // long name like persistent://tenant/topic
             List<String> parts = Splitter.on(TOPIC_DOMAIN_SEPARATOR).limit(2).splitToList(name);
             this.type = TopicType.fromString(parts.get(0));
-            String rest = parts.get(1);
+            this.mode = TopicMode.fromString(parts.get(1));
+            String rest = parts.get(2);
             // The rest of the name is like:
             // new:    tenant/<topic>
             parts = Splitter.on(FileConstant.LEFT_SLASH).limit(2).splitToList(rest);
@@ -181,4 +193,5 @@ public class TopicDetail {
             throw new IllegalArgumentException("Invalid topic name: " + completeTopicName);
         }
     }
+
 }

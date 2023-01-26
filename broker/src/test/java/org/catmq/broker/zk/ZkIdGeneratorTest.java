@@ -1,21 +1,12 @@
 package org.catmq.broker.zk;
 
-import cn.hutool.core.collection.ConcurrentHashSet;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.curator.test.TestingServer;
-import org.catmq.broker.BrokerConfig;
-import org.catmq.zk.ZkIdGenerator;
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 @Slf4j
 public class ZkIdGeneratorTest {

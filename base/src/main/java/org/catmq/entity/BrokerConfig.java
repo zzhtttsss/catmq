@@ -1,15 +1,13 @@
-package org.catmq.broker;
+package org.catmq.entity;
 
 import lombok.Getter;
 import lombok.Setter;
 import org.catmq.constant.ConfigConstant;
 import org.catmq.constant.ZkConstant;
-import org.catmq.zk.ZkIdGenerator;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
-import java.util.UUID;
 
 import static org.catmq.util.ConfigUtil.PROCESSOR_NUMBER;
 
@@ -30,6 +28,7 @@ public class BrokerConfig {
     private int brokerPort = 5432;
     private int grpcProducerThreadQueueCapacity = 10000;
     private int grpcProducerThreadPoolNums = PROCESSOR_NUMBER;
+    private int maxSegmentMessageNum = 10;
 
 
     private BrokerConfig() {

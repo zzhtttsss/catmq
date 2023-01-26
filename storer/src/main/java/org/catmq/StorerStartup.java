@@ -15,7 +15,7 @@ import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 import static org.catmq.storer.Storer.STORER;
-import static org.catmq.storer.StorerConfig.STORER_CONFIG;
+import static org.catmq.entity.StorerConfig.STORER_CONFIG;
 
 /**
  * Start the storer service.

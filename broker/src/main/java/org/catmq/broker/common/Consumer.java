@@ -3,7 +3,7 @@ package org.catmq.broker.common;
 import lombok.Getter;
 import lombok.Setter;
 import org.catmq.broker.topic.Subscription;
-import org.catmq.common.TopicDetail;
+import org.catmq.entity.TopicDetail;
 
 import java.util.Optional;
 import java.util.concurrent.ConcurrentLinkedQueue;

@@ -6,7 +6,8 @@ import org.catmq.util.StringUtil;
 
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import static org.catmq.storer.StorerConfig.STORER_CONFIG;
+import static org.catmq.storer.Storer.STORER;
+import static org.catmq.entity.StorerConfig.STORER_CONFIG;
 
 /**
  * Manage all {@link MessageLog}.
@@ -62,6 +63,8 @@ public class MessageLogStorage {
                 nextNextFilePath, this.maxMessageLogSize);
         if (messageLog != null) {
             this.messageLogs.add(messageLog);
+            STORER.getStorerInfo().addMessageLogNum();
+
         }
         return messageLog;
     }
@@ -73,5 +76,9 @@ public class MessageLogStorage {
 
     public MessageLog getLastMessageLog(final long startOffset) {
         return getLastMessageLog(startOffset, true);
+    }
+
+    public int getMessageLogNum() {
+        return messageLogs.size();
     }
 }

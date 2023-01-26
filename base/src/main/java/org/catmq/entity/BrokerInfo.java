@@ -1,18 +1,13 @@
-package org.catmq.broker;
+package org.catmq.entity;
 
 import com.alibaba.fastjson2.JSON;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
-import org.apache.curator.framework.CuratorFramework;
-import org.catmq.entity.JsonSerializable;
-import org.catmq.zk.ZkIdGenerator;
-import org.catmq.zk.ZkUtil;
 
 @Data
 @NoArgsConstructor
 public class BrokerInfo implements JsonSerializable {
-    @NonNull
     private long brokerId;
     private String brokerName;
     @NonNull
@@ -20,8 +15,8 @@ public class BrokerInfo implements JsonSerializable {
     private int brokerPort;
     @NonNull
     private String zkAddress;
+    private String brokerAddress;
 
-    private CuratorFramework client;
 
     /**
      * The number of connections on this broker.
@@ -38,8 +33,8 @@ public class BrokerInfo implements JsonSerializable {
         this.brokerIp = config.getBrokerIp();
         this.brokerPort = config.getBrokerPort();
         this.zkAddress = config.getZkAddress();
-        this.client = ZkUtil.createClient(zkAddress);
-        this.brokerId = ZkIdGenerator.ZkIdGeneratorEnum.INSTANCE.getInstance().nextId(client);
         this.load = 0;
+        // TODO concat
+        this.brokerAddress = brokerIp + brokerPort;
     }
 }

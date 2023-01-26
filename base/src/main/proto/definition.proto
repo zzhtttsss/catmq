@@ -17,12 +17,9 @@ enum Permission {
   READ_WRITE = 4;
 }
 
-enum MessageType {
-  NON_PERSISTENT = 0;
-
-  NORMAL = 1;
-
-  BATCH = 2;
+enum ProcessMode {
+  SYNC = 0;
+  ASYNC = 1;
 }
 
 enum Encoding {
@@ -89,8 +86,6 @@ message SystemProperties {
   // Message body encoding. Candidate options are identity, gzip, snappy etc.
   Encoding body_encoding = 5;
 
-  // Message type, normal, FIFO or transactional.
-  MessageType message_type = 6;
 
   // Message born time-point.
   google.protobuf.Timestamp born_timestamp = 7;
@@ -283,8 +278,12 @@ message Status {
   string message = 2;
 }
 
-message Message{
-  MessageType type = 1;
+message OriginMessage{
   bytes body = 2;
-  string topic = 3;
+}
+
+message NumberedMessage{
+  int64 segmentId = 1;
+  int64 entryId = 2;
+  bytes body = 3;
 }

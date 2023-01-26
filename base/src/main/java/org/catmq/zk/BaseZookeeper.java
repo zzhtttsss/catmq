@@ -20,9 +20,7 @@ public abstract class BaseZookeeper {
      */
     protected abstract void close();
 
-    protected BaseZookeeper(String zkAddress) {
-        RetryPolicy policy = new ExponentialBackoffRetry(1000, 3);
-        this.client = CuratorFrameworkFactory.newClient(zkAddress, policy);
-        client.start();
+    protected BaseZookeeper(CuratorFramework client) {
+        this.client = client;
     }
 }

@@ -15,12 +15,12 @@ import org.catmq.protocol.definition.Code;
 import org.catmq.protocol.definition.Status;
 import org.catmq.protocol.service.*;
 import org.catmq.thread.OrderedExecutor;
-import org.catmq.zk.StorerZooKeeperClient;
+import org.catmq.zk.StorerZkManager;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
-import static org.catmq.storer.StorerConfig.*;
+import static org.catmq.entity.StorerConfig.*;
 import static org.catmq.thread.OrderedExecutor.NO_TASK_LIMIT;
 import static org.catmq.thread.OrderedExecutor.createExecutor;
 import static org.catmq.util.StringUtil.defaultString;
@@ -39,7 +39,6 @@ public class StorerServer extends StorerServiceGrpc.StorerServiceImplBase {
      */
     protected OrderedExecutor readThreadPoolExecutor;
 
-    private StorerZooKeeperClient storerZooKeeperClient;
 
 
     public StorerServer() {
@@ -47,13 +46,11 @@ public class StorerServer extends StorerServiceGrpc.StorerServiceImplBase {
                 WRITE_ORDERED_EXECUTOR_NAME, NO_TASK_LIMIT);
         readThreadPoolExecutor = createExecutor(STORER_CONFIG.getReadOrderedExecutorThreadNums(),
                 READ_ORDERED_EXECUTOR_NAME, NO_TASK_LIMIT);
-        storerZooKeeperClient = new StorerZooKeeperClient("127.0.0.1:2181");
 
         this.init();
     }
 
     protected void init() {
-        storerZooKeeperClient.register2Zk();
     }
 
     private OrderedExecutor createExecutor(int numThreads, String nameFormat, int maxTasksInQueue) {

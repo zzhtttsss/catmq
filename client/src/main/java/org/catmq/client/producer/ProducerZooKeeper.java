@@ -1,8 +1,8 @@
 package org.catmq.client.producer;
 
 import lombok.extern.slf4j.Slf4j;
-import org.catmq.broker.BrokerInfo;
-import org.catmq.common.TopicDetail;
+import org.catmq.entity.BrokerInfo;
+import org.catmq.entity.TopicDetail;
 import org.catmq.constant.FileConstant;
 import org.catmq.constant.ZkConstant;
 import org.catmq.entity.JsonSerializable;
@@ -103,7 +103,7 @@ public class ProducerZooKeeper extends BaseZookeeper {
     }
 
     public ProducerZooKeeper(ProducerConfig config) {
-        super(config.getZkAddress());
+        super(null);
         this.config = config;
         this.brokerInfo = getBrokerInfo();
     }

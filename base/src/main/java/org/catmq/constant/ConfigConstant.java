@@ -41,6 +41,7 @@ public class ConfigConstant {
     public static final String SEGMENT_MAX_FILE_SIZE = "segment.maxFileSize";
     public static final String SEGMENT_INDEX_STORAGE_PATH = "segment.indexStoragePath";
     public static final String MAX_SEGMENT_ENTRY_NUM = "segment.maxSegmentEntryNum";
+    public static final String FLUSH_MODE = "messageLog.flushMode";
 
     public static final String READ_CACHE_EXPIRE_TIME = "readCache.expireTime";
 

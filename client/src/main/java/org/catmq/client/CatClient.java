@@ -7,8 +7,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.zookeeper.CreateMode;
 import org.catmq.client.producer.ProducerProxy;
-import org.catmq.common.GrpcConnectCache;
-import org.catmq.common.TopicType;
+import org.catmq.entity.GrpcConnectManager;
+import org.catmq.entity.TopicDetail;
+import org.catmq.entity.TopicMode;
+import org.catmq.entity.TopicType;
 import org.catmq.constant.FileConstant;
 import org.catmq.constant.ZkConstant;
 import org.catmq.protocol.service.*;
@@ -34,7 +36,7 @@ public class CatClient {
     private final ThreadPoolExecutor producerHandleResponseExecutor;
 
 
-    public static final GrpcConnectCache GRPC_CONNECT_CACHE = new GrpcConnectCache(100);
+    private final GrpcConnectManager grpcConnectManager;
 
 
     private CatClient(String zkAddress, String tenantId, ProducerProxy producerProxy) {
@@ -58,7 +60,7 @@ public class CatClient {
                 new LinkedBlockingQueue<>(10000),
                 new ThreadFactoryBuilder().setNameFormat("producerHandleResponseExecutor" + "-%d").build(),
                 new ThreadPoolExecutor.DiscardOldestPolicy());
-
+        grpcConnectManager = new GrpcConnectManager(100);
     }
 
     public static CatClientBuilder builder() {
@@ -66,17 +68,18 @@ public class CatClient {
     }
 
     public DefaultCatProducer.DefaultCatProducerBuilder createProducer() {
-        return DefaultCatProducer.builder(tenantId, client, producerHandleRequestExecutor, producerHandleResponseExecutor);
+        return DefaultCatProducer.builder(tenantId, client, producerHandleRequestExecutor, producerHandleResponseExecutor,
+                grpcConnectManager);
     }
 
-    public void createSinglePartitionTopic(String topic, TopicType type) {
-        createTopic(topic, type, 1);
+    public void createSinglePartitionTopic(String topic, TopicType type, TopicMode mode) {
+        createTopic(topic, type, mode, 1);
     }
 
-    public void createTopic(String topic, TopicType type, int partitionNum) {
+    public void createTopic(String topic, TopicType type, TopicMode mode, int partitionNum) {
         try {
-            String[] brokers = createTopicZkNode(topic, type, partitionNum);
-            createPartition(topic, type, partitionNum, brokers);
+            String[] brokers = createTopicZkNode(topic, type, mode, partitionNum);
+            createPartition(topic, type, mode, partitionNum, brokers);
         } catch (NoSuchElementException e) {
             log.error("no enough broker available");
         } catch (Exception e) {
@@ -85,22 +88,23 @@ public class CatClient {
 
     }
 
-    public String[] createTopicZkNode(String topic, TopicType type, int partitionNum) throws Exception {
+    public String[] createTopicZkNode(String topic, TopicType type, TopicMode mode, int partitionNum) throws Exception {
         String[] brokerZkPaths;
         brokerZkPaths = producerProxy.selectBrokers(client, partitionNum).orElseThrow();
+        TopicDetail topicDetail = TopicDetail.get(type.getName(), mode.getName(), this.tenantId, topic);
         String TopicPath = Concat2String.builder()
                 .concat(ZkConstant.TENANT_ROOT_PATH)
                 .concat(FileConstant.LEFT_SLASH)
                 .concat(tenantId)
                 .concat(FileConstant.LEFT_SLASH)
-                .concat(topic)
+                .concat(topicDetail.getCompleteTopicName())
                 .build();
 
         HashMap<Integer, String> map = new HashMap<>(partitionNum);
         for (int i = 0; i < partitionNum; i++) {
             map.put(i, brokerZkPaths[i]);
         }
-        TopicZkInfo info = new TopicZkInfo(topic, type.getName(), partitionNum, map);
+        TopicZkInfo info = new TopicZkInfo(topic, type.getName(), mode.getName(), partitionNum, map);
         client.create()
                 .creatingParentsIfNeeded()
                 .withMode(CreateMode.PERSISTENT)
@@ -108,9 +112,9 @@ public class CatClient {
         return brokerZkPaths;
     }
 
-    public void createPartition(String topic, TopicType type, int partitionNum, String[] brokers) {
+    public void createPartition(String topic, TopicType type, TopicMode mode, int partitionNum, String[] brokers) {
         for (int i = 0; i < partitionNum; i++) {
-            Channel channel = GRPC_CONNECT_CACHE.get(brokers[i]);
+            Channel channel = grpcConnectManager.get(brokers[i]);
             Metadata metadata = new Metadata();
             metadata.put(Metadata.Key.of("action", Metadata.ASCII_STRING_MARSHALLER), "createPartition");
             metadata.put(Metadata.Key.of("tenant-id", Metadata.ASCII_STRING_MARSHALLER), tenantId);
@@ -122,6 +126,7 @@ public class CatClient {
                     .setTopic(topic)
                     .setPartitionIndex(i)
                     .setTopicType(type.getName())
+                    .setTopicMode(mode.getName())
                     .build();
             CreatePartitionResponse response = stub.createPartition(request);
             // TODO handle response

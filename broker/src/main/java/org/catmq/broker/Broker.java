@@ -3,10 +3,13 @@ package org.catmq.broker;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.curator.framework.CuratorFramework;
-import org.catmq.common.GrpcConnectCache;
+import org.catmq.broker.manager.*;
+import org.catmq.entity.BrokerInfo;
+import org.catmq.entity.GrpcConnectManager;
+import org.catmq.zk.ZkIdGenerator;
 import org.catmq.zk.ZkUtil;
 
-import static org.catmq.broker.BrokerConfig.BROKER_CONFIG;
+import static org.catmq.entity.BrokerConfig.BROKER_CONFIG;
 
 /**
  * Broker with every service
@@ -17,7 +20,18 @@ public class Broker {
 
     private BrokerInfo brokerInfo;
 
-    public static final GrpcConnectCache GRPC_CONNECT_CACHE = new GrpcConnectCache(100);
+    private GrpcConnectManager grpcConnectManager;
+
+    private ClientManager clientManager;
+
+    private TopicManager topicManager;
+
+    private StorerManager storerManager;
+
+    private BrokerZkManager brokerZkManager;
+
+    private CuratorFramework client;
+
 
     public static final Broker BROKER;
 
@@ -32,6 +46,14 @@ public class Broker {
 
     public void init() {
         this.brokerInfo = new BrokerInfo(BROKER_CONFIG);
+        this.client = ZkUtil.createClient(brokerInfo.getZkAddress());
+        this.brokerInfo.setBrokerId(ZkIdGenerator.ZkIdGeneratorEnum.INSTANCE.getInstance().nextId(client));
+        this.grpcConnectManager = new GrpcConnectManager(100);
+        this.clientManager = ClientManager.ClientManagerEnum.INSTANCE.getInstance();
+        this.brokerZkManager = BrokerZkManager.BrokerZkManagerEnum.INSTANCE.getInstance();
+        this.topicManager = TopicManager.TopicManagerEnum.INSTANCE.getInstance();
+        this.storerManager = StorerManager.StorerManagerEnum.INSTANCE.getInstance();
+        brokerZkManager.register2Zk();
     }
 }
 

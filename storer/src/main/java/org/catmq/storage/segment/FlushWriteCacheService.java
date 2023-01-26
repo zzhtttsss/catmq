@@ -12,8 +12,11 @@ import java.io.IOException;
 import java.nio.channels.FileChannel;
 import java.util.concurrent.ArrayBlockingQueue;
 
+
 @Slf4j
 public class FlushWriteCacheService extends ServiceThread {
+
+    public static long lastSegmentOffset = 0L;
 
     private final SegmentStorage segmentStorage;
 
@@ -81,7 +84,8 @@ public class FlushWriteCacheService extends ServiceThread {
                         messageEntry.dump2ByteBuf(byteBuf);
                         try {
                             fileChannel.write(byteBuf.internalNioBuffer(0, byteBuf.readableBytes()));
-                            entryPositionIndex.addPosition(batch, segmentId, entryId, messageEntry.getOffset());
+                            entryPositionIndex.addPosition(batch, segmentId, entryId, lastSegmentOffset);
+                            lastSegmentOffset += messageEntry.getTotalSize();
                         } catch (IOException e) {
                             this.hasException = true;
                             log.error("write offset {} file error or add index error {}.", offset, e);
@@ -92,6 +96,7 @@ public class FlushWriteCacheService extends ServiceThread {
                 batch.flush();
                 batch.close();
                 fileChannel.force(true);
+                fileChannel.close();
             }
             offset += writeCache.getCacheSize().get();
             segmentStorage.clearFlushedCache();

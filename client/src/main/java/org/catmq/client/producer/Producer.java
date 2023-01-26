@@ -1,13 +1,12 @@
 package org.catmq.client.producer;
 
-import com.google.protobuf.ByteString;
 import io.grpc.Channel;
 import io.grpc.ClientInterceptors;
 import io.grpc.Metadata;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.MetadataUtils;
 import lombok.extern.slf4j.Slf4j;
-import org.catmq.common.TopicDetail;
+import org.catmq.entity.TopicDetail;
 import org.catmq.protocol.service.*;
 
 @Slf4j

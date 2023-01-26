@@ -5,12 +5,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.catmq.common.MessageEntry;
 import org.catmq.common.MessageEntryBatch;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicStampedReference;
 import java.util.concurrent.locks.ReentrantLock;
 
-import static org.catmq.storer.StorerConfig.STORER_CONFIG;
+import static org.catmq.entity.StorerConfig.STORER_CONFIG;
 
 /**
  * Manage all segment.
@@ -47,7 +48,7 @@ public class SegmentStorage {
      * Make sure that only one writer thread can {@link WriteCache} each time when {@link WriteCache}
      * is full. We use {@link AtomicStampedReference} to prevent the ABA problem.
      */
-    private final AtomicStampedReference<Boolean> isSwapping = new AtomicStampedReference<>(false, 1);
+    public final AtomicStampedReference<Boolean> canSwap = new AtomicStampedReference<>(false, 1);
     @Getter
     private final ConcurrentHashMap<Long, Segment> segments;
 
@@ -57,22 +58,50 @@ public class SegmentStorage {
      * @param messageEntry message entry need to be appended to writeCache4Append
      */
     public void appendEntry2WriteCache(MessageEntry messageEntry) {
-        int stamp = isSwapping.getStamp();
+        int stamp = canSwap.getStamp();
         boolean ok = writeCache4Append.appendEntry(messageEntry);
         if (!ok) {
-            // Only one writer thread can swap the writeCache.
-            if (isSwapping.compareAndSet(false, true, stamp, stamp + 1)) {
-                log.warn("Cas success, start swapping.");
-                swapAndFlush();
-            } else {
-                log.warn("Cas fail, start waiting.");
-                // Blocking if other writer thread is swapping the writeCache.
-                while (isSwapping.getReference()) {
-
-                }
-            }
+            swapOrWait(stamp);
             // After swapping, try again.
             this.writeCache4Append.appendEntry(messageEntry);
+        }
+    }
+
+    public void batchAppendEntry2WriteCache(List<MessageEntry> messageEntries) {
+        int totalSize = 0;
+        for (MessageEntry me: messageEntries) {
+            totalSize += me.getTotalSize();
+        }
+        int stamp = canSwap.getStamp();
+        boolean ok = writeCache4Append.batchAppendEntry(messageEntries, totalSize);
+        if (!ok) {
+            swapOrWait(stamp);
+            // After swapping, try again.
+            this.writeCache4Append.batchAppendEntry(messageEntries, totalSize);
+        }
+
+    }
+
+    private void swapOrWait(int stamp) {
+        // Only one writer thread can swap the writeCache.
+        if (canSwap.compareAndSet(false, true, stamp, stamp + 1)) {
+            log.warn("Cas success, start swapping.");
+            try {
+                Thread.sleep(20);
+            } catch (InterruptedException e) {
+                log.warn("Interrupted!", e);
+            }
+            while (!writeCache4Append.ready2Swap()) {
+
+            }
+            swapAndFlush();
+        }
+        else {
+            log.warn("Cas fail, start waiting.");
+            // Blocking if other writer thread is swapping the writeCache.
+            while (canSwap.getReference()) {
+
+            }
         }
     }
 

@@ -15,15 +15,14 @@ import java.util.Map;
 public class TopicZkInfo implements JsonSerializable {
     private String simpleName;
     private String type;
-
-
-
+    private String mode;
     private int partitionNum;
     private HashMap<Integer, String> brokerZkPaths;
 
-    public TopicZkInfo(String simpleName, String type, int partitionNum, HashMap<Integer, String> brokerZkPaths) {
+    public TopicZkInfo(String simpleName, String type, String mode, int partitionNum, HashMap<Integer, String> brokerZkPaths) {
         this.simpleName = simpleName;
         this.type = type;
+        this.mode = mode;
         this.partitionNum = partitionNum;
         this.brokerZkPaths = brokerZkPaths;
     }
