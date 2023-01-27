@@ -58,7 +58,6 @@ public class WriteCache {
             maxCacheSize = cacheSize.get();
             return false;
         }
-        LongAccumulator
         appendingCount.incrementAndGet();
 
         Map<Long, MessageEntry> map = cache.getOrDefault(messageEntry.getSegmentId(), null);
