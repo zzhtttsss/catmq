@@ -29,7 +29,6 @@ public class WriteProcessor implements Processor<SendMessage2StorerRequest, Send
         Storer storer = Storer.STORER;
         long segmentId = ctx.getSegmentId();
         long entryId = ctx.getEntryId();
-        log.info("write {}@{}", segmentId, entryId);
         MessageEntry messageEntry = new MessageEntry(segmentId, entryId, request.getBody().toByteArray());
         storer.getSegmentStorage().appendEntry2WriteCache(messageEntry);
         storer.getFlushMessageEntryService().putMessageEntry2Queue(messageEntry);

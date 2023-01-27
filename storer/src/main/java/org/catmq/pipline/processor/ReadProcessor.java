@@ -27,19 +27,19 @@ public class ReadProcessor implements Processor<GetMessageFromStorerRequest, Get
         // 1. query from write cache
         entry = segmentStorage.getEntryFromWriteCacheById(segmentId, entryId);
         if (entry.isPresent()) {
-            log.info("read {}@{} from write cache", segmentId, entryId);
+            log.debug("read {}@{} from write cache", segmentId, entryId);
             return builder.setBody(ByteString.copyFrom(entry.get().conv2Bytes())).build();
         }
         // 2. query from read cache
         entry = segmentStorage.getEntryFromReadCacheById(segmentId, entryId);
         if (entry.isPresent()) {
-            log.info("read {}@{} from read cache", segmentId, entryId);
+            log.debug("read {}@{} from read cache", segmentId, entryId);
             return builder.setBody(ByteString.copyFrom(entry.get().conv2Bytes())).build();
         }
         // 3. query from db and load into read cache
         entry = segmentStorage.getEntryFromFileById(segmentId, entryId);
         if (entry.isPresent()) {
-            log.info("read {}@{} from file", segmentId, entryId);
+            log.debug("read {}@{} from file", segmentId, entryId);
             return builder.setBody(ByteString.copyFrom(entry.get().conv2Bytes())).build();
         }
         log.error("{}@{} message not found", segmentId, entryId);

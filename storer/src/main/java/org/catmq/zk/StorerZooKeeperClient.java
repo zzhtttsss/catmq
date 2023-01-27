@@ -44,10 +44,14 @@ public class StorerZooKeeperClient extends BaseZookeeper {
      */
     private BooleanError registerStorerInfo() {
         try {
-            //TODO: change mode to ephemeral to make test easier
+            if (this.client.checkExists().forPath(this.storerPath) != null) {
+                log.info("Storer info has been registered and will be deleted.");
+                this.client.delete().forPath(this.storerPath);
+                log.info("Storer info has been deleted.");
+            }
             this.client.create()
                     .creatingParentsIfNeeded()
-                    .withMode(CreateMode.EPHEMERAL)
+                    .withMode(CreateMode.PERSISTENT)
                     .forPath(this.storerPath, STORER.getStorerInfo().toBytes());
             this.client.create()
                     .creatingParentsIfNeeded()

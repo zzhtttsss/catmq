@@ -139,7 +139,7 @@ public class MessageLog {
         log.debug("Mapped file warm-up done, force to disk, mappedFile={}, costTime={}",
                 this.getFileName(), System.currentTimeMillis() - beginTime);
         mappedByteBuffer.force();
-        //this.mlock();
+        this.mlock();
     }
 
     public boolean isFull() {

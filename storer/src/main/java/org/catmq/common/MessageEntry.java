@@ -50,7 +50,7 @@ public class MessageEntry {
     public byte[] conv2Bytes() {
         ByteBuffer byteBuffer = ByteBuffer.allocate(getTotalSize());
         // 1. put the length of the message and two Ids
-        byteBuffer.putInt(length + 16);
+        byteBuffer.putInt(length + 2 * BYTES_LENGTH_OF_LONG);
         // 2. put the segmentId
         byteBuffer.putLong(segmentId);
         // 3. put the entryId

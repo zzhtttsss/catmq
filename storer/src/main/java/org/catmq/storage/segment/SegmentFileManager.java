@@ -45,11 +45,9 @@ public class SegmentFileManager {
         MessageEntryBatch batch = new MessageEntryBatch();
         try (FileChannelWrapper wrapper = getOrCreateSegmentFileByOffset(fileOffset, false)) {
             FileChannel fc = wrapper.getFileChannel();
-            //TODO: 4KB
             var mapped = fc.map(FileChannel.MapMode.READ_ONLY, segmentOffset, 4 * FileConstant.KB);
             List<MessageEntry> entries = readFromByteBuf(mapped);
             batch.putAll(entries);
-            //TODO: invoke unmap method
             return batch;
         } catch (IOException e) {
             log.error("Get segment batch by offset error, offset: {}", offset, e);

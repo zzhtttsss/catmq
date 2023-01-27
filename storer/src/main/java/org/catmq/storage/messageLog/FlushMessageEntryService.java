@@ -73,7 +73,7 @@ public class FlushMessageEntryService extends ServiceThread {
                         // TODO: 一批消息如果一部分在前一个messageLog中flush之后崩溃可能会出现消息重复。
                         messageLog.putAndFlush(byteBuf);
                         // Unlock the full mapped file.
-                        //messageLog.unlockMappedFile();
+                        messageLog.unlockMappedFile();
                         byteBuf.clear();
                         messageLog = Storer.STORER.getMessageLogStorage().getLastMessageLog(BEGIN_OFFSET);
                         messageLog.appendMessageEntry(msgBytes, byteBuf, nextBeginIndex, msgLength);
