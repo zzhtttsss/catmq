@@ -48,7 +48,7 @@ public class SegmentStorage {
      * Make sure that only one writer thread can {@link WriteCache} each time when {@link WriteCache}
      * is full. We use {@link AtomicStampedReference} to prevent the ABA problem.
      */
-    public final AtomicStampedReference<Boolean> canSwap = new AtomicStampedReference<>(false, 1);
+    public final AtomicStampedReference<Boolean> isSwapping = new AtomicStampedReference<>(false, 1);
     @Getter
     private final ConcurrentHashMap<Long, Segment> segments;
 
@@ -58,7 +58,7 @@ public class SegmentStorage {
      * @param messageEntry message entry need to be appended to writeCache4Append
      */
     public void appendEntry2WriteCache(MessageEntry messageEntry) {
-        int stamp = canSwap.getStamp();
+        int stamp = isSwapping.getStamp();
         boolean ok = writeCache4Append.appendEntry(messageEntry);
         if (!ok) {
             swapOrWait(stamp);
@@ -72,7 +72,7 @@ public class SegmentStorage {
         for (MessageEntry me: messageEntries) {
             totalSize += me.getTotalSize();
         }
-        int stamp = canSwap.getStamp();
+        int stamp = isSwapping.getStamp();
         boolean ok = writeCache4Append.batchAppendEntry(messageEntries, totalSize);
         if (!ok) {
             swapOrWait(stamp);
@@ -84,7 +84,7 @@ public class SegmentStorage {
 
     private void swapOrWait(int stamp) {
         // Only one writer thread can swap the writeCache.
-        if (canSwap.compareAndSet(false, true, stamp, stamp + 1)) {
+        if (isSwapping.compareAndSet(false, true, stamp, stamp + 1)) {
             log.warn("Cas success, start swapping.");
             try {
                 Thread.sleep(10);
@@ -99,7 +99,7 @@ public class SegmentStorage {
         else {
             log.warn("Cas fail, start waiting.");
             // Blocking if other writer thread is swapping the writeCache.
-            while (canSwap.getReference()) {
+            while (isSwapping.getReference()) {
 
             }
         }
