@@ -87,7 +87,7 @@ public class SegmentStorage {
         if (canSwap.compareAndSet(false, true, stamp, stamp + 1)) {
             log.warn("Cas success, start swapping.");
             try {
-                Thread.sleep(20);
+                Thread.sleep(10);
             } catch (InterruptedException e) {
                 log.warn("Interrupted!", e);
             }

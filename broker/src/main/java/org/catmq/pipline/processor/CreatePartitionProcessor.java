@@ -11,12 +11,10 @@ import static org.catmq.broker.Broker.BROKER;
 public class CreatePartitionProcessor implements Processor<CreatePartitionRequest, CreatePartitionResponse> {
     @Override
     public CreatePartitionResponse process(RequestContext ctx, CreatePartitionRequest request) {
-        TopicDetail topicDetail = TopicDetail.get(request.getTopic());
-        String completeTopicName = topicDetail.getCompleteTopicName();
-
-        BROKER.getTopicManager().createPartition(completeTopicName, ctx.getBrokerPath());
+        TopicDetail.get(request.getTopic());
+        BROKER.getTopicManager().createPartition(request.getTopic(), ctx.getBrokerPath());
         long segmentId = ZkIdGenerator.ZkIdGeneratorEnum.INSTANCE.getInstance().nextId(BROKER.getClient());
-        BROKER.getStorerManager().createSegment(segmentId);
+//        BROKER.getStorerManager().createSegment(segmentId);
         return CreatePartitionResponse
                 .newBuilder()
                 .setAck(true)

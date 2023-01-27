@@ -9,6 +9,9 @@ import org.catmq.pipline.Processor;
 import org.catmq.protocol.service.SendMessage2BrokerRequest;
 import org.catmq.protocol.service.SendMessage2BrokerResponse;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+
 import static org.catmq.broker.Broker.BROKER;
 
 @Slf4j
@@ -19,10 +22,14 @@ public class SendMessageProcessor implements Processor<SendMessage2BrokerRequest
 
     @Override
     public SendMessage2BrokerResponse process(RequestContext ctx, SendMessage2BrokerRequest request) {
-
         TopicDetail topicDetail = TopicDetail.get(request.getTopic());
         Topic topic = BROKER.getTopicManager().getTopic(topicDetail.getCompleteTopicName());
-        topic.putMessage(request.getMessageList());
+        CompletableFuture<SendMessage2BrokerResponse> future = topic.putMessage(request.getMessageList());
+        try {
+            future.get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
+        }
         return SendMessage2BrokerResponse
                 .newBuilder()
                 .setAck(true)

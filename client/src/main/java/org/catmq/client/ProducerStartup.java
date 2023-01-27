@@ -48,8 +48,8 @@ public class ProducerStartup {
     private static Producer initProducer(ProducerProxy pp) throws InterruptedException {
         ProducerConfig config = ProducerConfig.ProducerConfigEnum.INSTANCE.getInstance();
         InetSocketAddress brokerAddress = StringUtil.parseAddress(
-                pp.selectBrokers(config.getZkAddress())
-                        .orElseThrow(() -> new RuntimeException("no broker address")));
+                pp.selectBrokers(null, 1)
+                        .orElseThrow(() -> new RuntimeException("no broker address"))[0]);
         config.setBrokerAddress(brokerAddress);
         // Access a service running on the local machine on port 5432
         int port = brokerAddress.getPort();

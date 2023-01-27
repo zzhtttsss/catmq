@@ -86,7 +86,7 @@ public class PersistentTopic extends BaseTopic implements Topic {
                 log.warn("Cas success, start swapping.");
                 while (!(runningCount.get() == 0)) {
                     try {
-                        Thread.sleep(20);
+                        Thread.sleep(10);
                     } catch (InterruptedException e) {
                         log.warn("Interrupted!", e);
                     }

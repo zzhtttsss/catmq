@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.LongAccumulator;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static org.catmq.storage.segment.SegmentStorage.MAX_CACHE_SIZE;
@@ -57,6 +58,7 @@ public class WriteCache {
             maxCacheSize = cacheSize.get();
             return false;
         }
+        LongAccumulator
         appendingCount.incrementAndGet();
 
         Map<Long, MessageEntry> map = cache.getOrDefault(messageEntry.getSegmentId(), null);
@@ -92,17 +94,6 @@ public class WriteCache {
         segmentOffset.addAndGet(totalSize);
         appendingCount.decrementAndGet();
         return true;
-    }
-
-    public void appendEntry1(MessageEntry messageEntry) {
-        Map<Long, MessageEntry> map = cache.getOrDefault(messageEntry.getSegmentId(), null);
-        if (map == null) {
-            map = Collections.synchronizedMap(new LinkedHashMap<>());
-            cache.put(messageEntry.getSegmentId(), map);
-        }
-        map.put(messageEntry.getEntryId(), messageEntry);
-        segmentOffset.addAndGet(messageEntry.getTotalSize());
-        entryNum.incrementAndGet();
     }
 
     public MessageEntry getEntry(long segmentId, Long entryId) {

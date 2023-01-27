@@ -26,7 +26,7 @@ public class WriteProcessor implements Processor<SendMessage2StorerRequest, Send
 
     @Override
     public SendMessage2StorerResponse process(RequestContext ctx, SendMessage2StorerRequest request) {
-        if (request.getMessage(0).getEntryId() == 0) {
+        if (request.getMessage(0).getEntryId() == 1) {
             storer.getSegmentStorage().getSegments().put(request.getMessage(0).getSegmentId(),
                     new Segment(request.getMessage(0).getSegmentId()));
         }
