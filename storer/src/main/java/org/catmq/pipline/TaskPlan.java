@@ -3,11 +3,9 @@ package org.catmq.pipline;
 import org.catmq.pipline.finisher.ExampleFinisher;
 import org.catmq.pipline.preparer.ExamplePreparer;
 import org.catmq.pipline.processor.CreateSegmentProcessor;
+import org.catmq.pipline.processor.ReadProcessor;
 import org.catmq.pipline.processor.WriteProcessor;
-import org.catmq.protocol.service.CreateSegmentRequest;
-import org.catmq.protocol.service.CreateSegmentResponse;
-import org.catmq.protocol.service.SendMessage2StorerRequest;
-import org.catmq.protocol.service.SendMessage2StorerResponse;
+import org.catmq.protocol.service.*;
 
 /**
  * Represent how to process a grpc request.
@@ -15,8 +13,8 @@ import org.catmq.protocol.service.SendMessage2StorerResponse;
  * @param preparers all {@link Preparer} need to be done
  * @param processor processor that handle main logic
  * @param finishers all {@link Finisher} need to be done
- * @param <V> class of the grpc request
- * @param <T> class of the grpc response
+ * @param <V>       class of the grpc request
+ * @param <T>       class of the grpc response
  */
 public record TaskPlan<V, T>(Preparer[] preparers, Processor<V, T> processor, Finisher[] finishers) {
 
@@ -29,4 +27,8 @@ public record TaskPlan<V, T>(Preparer[] preparers, Processor<V, T> processor, Fi
             new TaskPlan<>(new Preparer[]{ExamplePreparer.ExamplePreparerEnum.INSTANCE.getInstance()},
                     CreateSegmentProcessor.CreateSegmentProcessorEnum.INSTANCE.getInstance(),
                     new Finisher[]{ExampleFinisher.ExampleFinisherEnum.INSTANCE.getInstance()});
+    public static final TaskPlan<GetMessageFromStorerRequest, GetMessageFromStorerResponse>
+            GET_MESSAGE_FROM_STORER_TASK_PLAN = new TaskPlan<>(new Preparer[]{},
+            ReadProcessor.ReadProcessorEnum.INSTANCE.getInstance(),
+            new Finisher[]{});
 }

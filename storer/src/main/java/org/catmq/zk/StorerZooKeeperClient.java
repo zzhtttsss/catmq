@@ -6,7 +6,6 @@ import org.apache.zookeeper.CreateMode;
 import org.catmq.command.BooleanError;
 import org.catmq.constant.FileConstant;
 import org.catmq.constant.ZkConstant;
-import org.catmq.storer.Storer;
 import org.catmq.util.StringUtil;
 
 import static org.catmq.storer.Storer.STORER;
@@ -45,6 +44,11 @@ public class StorerZooKeeperClient extends BaseZookeeper {
      */
     private BooleanError registerStorerInfo() {
         try {
+            if (this.client.checkExists().forPath(this.storerPath) != null) {
+                log.info("Storer info has been registered and will be deleted.");
+                this.client.delete().forPath(this.storerPath);
+                log.info("Storer info has been deleted.");
+            }
             this.client.create()
                     .creatingParentsIfNeeded()
                     .withMode(CreateMode.PERSISTENT)

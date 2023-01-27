@@ -2,9 +2,9 @@ package org.catmq.storage.messageLog;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.catmq.constant.FileConstant;
 import org.catmq.thread.ServiceThread;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
@@ -34,9 +34,9 @@ public class AllocateMessageLogService extends ServiceThread {
      * {@link MessageLog} in advance so that write threads can get the next {@link MessageLog}
      * immediately.
      *
-     * @param nextFilePath the path of the next message log file.
+     * @param nextFilePath     the path of the next message log file.
      * @param nextNextFilePath the path of the next message log file of the next message log file.
-     * @param fileSize the size of message log file.
+     * @param fileSize         the size of message log file.
      * @return The next {@link MessageLog}
      */
     public MessageLog getNextMessageLog(String nextFilePath, String nextNextFilePath, int fileSize) {
@@ -181,23 +181,18 @@ public class AllocateMessageLogService extends ServiceThread {
         /**
          * First compare the file size, then compare the file offset.
          */
+        @Override
         public int compareTo(AllocateRequest other) {
-            if (this.fileSize < other.fileSize)
+            if (this.fileSize < other.fileSize) {
                 return 1;
-            else if (this.fileSize > other.fileSize) {
+            } else if (this.fileSize > other.fileSize) {
                 return -1;
             } else {
-                int mIndex = this.filePath.lastIndexOf(File.separator);
+                int mIndex = this.filePath.lastIndexOf(FileConstant.LEFT_SLASH);
                 long mName = Long.parseLong(this.filePath.substring(mIndex + 1));
-                int oIndex = other.filePath.lastIndexOf(File.separator);
+                int oIndex = other.filePath.lastIndexOf(FileConstant.LEFT_SLASH);
                 long oName = Long.parseLong(other.filePath.substring(oIndex + 1));
-                if (mName < oName) {
-                    return -1;
-                } else if (mName > oName) {
-                    return 1;
-                } else {
-                    return 0;
-                }
+                return Long.compare(mName, oName);
             }
         }
 

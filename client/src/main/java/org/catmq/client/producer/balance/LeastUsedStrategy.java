@@ -15,7 +15,6 @@ import java.util.Map;
 import java.util.Optional;
 
 @Slf4j
-@Deprecated
 public class LeastUsedStrategy implements LoadBalance {
     @Override
     public Optional<String> selectBroker(String zkAddress) {

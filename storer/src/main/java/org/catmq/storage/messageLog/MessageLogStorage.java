@@ -1,13 +1,11 @@
 package org.catmq.storage.messageLog;
 
 import lombok.extern.slf4j.Slf4j;
+import org.catmq.constant.FileConstant;
 import org.catmq.util.StringUtil;
 
-import java.io.File;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import static org.catmq.constant.FileConstant.GB;
-import static org.catmq.constant.FileConstant.MB;
 import static org.catmq.storer.StorerConfig.STORER_CONFIG;
 
 /**
@@ -56,8 +54,9 @@ public class MessageLogStorage {
      * @return a new {@link MessageLog}
      */
     public MessageLog tryCreateMessageLog(long createOffset) {
-        String nextFilePath = StringUtil.concatString(this.path, File.separator, StringUtil.offset2FileName(createOffset));
-        String nextNextFilePath = StringUtil.concatString(this.path, File.separator,
+        String nextFilePath = StringUtil.concatString(this.path, FileConstant.LEFT_SLASH,
+                StringUtil.offset2FileName(createOffset));
+        String nextNextFilePath = StringUtil.concatString(this.path, FileConstant.LEFT_SLASH,
                 StringUtil.offset2FileName(createOffset + this.maxMessageLogSize));
         MessageLog messageLog = this.allocateMessageLogService.getNextMessageLog(nextFilePath,
                 nextNextFilePath, this.maxMessageLogSize);

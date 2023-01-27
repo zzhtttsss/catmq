@@ -4,13 +4,11 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.catmq.storage.MessageEntry;
+import org.catmq.common.FileChannelWrapper;
+import org.catmq.common.MessageEntry;
 import org.catmq.thread.ServiceThread;
-import org.catmq.util.StringUtil;
 
-import java.io.File;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
 import java.util.concurrent.ArrayBlockingQueue;
 
@@ -18,6 +16,8 @@ import java.util.concurrent.ArrayBlockingQueue;
 public class FlushWriteCacheService extends ServiceThread {
 
     private final SegmentStorage segmentStorage;
+
+    private final SegmentFileManager segmentFileManager;
 
     /**
      * Receive the writeCache to be flushed.
@@ -34,8 +34,9 @@ public class FlushWriteCacheService extends ServiceThread {
 
     private volatile boolean hasException = false;
 
-    public FlushWriteCacheService(SegmentStorage segmentStorage) {
+    public FlushWriteCacheService(SegmentStorage segmentStorage, SegmentFileManager segmentFileManager) {
         this.segmentStorage = segmentStorage;
+        this.segmentFileManager = segmentFileManager;
     }
 
     @Override
@@ -63,41 +64,38 @@ public class FlushWriteCacheService extends ServiceThread {
      * @return whether the service need continue running.
      */
     private boolean flush2File() {
-        WriteCache writeCache;
-        String fileName = StringUtil.concatString(segmentStorage.getPath(), File.separator,
-                StringUtil.offset2FileName(offset));
         try {
             // Wait until there is a new writeCache.
-            writeCache = requestQueue.take();
+            WriteCache writeCache = requestQueue.take();
             // Lock to avoid the writeCache to be modified by write threads.
             segmentStorage.flushLock.lock();
 
-            File file = new File(fileName);
-            FileChannel fileChannel = new RandomAccessFile(file, "rw").getChannel();
-            EntryPositionIndex entryPositionIndex = segmentStorage.getEntryPositionIndex();
-            KeyValueStorage.Batch batch = entryPositionIndex.newBatch();
+            try (FileChannelWrapper wrapper = segmentFileManager.getOrCreateSegmentFileByOffset(offset, true)) {
+                FileChannel fileChannel = wrapper.getFileChannel();
+                EntryPositionIndex entryPositionIndex = segmentStorage.getEntryPositionIndex();
+                KeyValueStorage.Batch batch = entryPositionIndex.newBatch();
 
-            writeCache.getCache().forEach((segmentId, map) -> {
-                map.forEach((entryId, messageEntry) -> {
-                    ByteBuf byteBuf = Unpooled.directBuffer(messageEntry.getTotalSize());
-                    messageEntry.dump2ByteBuf(byteBuf);
-                    try {
-                        fileChannel.write(byteBuf.internalNioBuffer(0, byteBuf.readableBytes()));
-                        entryPositionIndex.addPosition(batch, segmentId, entryId, messageEntry.getOffset());
-                    } catch (IOException e) {
-                        this.hasException = true;
-                        log.error("write file " + fileName + " error or add index error.", e);
-                    }
-                    byteBuf.release();
+                writeCache.getCache().forEach((segmentId, map) -> {
+                    map.forEach((entryId, messageEntry) -> {
+                        ByteBuf byteBuf = Unpooled.directBuffer(messageEntry.getTotalSize());
+                        messageEntry.dump2ByteBuf(byteBuf);
+                        try {
+                            fileChannel.write(byteBuf.internalNioBuffer(0, byteBuf.readableBytes()));
+                            entryPositionIndex.addPosition(batch, segmentId, entryId, messageEntry.getOffset());
+                        } catch (IOException e) {
+                            this.hasException = true;
+                            log.error("write offset {} file error or add index error {}.", offset, e);
+                        }
+                        byteBuf.release();
+                    });
                 });
-            });
-            batch.flush();
-            batch.close();
-            fileChannel.force(true);
-            fileChannel.close();
+                batch.flush();
+                batch.close();
+                fileChannel.force(true);
+            }
             offset += writeCache.getCacheSize().get();
-            log.warn("success to flush index and segment.");
             segmentStorage.clearFlushedCache();
+            log.info("success to flush index and segment.");
             return true;
         } catch (InterruptedException e) {
             log.warn("{} interrupted, possibly by shutdown.", this.getServiceName());
@@ -105,7 +103,7 @@ public class FlushWriteCacheService extends ServiceThread {
             return false;
         } catch (IOException e) {
             this.hasException = true;
-            log.error("load file " + fileName + " error", e);
+            log.error("load offset {} file with error {}", offset, e);
             return false;
         } finally {
             segmentStorage.flushLock.unlock();

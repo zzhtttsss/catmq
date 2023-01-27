@@ -9,8 +9,8 @@ public class ConfigConstant {
 
 
     /**
-    * Broker constants
-    */
+     * Broker constants
+     */
     public static final String BROKER_IP = "broker.ip";
     public static final String BROKER_PORT = "broker.port";
     public static final String BROKER_NAME = "broker.name";
@@ -24,7 +24,8 @@ public class ConfigConstant {
 
     public static final String PRODUCER_CONFIG_PATH = "./conf/producer.properties";
 
-    public static final String CONSUMER_CONFIG_PATH = "./conf/consumer.properties";/**
+    public static final String CONSUMER_CONFIG_PATH = "./conf/consumer.properties";
+    /**
      * Storer constants
      */
     public static final String STORER_IP = "storer.ip";
@@ -39,7 +40,10 @@ public class ConfigConstant {
     public static final String SEGMENT_STORAGE_PATH = "segment.storagePath";
     public static final String SEGMENT_MAX_FILE_SIZE = "segment.maxFileSize";
     public static final String SEGMENT_INDEX_STORAGE_PATH = "segment.indexStoragePath";
-
     public static final String MAX_SEGMENT_ENTRY_NUM = "segment.maxSegmentEntryNum";
 
+    public static final String READ_CACHE_EXPIRE_TIME = "readCache.expireTime";
+
+    public static final String READ_CACHE_CLEAN_UP_INTERVAL = "readCache.cleanUpInterval";
+    public static final String READ_CACHE_REMAINING_THRESHOLD = "readCache.remainingThreshold";
 }

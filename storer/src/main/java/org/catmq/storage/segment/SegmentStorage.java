@@ -2,10 +2,11 @@ package org.catmq.storage.segment;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.catmq.storage.MessageEntry;
+import org.catmq.common.MessageEntry;
+import org.catmq.common.MessageEntryBatch;
 
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicStampedReference;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -22,6 +23,8 @@ public class SegmentStorage {
     @Getter
     private final EntryPositionIndex entryPositionIndex;
     private final FlushWriteCacheService flushWriteCacheService;
+    @Getter
+    private final SegmentFileManager segmentFileManager;
     public static final long MAX_CACHE_SIZE = STORER_CONFIG.getSegmentMaxFileSize();
     /**
      * Cache all incoming {@link MessageEntry}
@@ -41,24 +44,12 @@ public class SegmentStorage {
      */
     protected final ReentrantLock flushLock = new ReentrantLock();
     /**
-     * Make sure that only one writer thread can {@link WriteCache} each time {@link WriteCache}
+     * Make sure that only one writer thread can {@link WriteCache} each time when {@link WriteCache}
      * is full. We use {@link AtomicStampedReference} to prevent the ABA problem.
      */
-    private final AtomicStampedReference<Boolean> canSwap = new AtomicStampedReference<>(false, 1);
+    private final AtomicStampedReference<Boolean> isSwapping = new AtomicStampedReference<>(false, 1);
     @Getter
     private final ConcurrentHashMap<Long, Segment> segments;
-
-    public SegmentStorage() {
-        this.path = STORER_CONFIG.getSegmentStoragePath();
-        this.writeCache4Append = new WriteCache(MAX_CACHE_SIZE);
-        this.writeCache4Flush = new WriteCache(MAX_CACHE_SIZE);
-        this.readCache = new ReadCache();
-        segments = new ConcurrentHashMap<>();
-        this.flushWriteCacheService = new FlushWriteCacheService(this);
-        entryPositionIndex = new EntryPositionIndex(KeyValueStorageRocksDB.factory,
-                STORER_CONFIG.getSegmentIndexStoragePath());
-        flushWriteCacheService.start();
-    }
 
     /**
      * Append an {@link MessageEntry} to the writeCache4Append.
@@ -66,23 +57,60 @@ public class SegmentStorage {
      * @param messageEntry message entry need to be appended to writeCache4Append
      */
     public void appendEntry2WriteCache(MessageEntry messageEntry) {
-        int stamp = canSwap.getStamp();
+        int stamp = isSwapping.getStamp();
         boolean ok = writeCache4Append.appendEntry(messageEntry);
         if (!ok) {
             // Only one writer thread can swap the writeCache.
-            if (canSwap.compareAndSet(false, true, stamp, stamp + 1)) {
+            if (isSwapping.compareAndSet(false, true, stamp, stamp + 1)) {
                 log.warn("Cas success, start swapping.");
                 swapAndFlush();
-            }
-            else {
+            } else {
                 log.warn("Cas fail, start waiting.");
                 // Blocking if other writer thread is swapping the writeCache.
-                while (canSwap.getReference()) {
+                while (isSwapping.getReference()) {
 
                 }
             }
             // After swapping, try again.
             this.writeCache4Append.appendEntry(messageEntry);
+        }
+    }
+
+    public Optional<MessageEntry> getEntryFromWriteCacheById(long segmentId, long entryId) {
+        MessageEntry entry;
+        while (isSwapping.getReference()) {
+        }
+        WriteCache localWriteCache4Append = writeCache4Append;
+        WriteCache localWriteCache4Flush = writeCache4Flush;
+        entry = localWriteCache4Append.getEntry(segmentId, entryId);
+        if (entry != null) {
+            return Optional.of(entry);
+        }
+        entry = localWriteCache4Flush.getEntry(segmentId, entryId);
+        if (entry != null) {
+            return Optional.of(entry);
+        }
+        return Optional.empty();
+    }
+
+    public Optional<MessageEntry> getEntryFromReadCacheById(long segmentId, long entryId) {
+        return Optional.ofNullable(readCache.getEntry(segmentId, entryId));
+    }
+
+    public Optional<MessageEntry> getEntryFromFileById(long segmentId, long entryId) {
+        try {
+            long offset = entryPositionIndex.getPosition(segmentId, entryId);
+            MessageEntryBatch batch = segmentFileManager.getSegmentBatchByOffset(offset);
+            if (batch.isEmpty()) {
+                log.info("Batch is empty.");
+                return Optional.empty();
+            }
+            readCache.putBatch(batch);
+            MessageEntry entry = batch.get(0);
+            return Optional.ofNullable(entry);
+        } catch (Exception e) {
+            log.error("Get entry from file err, ", e);
+            return Optional.empty();
         }
     }
 
@@ -97,17 +125,33 @@ public class SegmentStorage {
 
     public void swapWriteCache() {
         flushLock.lock();
-        WriteCache temp = this.writeCache4Append;
-        this.writeCache4Append = this.writeCache4Flush;
-        // When writeCache4Append finishes swapping, immediately set canSwap to false so that other
-        // writer threads can continue to append message entry to the writeCache4Append.
-        canSwap.set(false, canSwap.getStamp() + 1);
-        this.writeCache4Flush = temp;
-        flushLock.unlock();
+        try {
+            WriteCache temp = this.writeCache4Append;
+            this.writeCache4Append = this.writeCache4Flush;
+            this.writeCache4Flush = temp;
+            // Ensure that the swapping finishes.
+            isSwapping.set(false, isSwapping.getStamp() + 1);
+        } finally {
+            flushLock.unlock();
+        }
+
     }
 
     public void clearFlushedCache() {
         writeCache4Flush.clear();
     }
 
+
+    public SegmentStorage() {
+        this.path = STORER_CONFIG.getSegmentStoragePath();
+        this.writeCache4Append = new WriteCache(MAX_CACHE_SIZE);
+        this.writeCache4Flush = new WriteCache(MAX_CACHE_SIZE);
+        this.readCache = new ReadCache(MAX_CACHE_SIZE);
+        this.segmentFileManager = SegmentFileManager.SegmentFileServiceEnum.INSTANCE.getInstance();
+        segments = new ConcurrentHashMap<>();
+        this.flushWriteCacheService = new FlushWriteCacheService(this, segmentFileManager);
+        entryPositionIndex = new EntryPositionIndex(KeyValueStorageRocksDB.factory,
+                STORER_CONFIG.getSegmentIndexStoragePath());
+        flushWriteCacheService.start();
+    }
 }
