@@ -5,22 +5,20 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.catmq.common.MessageEntry;
 import org.catmq.common.MessageEntryBatch;
-import org.catmq.thread.ServiceThread;
 
 import java.util.concurrent.atomic.AtomicLong;
 
-import static org.catmq.storer.StorerConfig.STORER_CONFIG;
-
 @Slf4j
-public class ReadCache extends ServiceThread {
+@Getter
+public class ReadCache {
 
     private final long maxCacheSize;
 
-    @Getter
-    private AtomicLong cacheSize;
+    private final AtomicLong cacheSize;
 
-    @Getter
     private final ConcurrentLinkedHashMap<SegmentBatchKey, ConcurrentLinkedHashMap<Long, MessageEntry>> cache;
+
+    private final CleanReadCacheService cleanReadCacheService;
 
 
     /**
@@ -29,8 +27,8 @@ public class ReadCache extends ServiceThread {
      * @param messageEntry msg to be put
      */
     public void putEntry(MessageEntry messageEntry) {
-        if (this.cacheSize.addAndGet(messageEntry.getTotalSize()) > maxCacheSize) {
-            this.cleanCache(messageEntry.getTotalSize());
+        while (this.cacheSize.addAndGet(messageEntry.getTotalSize()) > maxCacheSize) {
+            cleanReadCacheService.cleanCache(messageEntry.getTotalSize());
         }
         SegmentBatchKey key = new SegmentBatchKey(messageEntry.getSegmentId());
         key.addSize(messageEntry.getTotalSize());
@@ -41,9 +39,8 @@ public class ReadCache extends ServiceThread {
     }
 
     public void putBatch(MessageEntryBatch batch) {
-        if (this.cacheSize.addAndGet(batch.getTotalSize()) > maxCacheSize) {
-            log.info("ReadCache is full when putting {} with size {}.", batch.getBatchSegmentId(), batch.getTotalSize());
-            this.cleanCache(batch.getTotalSize());
+        while (this.cacheSize.addAndGet(batch.getTotalSize()) > maxCacheSize) {
+            cleanReadCacheService.cleanCache(batch.getTotalSize());
         }
         SegmentBatchKey key = new SegmentBatchKey(batch.getBatchSegmentId());
         for (MessageEntry messageEntry : batch.getBatch()) {
@@ -63,59 +60,6 @@ public class ReadCache extends ServiceThread {
         return cacheSegment.get(entryId);
     }
 
-    @Override
-    public String getServiceName() {
-        return this.getClass().getName();
-    }
-
-    @Override
-    public void run() {
-        long lastFlushTime = System.currentTimeMillis();
-        while (!this.isStopped()) {
-            // Big Clean-up occurs when time is up or there are too many batch in queue.
-            if (System.currentTimeMillis() - lastFlushTime > STORER_CONFIG.getReadCacheCleanUpInterval()) {
-                this.cleanCache(-1);
-                log.info("{} has cleaned up.", this.getServiceName());
-                lastFlushTime = System.currentTimeMillis();
-            }
-        }
-    }
-
-    private void cleanCache(long batchSize) {
-        if (batchSize < 0) {
-            // Big clean-up occurs
-            // Clean up an expired or deletable key.
-            final long threshold = (long) (maxCacheSize * STORER_CONFIG.getReadCacheRemainingThreshold());
-            cleanup0(threshold);
-        } else {
-            // double check
-            if (cacheSize.get() > maxCacheSize) {
-                cleanup0(maxCacheSize);
-            }
-
-        }
-    }
-
-    private synchronized void cleanup0(long threshold) {
-        // Just clean up the oldest segment with its entries.
-        for (var key : cache.ascendingKeySet()) {
-            cacheSize.addAndGet(-key.getBatchSegmentSize());
-            cache.remove(key);
-            if (cacheSize.get() <= threshold) {
-                return;
-            }
-        }
-        // If the cache is still full, delete the oldest.
-        var iterator = cache.ascendingKeySet().iterator();
-        while (cacheSize.get() > threshold && iterator.hasNext()) {
-            var key = iterator.next();
-            cacheSize.addAndGet(-key.getBatchSegmentSize());
-            cache.remove(key);
-        }
-        if (cacheSize.get() > threshold) {
-            log.error("ReadCache is still full after cleaning up.");
-        }
-    }
 
     public ReadCache(long cacheSize) {
         this.maxCacheSize = cacheSize;
@@ -124,7 +68,8 @@ public class ReadCache extends ServiceThread {
                 ConcurrentLinkedHashMap<Long, MessageEntry>>()
                 .maximumWeightedCapacity(maxCacheSize)
                 .build();
-
+        this.cleanReadCacheService = new CleanReadCacheService(this);
+        this.cleanReadCacheService.start();
     }
 }
 
