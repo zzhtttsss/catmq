@@ -20,6 +20,7 @@ public abstract class BaseTopic implements Topic {
     protected final ConcurrentHashMap<String, Producer> producers;
 
     public BaseTopic(TopicDetail topicDetail) {
+        this.topicDetail = topicDetail;
         this.topicName = topicDetail.getCompleteTopicName();
         this.producers = new ConcurrentHashMap<>();
     }

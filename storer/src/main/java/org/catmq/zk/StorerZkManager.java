@@ -4,9 +4,6 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.zookeeper.CreateMode;
 import org.catmq.command.BooleanError;
-import org.catmq.constant.FileConstant;
-import org.catmq.constant.ZkConstant;
-import org.catmq.util.StringUtil;
 
 import static org.catmq.storer.Storer.STORER;
 
@@ -49,14 +46,15 @@ public class StorerZkManager extends BaseZookeeper {
                 this.client.delete().forPath(this.storerPath);
                 log.info("Storer info has been deleted.");
             }
+            log.warn("zk path: {}", this.storerPath);
             this.client.create()
                     .creatingParentsIfNeeded()
                     .withMode(CreateMode.PERSISTENT)
                     .forPath(this.storerPath, STORER.getStorerInfo().toBytes());
-            this.client.create()
-                    .creatingParentsIfNeeded()
-                    .withMode(CreateMode.EPHEMERAL)
-                    .forPath(StringUtil.concatString(ZkConstant.TMP_STORER_PATH, FileConstant.LEFT_SLASH, STORER.getStorerInfo().getStorerId()));
+//            this.client.create()
+//                    .creatingParentsIfNeeded()
+//                    .withMode(CreateMode.EPHEMERAL)
+//                    .forPath(StringUtil.concatString(ZkConstant.TMP_STORER_PATH, FileConstant.LEFT_SLASH, STORER.getStorerInfo().getStorerIp()));
         } catch (Exception e) {
             log.error("Fail to register storer information to zookeeper.", e);
             return BooleanError.fail(e.getMessage());

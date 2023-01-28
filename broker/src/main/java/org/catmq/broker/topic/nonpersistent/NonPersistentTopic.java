@@ -2,7 +2,6 @@ package org.catmq.broker.topic.nonpersistent;
 
 import lombok.extern.slf4j.Slf4j;
 import org.catmq.broker.common.Consumer;
-import org.catmq.broker.common.MessageEntry;
 import org.catmq.broker.manager.ClientManager;
 import org.catmq.broker.topic.BaseTopic;
 import org.catmq.broker.topic.Subscription;
@@ -29,6 +28,7 @@ public class NonPersistentTopic extends BaseTopic implements Topic {
 
     @Override
     public CompletableFuture<SendMessage2BrokerResponse> putMessage(List<OriginMessage> messages) {
+        log.warn("non-persistent!");
         subscriptions.forEach((name, subscription) -> {
             subscription.getDispatcher().ifPresent(dispatcher -> {
                 if (dispatcher instanceof SingleActiveConsumerNonPersistentDispatcher singleActiveConsumer) {

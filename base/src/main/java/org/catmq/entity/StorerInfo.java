@@ -25,7 +25,7 @@ public class StorerInfo implements JsonSerializable {
         storerPort = 4321;
         zkAddress = "127.0.0.1:2181";
         messageLogNum = 0;
-        storerAddress = storerIp + storerPort;
+        storerAddress = storerIp + ":" + storerPort;
     }
 
     public byte[] toBytes() {

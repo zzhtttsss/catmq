@@ -2,6 +2,7 @@ package org.catmq.broker.topic.persistent;
 
 import lombok.extern.slf4j.Slf4j;
 import org.catmq.broker.common.Consumer;
+import org.catmq.broker.manager.BrokerZkManager;
 import org.catmq.broker.manager.ClientManager;
 import org.catmq.broker.topic.BaseTopic;
 import org.catmq.broker.topic.Subscription;
@@ -22,15 +23,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicStampedReference;
-import java.util.concurrent.locks.ReentrantLock;
 
 import static org.catmq.broker.Broker.BROKER;
 import static org.catmq.entity.BrokerConfig.BROKER_CONFIG;
 
 @Slf4j
 public class PersistentTopic extends BaseTopic implements Topic {
-
-
     /**
      * Subscriptions to this topic whose key is subscriptionName
      */
@@ -38,22 +36,24 @@ public class PersistentTopic extends BaseTopic implements Topic {
 
     private final ClientManager clientManager;
 
-    private AtomicLong lastAppendSegmentId;
+    private Long lastAppendSegmentId;
 
-    private AtomicInteger lastAppendEntryId;
+    private final AtomicLong lastAppendEntryId;
 
-    private int maxSegmentMessageNum;
+    private long maxSegmentMessageNum;
 
-    private List<String> currentStorerAddresses;
+    private String[] currentStorerAddresses;
 
-    private AtomicInteger runningCount = new AtomicInteger(0);
+    private final AtomicInteger runningCount = new AtomicInteger(0);
 
-    private AtomicStampedReference<Boolean> isSwitching = new AtomicStampedReference<>(false, 1);
+    private final AtomicStampedReference<Boolean> isSwitching = new AtomicStampedReference<>(false, 1);
+
+    private final BrokerZkManager brokerZkManager;
 
     @Override
     public CompletableFuture<SendMessage2BrokerResponse> putMessage(List<OriginMessage> messages) {
         List<NumberedMessage> numberedMessages = new ArrayList<>();
-                switch (getTopicDetail().getMode()) {
+        switch (getTopicDetail().getMode()) {
             case NORMAL -> {
                 numberedMessages = allocateEntryIdThreadSafely(messages);
             }
@@ -74,7 +74,7 @@ public class PersistentTopic extends BaseTopic implements Topic {
 
     private List<NumberedMessage> allocateEntryId(List<OriginMessage> messages) {
         // TODO
-        return null;
+        return allocateEntryIdThreadSafely(messages);
     }
 
     private List<NumberedMessage> allocateEntryIdThreadSafely(List<OriginMessage> messages) {
@@ -84,16 +84,16 @@ public class PersistentTopic extends BaseTopic implements Topic {
             // Only one writer thread can swap the writeCache.
             if (isSwitching.compareAndSet(false, true, stamp, stamp + 1)) {
                 log.warn("Cas success, start swapping.");
+                try {
+                    Thread.sleep(1);
+                } catch (InterruptedException e) {
+                    log.warn("Interrupted!", e);
+                }
                 while (!(runningCount.get() == 0)) {
-                    try {
-                        Thread.sleep(10);
-                    } catch (InterruptedException e) {
-                        log.warn("Interrupted!", e);
-                    }
+
                 }
                 switch2NextSegment();
-            }
-            else {
+            } else {
                 log.warn("Cas fail, start waiting.");
                 // Blocking if other writer thread is swapping the writeCache.
                 while (isSwitching.getReference()) {
@@ -109,15 +109,16 @@ public class PersistentTopic extends BaseTopic implements Topic {
 
     private List<NumberedMessage> doAllocateEntryIdThreadSafely(List<OriginMessage> messages) {
         if (maxSegmentMessageNum < lastAppendEntryId.get() + messages.size()) {
+            log.warn("no enough space");
             maxSegmentMessageNum = lastAppendEntryId.get();
             return null;
         }
         runningCount.incrementAndGet();
-        int firstEntryId = lastAppendEntryId.getAndAdd(messages.size()) + 1;
-        long segmentId = lastAppendSegmentId.get();
+        long firstEntryId = lastAppendEntryId.getAndAdd(messages.size()) + 1;
+        long segmentId = lastAppendSegmentId;
         runningCount.decrementAndGet();
         List<NumberedMessage> numberedMessages = new ArrayList<>(messages.size());
-        for (OriginMessage om: messages) {
+        for (OriginMessage om : messages) {
             numberedMessages.add(NumberedMessage.newBuilder()
                     .setBody(om.getBody())
                     .setEntryId(firstEntryId)
@@ -125,7 +126,6 @@ public class PersistentTopic extends BaseTopic implements Topic {
                     .build());
             firstEntryId++;
         }
-
         return numberedMessages;
 
     }
@@ -139,10 +139,10 @@ public class PersistentTopic extends BaseTopic implements Topic {
     }
 
     private void switch2NextSegment() {
-        long segmentId = ZkIdGenerator.ZkIdGeneratorEnum.INSTANCE.getInstance().nextId(BROKER.getClient());
         // TODO 通知storer 惰性通知，storer在拿到一个entryId为0的消息时即判断是一个新segment.
-        lastAppendSegmentId.set(segmentId);
+        lastAppendSegmentId = ZkIdGenerator.ZkIdGeneratorEnum.INSTANCE.getInstance().nextId(BROKER.getClient());
         lastAppendEntryId.set(0);
+        this.currentStorerAddresses = brokerZkManager.selectStorer(1).orElseThrow();
     }
 
     @Override
@@ -181,10 +181,14 @@ public class PersistentTopic extends BaseTopic implements Topic {
     }
 
 
-    public PersistentTopic(TopicDetail topicDetail) {
+    public PersistentTopic(TopicDetail topicDetail, long segmentId) {
         super(topicDetail);
+        this.brokerZkManager = BROKER.getBrokerZkManager();
         this.subscriptions = new ConcurrentHashMap<>();
         this.clientManager = BROKER.getClientManager();
         this.maxSegmentMessageNum = BROKER_CONFIG.getMaxSegmentMessageNum();
+        this.lastAppendSegmentId = segmentId;
+        this.lastAppendEntryId = new AtomicLong(0);
+        this.currentStorerAddresses = brokerZkManager.selectStorer(1).orElseThrow();
     }
 }

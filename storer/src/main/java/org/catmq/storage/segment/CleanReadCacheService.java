@@ -5,7 +5,7 @@ import org.catmq.thread.ServiceThread;
 
 import java.util.concurrent.locks.ReentrantLock;
 
-import static org.catmq.storer.StorerConfig.STORER_CONFIG;
+import static org.catmq.entity.StorerConfig.STORER_CONFIG;
 
 @Slf4j
 public class CleanReadCacheService extends ServiceThread {

@@ -1,7 +1,5 @@
 package org.catmq.entity;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -11,7 +9,6 @@ import io.grpc.ManagedChannel;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.curator.framework.CuratorFramework;
 
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -34,7 +31,8 @@ public class GrpcConnectManager {
                                 .keepAliveTimeout(10, TimeUnit.SECONDS)
                                 .build();
                     }
-                });;
+                });
+        ;
     }
 
     public ManagedChannel get(String key) {

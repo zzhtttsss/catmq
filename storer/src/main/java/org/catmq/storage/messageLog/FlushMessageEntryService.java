@@ -5,10 +5,10 @@ import io.netty.buffer.Unpooled;
 import lombok.extern.slf4j.Slf4j;
 import org.catmq.collection.RecyclableArrayList;
 import org.catmq.common.MessageEntry;
+import org.catmq.common.MessageEntryBatch;
 import org.catmq.storer.Storer;
 import org.catmq.thread.ServiceThread;
 
-import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
@@ -102,9 +102,9 @@ public class FlushMessageEntryService extends ServiceThread {
         }
     }
 
-    public void batchPutMessageEntry2Queue(List<MessageEntry> messageEntries) {
+    public void batchPutMessageEntry2Queue(MessageEntryBatch messageEntryBatch) {
         try {
-            for (MessageEntry me: messageEntries) {
+            for (MessageEntry me : messageEntryBatch.getBatch()) {
                 flushMessageEntryQueue.put(me);
             }
         } catch (InterruptedException e) {

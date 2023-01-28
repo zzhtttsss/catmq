@@ -19,7 +19,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import static org.catmq.storer.StorerConfig.STORER_CONFIG;
+import static org.catmq.entity.StorerConfig.STORER_CONFIG;
 
 @Slf4j
 @Getter

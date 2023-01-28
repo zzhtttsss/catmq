@@ -22,19 +22,17 @@ public class SendMessageProcessor implements Processor<SendMessage2BrokerRequest
 
     @Override
     public SendMessage2BrokerResponse process(RequestContext ctx, SendMessage2BrokerRequest request) {
+        SendMessage2BrokerResponse response;
         TopicDetail topicDetail = TopicDetail.get(request.getTopic());
         Topic topic = BROKER.getTopicManager().getTopic(topicDetail.getCompleteTopicName());
-        CompletableFuture<SendMessage2BrokerResponse> future = topic.putMessage(request.getMessageList());
+        var messageList = request.getMessageList();
+        CompletableFuture<SendMessage2BrokerResponse> future = topic.putMessage(messageList);
         try {
-            future.get();
+            response = future.get();
         } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException(e);
         }
-        return SendMessage2BrokerResponse
-                .newBuilder()
-                .setAck(true)
-                .setRes("send success")
-                .build();
+        return response;
     }
 
     public enum ProduceProcessorEnum {

@@ -1,11 +1,11 @@
 package org.catmq.client.producer;
 
 import lombok.extern.slf4j.Slf4j;
-import org.catmq.entity.BrokerInfo;
-import org.catmq.entity.TopicDetail;
 import org.catmq.constant.FileConstant;
 import org.catmq.constant.ZkConstant;
+import org.catmq.entity.BrokerInfo;
 import org.catmq.entity.JsonSerializable;
+import org.catmq.entity.TopicDetail;
 import org.catmq.util.Concat2String;
 import org.catmq.zk.BaseZookeeper;
 import org.catmq.zk.ZkUtil;
@@ -27,7 +27,7 @@ public class ProducerZooKeeper extends BaseZookeeper {
                 .concat(FileConstant.LEFT_SLASH)
                 .concat(topicDetail.getTenant())
                 .concat(FileConstant.LEFT_SLASH)
-                .concat(topicDetail.getLocalName())
+                .concat(topicDetail.getSimpleName())
                 .build();
         try {
             return client.checkExists().forPath(brokerPath) != null;

@@ -30,12 +30,12 @@ public class StorerManager {
     public void createSegment(long segmentId) {
         try {
             String[] storerZkPaths = BROKER.getBrokerZkManager().selectStorer(1).orElseThrow();
-        List<ListenableFuture<CreateSegmentResponse>> listenableFutures = new ArrayList<>();
-        for (String path: storerZkPaths) {
-            listenableFutures.add(doCreateSegment(path, segmentId));
-        }
-        ListenableFuture<List<CreateSegmentResponse>> listenableFuture = Futures.allAsList(listenableFutures);
-        listenableFuture.get();
+            List<ListenableFuture<CreateSegmentResponse>> listenableFutures = new ArrayList<>();
+            for (String path : storerZkPaths) {
+                listenableFutures.add(doCreateSegment(path, segmentId));
+            }
+            ListenableFuture<List<CreateSegmentResponse>> listenableFuture = Futures.allAsList(listenableFutures);
+            listenableFuture.get();
         } catch (InterruptedException | ExecutionException | NoSuchElementException e) {
             throw new RuntimeException(e);
         }
@@ -54,17 +54,18 @@ public class StorerManager {
         return futureStub.createSegment(request);
     }
 
-    public CompletableFuture<List<SendMessage2StorerResponse>> sendMessage2Storer(List<NumberedMessage> messages, List<String> storerZkPaths) {
+    public CompletableFuture<List<SendMessage2StorerResponse>> sendMessage2Storer(List<NumberedMessage> messages, String[] storerAddresses) {
         List<ListenableFuture<SendMessage2StorerResponse>> listenableFutures = new ArrayList<>();
-        for (String path: storerZkPaths) {
-            listenableFutures.add(doSendMessage2Storer(messages, path));
+        for (String address : storerAddresses) {
+            log.warn("storer address is: {}", address);
+            listenableFutures.add(doSendMessage2Storer(messages, address));
         }
         ListenableFuture<List<SendMessage2StorerResponse>> listenableFuture = Futures.allAsList(listenableFutures);
         return toCompletable(listenableFuture);
     }
 
-    private ListenableFuture<SendMessage2StorerResponse> doSendMessage2Storer(List<NumberedMessage> messages, String storerZkPath) {
-        ManagedChannel channel = BROKER.getGrpcConnectManager().get(storerZkPath);
+    private ListenableFuture<SendMessage2StorerResponse> doSendMessage2Storer(List<NumberedMessage> messages, String storerAddress) {
+        ManagedChannel channel = BROKER.getGrpcConnectManager().get(storerAddress);
         Metadata metadata = new Metadata();
         metadata.put(Metadata.Key.of("action", Metadata.ASCII_STRING_MARSHALLER), "sendMessage");
         Channel headChannel = ClientInterceptors.intercept(channel, MetadataUtils.newAttachHeadersInterceptor(metadata));
@@ -72,10 +73,11 @@ public class StorerManager {
         SendMessage2StorerRequest request = SendMessage2StorerRequest.newBuilder()
                 .addAllMessage(messages)
                 .build();
+        log.warn("start to send message");
         return futureStub.sendMessage2Storer(request);
     }
 
-    public enum StorerManagerEnum{
+    public enum StorerManagerEnum {
         INSTANCE;
         private final StorerManager storerManager;
 

@@ -3,16 +3,14 @@ package org.catmq.storage.segment;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.catmq.common.MessageEntry;
+import org.catmq.common.MessageEntryBatch;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.LongAccumulator;
-import java.util.concurrent.locks.ReentrantLock;
 
 import static org.catmq.storage.segment.SegmentStorage.MAX_CACHE_SIZE;
 
@@ -73,23 +71,24 @@ public class WriteCache {
         return true;
     }
 
-    public boolean batchAppendEntry(List<MessageEntry> messageEntries, int totalSize) {
+    public boolean batchAppendEntry(MessageEntryBatch messageEntryBatch) {
         // If cache does not have enough space, deny the request.
-        if (cacheSize.get() + totalSize > maxCacheSize) {
+        if (cacheSize.get() + messageEntryBatch.getTotalSize() > maxCacheSize) {
             maxCacheSize = cacheSize.get();
             return false;
         }
+        long totalSize = messageEntryBatch.getTotalSize();
         appendingCount.incrementAndGet();
-        Map<Long, MessageEntry> map = cache.getOrDefault(messageEntries.get(0).getSegmentId(), null);
+        Map<Long, MessageEntry> map = cache.getOrDefault(messageEntryBatch.getBatchSegmentId(), null);
         if (map == null) {
             map = Collections.synchronizedMap(new LinkedHashMap<>());
-            cache.put(messageEntries.get(0).getSegmentId(), map);
+            cache.put(messageEntryBatch.get(0).getSegmentId(), map);
         }
-        for (MessageEntry me: messageEntries) {
+        for (MessageEntry me : messageEntryBatch.getBatch()) {
             map.put(me.getEntryId(), me);
         }
         cacheSize.addAndGet(totalSize);
-        entryNum.addAndGet(messageEntries.size());
+        entryNum.addAndGet(messageEntryBatch.getBatch().size());
         segmentOffset.addAndGet(totalSize);
         appendingCount.decrementAndGet();
         return true;

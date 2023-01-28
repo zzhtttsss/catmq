@@ -2,9 +2,9 @@ package org.catmq.client.producer.balance;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.curator.framework.CuratorFramework;
-import org.catmq.entity.BrokerInfo;
 import org.catmq.constant.FileConstant;
 import org.catmq.constant.ZkConstant;
+import org.catmq.entity.BrokerInfo;
 import org.catmq.entity.JsonSerializable;
 import org.catmq.util.StringUtil;
 
@@ -30,7 +30,7 @@ public class LeastUsedStrategy implements LoadBalance {
                 String fullPath = StringUtil.concatString(addressDirectory, path);
                 byte[] bytes = client.getData().forPath(fullPath);
                 BrokerInfo info = JsonSerializable.fromBytes(bytes, BrokerInfo.class);
-                map.put(fullPath, info.getLoad());
+                map.put(path, info.getLoad());
             }
             if (map.size() < num) {
                 log.error("The number of brokers is less than the number of topics");
@@ -39,7 +39,7 @@ public class LeastUsedStrategy implements LoadBalance {
             String[] brokerZkPaths = map.entrySet().stream()
                     .sorted(Map.Entry.comparingByValue())
                     .limit(num)
-                    .map(stringIntegerEntry -> addressDirectory + stringIntegerEntry.getKey())
+                    .map(stringIntegerEntry -> stringIntegerEntry.getKey())
                     .toArray(String[]::new);
             return Optional.of(brokerZkPaths);
 

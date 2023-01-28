@@ -15,14 +15,12 @@ import org.catmq.protocol.definition.Code;
 import org.catmq.protocol.definition.Status;
 import org.catmq.protocol.service.*;
 import org.catmq.thread.OrderedExecutor;
-import org.catmq.zk.StorerZkManager;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
 import static org.catmq.entity.StorerConfig.*;
 import static org.catmq.thread.OrderedExecutor.NO_TASK_LIMIT;
-import static org.catmq.thread.OrderedExecutor.createExecutor;
 import static org.catmq.util.StringUtil.defaultString;
 
 /**
@@ -38,7 +36,6 @@ public class StorerServer extends StorerServiceGrpc.StorerServiceImplBase {
      * Handle all read request.
      */
     protected OrderedExecutor readThreadPoolExecutor;
-
 
 
     public StorerServer() {
@@ -72,11 +69,11 @@ public class StorerServer extends StorerServiceGrpc.StorerServiceImplBase {
     public void sendMessage2Storer(SendMessage2StorerRequest request, StreamObserver<SendMessage2StorerResponse> responseObserver) {
         Function<Status, SendMessage2StorerResponse> statusResponseCreator =
                 status -> SendMessage2StorerResponse.newBuilder().setStatus(status).build();
-        log.debug("receive a message: {}", request.getBody());
+        log.debug("receive a batch of message, num: {}", request.getMessageCount());
         RequestContext ctx = createContext();
 
         try {
-            this.writeOrderedExecutor.executeOrdered(ctx.getSegmentId(), new GrpcTask<>(ctx, request,
+            this.writeOrderedExecutor.executeOrdered(request.getMessage(0).getSegmentId(), new GrpcTask<>(ctx, request,
                     TaskPlan.SEND_MESSAGE_2_STORER_TASK_PLAN, responseObserver, statusResponseCreator));
         } catch (Throwable t) {
             writeResponse(ctx, request, null, responseObserver, t, statusResponseCreator);
@@ -154,8 +151,6 @@ public class StorerServer extends StorerServiceGrpc.StorerServiceImplBase {
         Context ctx = Context.current();
         Metadata headers = InterceptorConstants.METADATA.get(ctx);
         RequestContext context = RequestContext.create()
-                .setEntryId(getValueFromMetadata(headers, InterceptorConstants.ENTRY_ID))
-                .setSegmentId(getValueFromMetadata(headers, InterceptorConstants.SEGMENT_ID))
                 .setLocalAddress(getValueFromMetadata(headers, InterceptorConstants.LOCAL_ADDRESS))
                 .setRemoteAddress(getValueFromMetadata(headers, InterceptorConstants.REMOTE_ADDRESS))
                 .setAction(getValueFromMetadata(headers, InterceptorConstants.RPC_NAME));

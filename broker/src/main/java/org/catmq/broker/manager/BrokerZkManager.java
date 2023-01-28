@@ -4,13 +4,13 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.zookeeper.CreateMode;
-import org.catmq.entity.BrokerInfo;
 import org.catmq.command.BooleanError;
-import org.catmq.entity.StorerInfo;
-import org.catmq.entity.TopicDetail;
 import org.catmq.constant.FileConstant;
 import org.catmq.constant.ZkConstant;
+import org.catmq.entity.BrokerInfo;
 import org.catmq.entity.JsonSerializable;
+import org.catmq.entity.StorerInfo;
+import org.catmq.entity.TopicDetail;
 import org.catmq.util.Concat2String;
 import org.catmq.util.StringUtil;
 import org.catmq.zk.BaseZookeeper;
@@ -86,10 +86,10 @@ public class BrokerZkManager extends BaseZookeeper {
                     .creatingParentsIfNeeded()
                     .withMode(CreateMode.PERSISTENT)
                     .forPath(this.brokerPath, BROKER.getBrokerInfo().toBytes());
-            this.client.create()
-                    .creatingParentsIfNeeded()
-                    .withMode(CreateMode.EPHEMERAL)
-                    .forPath(StringUtil.concatString(ZkConstant.TMP_BROKER_PATH, FileConstant.LEFT_SLASH, BROKER.getBrokerInfo().getBrokerAddress()));
+//            this.client.create()
+//                    .creatingParentsIfNeeded()
+//                    .withMode(CreateMode.EPHEMERAL)
+//                    .forPath(StringUtil.concatString(ZkConstant.TMP_BROKER_PATH, FileConstant.LEFT_SLASH, BROKER.getBrokerInfo().getBrokerAddress()));
         } catch (Exception e) {
             e.printStackTrace();
             return BooleanError.fail(e.getMessage());
@@ -130,11 +130,11 @@ public class BrokerZkManager extends BaseZookeeper {
                     .forPath(Concat2String.builder()
                             .concat(brokerPath)
                             .concat(FileConstant.LEFT_SLASH)
-                            .concat(topicDetail.getPartitionedTopicName())
+                            .concat(topicDetail.getTopicNameWithoutIndex())
                             .build(), brokerPath.getBytes());
-            log.info("Create topic {} in zookeeper", topicDetail.getPartitionedTopicName());
+            log.info("Create topic {} in zookeeper", topicDetail.getTopicNameWithoutIndex());
         } catch (Exception e) {
-            log.warn("create topic {} failed", topicDetail.getPartitionedTopicName(), e);
+            log.warn("create topic {} failed", topicDetail.getTopicNameWithoutIndex(), e);
         }
     }
 
@@ -149,7 +149,7 @@ public class BrokerZkManager extends BaseZookeeper {
                 String fullPath = StringUtil.concatString(directory, path);
                 byte[] bytes = client.getData().forPath(fullPath);
                 StorerInfo info = JsonSerializable.fromBytes(bytes, StorerInfo.class);
-                map.put(fullPath, info.getMessageLogNum());
+                map.put(path, info.getMessageLogNum());
             }
             if (map.size() < num) {
                 log.error("The number of brokers is less than the number of topics");
@@ -158,7 +158,7 @@ public class BrokerZkManager extends BaseZookeeper {
             String[] storerZkPaths = map.entrySet().stream()
                     .sorted(Map.Entry.comparingByValue())
                     .limit(num)
-                    .map(stringIntegerEntry -> directory + stringIntegerEntry.getKey())
+                    .map(Map.Entry::getKey)
                     .toArray(String[]::new);
             return Optional.of(storerZkPaths);
 
@@ -170,7 +170,7 @@ public class BrokerZkManager extends BaseZookeeper {
 
     public BrokerZkManager(CuratorFramework client) {
         super(client);
-        this.brokerPath = String.format("/broker/%s", BROKER.getBrokerInfo().getBrokerId());
+        this.brokerPath = String.format("/broker/%s", BROKER.getBrokerInfo().getBrokerAddress());
     }
 
     public enum BrokerZkManagerEnum {

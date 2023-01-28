@@ -5,7 +5,10 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.protobuf.ByteString;
-import io.grpc.*;
+import io.grpc.Channel;
+import io.grpc.ClientInterceptors;
+import io.grpc.ManagedChannel;
+import io.grpc.Metadata;
 import io.grpc.stub.MetadataUtils;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -13,14 +16,16 @@ import org.apache.curator.framework.CuratorFramework;
 import org.catmq.client.common.*;
 import org.catmq.entity.GrpcConnectManager;
 import org.catmq.entity.TopicDetail;
+import org.catmq.protocol.definition.Code;
 import org.catmq.protocol.definition.OriginMessage;
 import org.catmq.protocol.definition.ProcessMode;
-import org.catmq.protocol.service.*;
+import org.catmq.protocol.service.BrokerServiceGrpc;
+import org.catmq.protocol.service.SendMessage2BrokerRequest;
+import org.catmq.protocol.service.SendMessage2BrokerResponse;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -46,12 +51,12 @@ public class DefaultCatProducer extends ClientConfig {
     private final GrpcConnectManager grpcConnectManager;
 
 
-
     private DefaultCatProducer(String tenantId, String topic, CuratorFramework client,
                                PartitionSelector partitionSelector, ThreadPoolExecutor handleResponseExecutor,
                                ThreadPoolExecutor handleRequestExecutor, GrpcConnectManager grpcConnectManager) {
         this.tenantId = tenantId;
         this.topicDetail = TopicDetail.get(topic);
+        log.warn("producer topic detail: {}", topicDetail.getCompleteTopicName());
         this.client = client;
         this.partitionSelector = partitionSelector;
         this.producerId = 1111L;
@@ -100,7 +105,7 @@ public class DefaultCatProducer extends ClientConfig {
     }
 
     private void doSend(MessageEntry messageEntry, ProcessMode processMode, SendCallback sendCallback, long timeout) {
-        ManagedChannel channel = grpcConnectManager.get("111");
+        ManagedChannel channel = grpcConnectManager.get("127.0.0.1:5432");
         Metadata metadata = new Metadata();
         metadata.put(Metadata.Key.of("action", Metadata.ASCII_STRING_MARSHALLER), "sendMessage");
         Channel headChannel = ClientInterceptors.intercept(channel, MetadataUtils.newAttachHeadersInterceptor(metadata));
@@ -113,27 +118,30 @@ public class DefaultCatProducer extends ClientConfig {
                         .build();
                 messages.add(message);
             }
-        }
-        else {
+        } else {
             OriginMessage message = OriginMessage.newBuilder()
                     .setBody(ByteString.copyFrom(messageEntry.getBody()))
                     .build();
             messages.add(message);
         }
+        log.warn("topic detail: {}", topicDetail.getCompleteTopicName());
 
         SendMessage2BrokerRequest request = SendMessage2BrokerRequest.newBuilder()
                 .addAllMessage(messages)
-                .setTopic(topicDetail.getCompleteTopicName())
+                .setTopic(topicDetail.getCompleteTopicName() + "#0")
                 .setProducerId(this.producerId)
                 .build();
         ListenableFuture<SendMessage2BrokerResponse> responseFuture = futureStub.sendMessage2Broker(request);
 
 
-
         switch (processMode) {
             case SYNC -> {
                 try {
-                    responseFuture.get();
+                    SendMessage2BrokerResponse response = responseFuture.get();
+                    if (response.getStatus().getCode() != Code.OK) {
+                        log.error("fail..., message: {}", response.getStatus().getMessage());
+                    }
+
                 } catch (ExecutionException | InterruptedException e) {
                     log.error("Fail to get response.", e);
                 }
@@ -141,13 +149,11 @@ public class DefaultCatProducer extends ClientConfig {
             case ASYNC -> Futures.addCallback(responseFuture, new FutureCallback<>() {
                 @Override
                 public void onSuccess(SendMessage2BrokerResponse result) {
-                    log.info("success to send message");
                     sendCallback.onSuccess(new SendResult());
                 }
 
                 @Override
                 public void onFailure(Throwable t) {
-                    log.warn("fail to send message", t);
                     sendCallback.onException(t);
                 }
             }, MoreExecutors.directExecutor());

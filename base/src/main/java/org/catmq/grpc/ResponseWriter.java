@@ -4,9 +4,11 @@ import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.ServerCallStreamObserver;
 import io.grpc.stub.StreamObserver;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@Slf4j
 public class ResponseWriter {
     private static final Logger logger = LoggerFactory.getLogger(ResponseWriter.class);
 
@@ -33,7 +35,6 @@ public class ResponseWriter {
         if (null == response) {
             return false;
         }
-        logger.debug("start to write response. response: {}", response);
         if (isCancelled(observer)) {
             logger.warn("client has cancelled the request. response to write: {}", response);
             return false;

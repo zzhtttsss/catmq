@@ -35,6 +35,6 @@ public class BrokerInfo implements JsonSerializable {
         this.zkAddress = config.getZkAddress();
         this.load = 0;
         // TODO concat
-        this.brokerAddress = brokerIp + brokerPort;
+        this.brokerAddress = brokerIp + ":" + brokerPort;
     }
 }

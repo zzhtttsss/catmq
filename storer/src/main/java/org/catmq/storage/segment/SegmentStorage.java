@@ -5,7 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.catmq.common.MessageEntry;
 import org.catmq.common.MessageEntryBatch;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicStampedReference;
@@ -67,17 +66,13 @@ public class SegmentStorage {
         }
     }
 
-    public void batchAppendEntry2WriteCache(List<MessageEntry> messageEntries) {
-        int totalSize = 0;
-        for (MessageEntry me: messageEntries) {
-            totalSize += me.getTotalSize();
-        }
+    public void batchAppendEntry2WriteCache(MessageEntryBatch messageEntryBatch) {
         int stamp = isSwapping.getStamp();
-        boolean ok = writeCache4Append.batchAppendEntry(messageEntries, totalSize);
+        boolean ok = writeCache4Append.batchAppendEntry(messageEntryBatch);
         if (!ok) {
             swapOrWait(stamp);
             // After swapping, try again.
-            this.writeCache4Append.batchAppendEntry(messageEntries, totalSize);
+            this.writeCache4Append.batchAppendEntry(messageEntryBatch);
         }
 
     }
@@ -87,7 +82,7 @@ public class SegmentStorage {
         if (isSwapping.compareAndSet(false, true, stamp, stamp + 1)) {
             log.warn("Cas success, start swapping.");
             try {
-                Thread.sleep(10);
+                Thread.sleep(1);
             } catch (InterruptedException e) {
                 log.warn("Interrupted!", e);
             }
@@ -95,8 +90,7 @@ public class SegmentStorage {
 
             }
             swapAndFlush();
-        }
-        else {
+        } else {
             log.warn("Cas fail, start waiting.");
             // Blocking if other writer thread is swapping the writeCache.
             while (isSwapping.getReference()) {

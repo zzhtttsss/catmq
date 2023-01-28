@@ -17,7 +17,7 @@ public class ConsumerZooKeeper extends BaseZookeeper {
     }
 
     protected ConsumerZooKeeper(ConsumerConfig config) {
-        super(config.getZkAddress());
+        super(null);
         this.config = config;
     }
 }

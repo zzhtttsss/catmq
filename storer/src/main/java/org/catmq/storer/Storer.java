@@ -4,7 +4,6 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.curator.framework.CuratorFramework;
 import org.catmq.entity.StorerInfo;
-import org.catmq.storage.segment.SegmentStorage;
 import org.catmq.storage.messageLog.FlushMessageEntryService;
 import org.catmq.storage.messageLog.MessageLogStorage;
 import org.catmq.storage.segment.SegmentFileManager;
@@ -29,6 +28,7 @@ public class Storer {
         storerInfo = new StorerInfo();
         client = ZkUtil.createClient(storerInfo.getZkAddress());
         storerZkManager = new StorerZkManager();
+        storerZkManager.register2Zk();
         messageLogStorage = new MessageLogStorage();
         segmentStorage = new SegmentStorage();
         flushMessageEntryService = new FlushMessageEntryService();
