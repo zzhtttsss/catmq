@@ -66,7 +66,7 @@ public class StorerConfig {
         storerName = properties.getProperty(ConfigConstant.STORER_NAME, "default");
         storerIp = properties.getProperty(ConfigConstant.STORER_IP, "127.0.0.1");
         storerPort = Integer.parseInt(properties.getProperty(ConfigConstant.STORER_PORT, "4321"));
-        writeOrderedExecutorThreadNums = Integer.parseInt(properties.getProperty(ConfigConstant.WRITE_ORDERED_EXECUTOR_THREAD_NUMS, "1"));
+        writeOrderedExecutorThreadNums = Integer.parseInt(properties.getProperty(ConfigConstant.WRITE_ORDERED_EXECUTOR_THREAD_NUMS, "4"));
         readOrderedExecutorThreadNums = Integer.parseInt(properties.getProperty(ConfigConstant.READ_ORDERED_EXECUTOR_THREAD_NUMS,
                 String.valueOf(PROCESSOR_NUMBER)));
         needWarmMappedFile = Boolean.parseBoolean(properties.getProperty(ConfigConstant.NEED_WARM_MAPPED_FILE, "false"));

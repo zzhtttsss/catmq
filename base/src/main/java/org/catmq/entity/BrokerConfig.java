@@ -28,7 +28,7 @@ public class BrokerConfig {
     private int brokerPort = 5432;
     private int grpcProducerThreadQueueCapacity = 10000;
     private int grpcProducerThreadPoolNums = PROCESSOR_NUMBER;
-    private int maxSegmentMessageNum = 10;
+    private int maxSegmentMessageNum = 100000;
 
 
     private BrokerConfig() {

@@ -67,7 +67,7 @@ public class PersistentTopic extends BaseTopic implements Topic {
         }
 
         CompletableFuture<SendMessage2BrokerResponse> future = BROKER.getStorerManager()
-                .sendMessage2Storer(numberedMessages, currentStorerAddresses)
+                .sendMessage2Storer(numberedMessages, super.getTopicDetail().getMode(), currentStorerAddresses)
                 .thenApply(responses -> conv2SendMessage2BrokerResponse(responses));
         return future;
     }
@@ -132,6 +132,11 @@ public class PersistentTopic extends BaseTopic implements Topic {
 
     private SendMessage2BrokerResponse conv2SendMessage2BrokerResponse(List<SendMessage2StorerResponse> responses) {
         SendMessage2BrokerResponse.Builder builder = SendMessage2BrokerResponse.newBuilder();
+        for (SendMessage2StorerResponse response : responses) {
+            if (response.getStatus().getCode() != Code.OK) {
+                throw new RuntimeException("fail to send message to storer");
+            }
+        }
         builder.setStatus(Status.newBuilder().setCode(Code.OK).build())
                 .setRes("success")
                 .setAck(true);
@@ -143,6 +148,8 @@ public class PersistentTopic extends BaseTopic implements Topic {
         lastAppendSegmentId = ZkIdGenerator.ZkIdGeneratorEnum.INSTANCE.getInstance().nextId(BROKER.getClient());
         lastAppendEntryId.set(0);
         this.currentStorerAddresses = brokerZkManager.selectStorer(1).orElseThrow();
+        this.maxSegmentMessageNum = BROKER_CONFIG.getMaxSegmentMessageNum();
+        isSwitching.set(false, isSwitching.getStamp() + 1);
     }
 
     @Override

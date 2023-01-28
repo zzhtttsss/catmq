@@ -6,7 +6,6 @@ import io.grpc.Metadata;
 import io.grpc.stub.StreamObserver;
 import lombok.extern.slf4j.Slf4j;
 import org.catmq.entity.TopicDetail;
-import org.catmq.entity.TopicMode;
 import org.catmq.grpc.InterceptorConstants;
 import org.catmq.grpc.RequestContext;
 import org.catmq.grpc.ResponseBuilder;
@@ -37,7 +36,6 @@ public class BrokerServer extends BrokerServiceGrpc.BrokerServiceImplBase {
     protected OrderedExecutor producerThreadPoolExecutor;
 
     protected ThreadPoolExecutor adminThreadPoolExecutor;
-
 
 
     protected void init() {
@@ -71,8 +69,8 @@ public class BrokerServer extends BrokerServiceGrpc.BrokerServiceImplBase {
             switch (TopicDetail.get(request.getTopic()).getMode()) {
                 case NORMAL -> this.producerThreadPoolExecutor.execute(new GrpcTask<>(ctx, request,
                         TaskPlan.SEND_MESSAGE_2_BROKER_TASK_PLAN, responseObserver, statusResponseCreator));
-                case ORDERED -> this.producerThreadPoolExecutor.executeOrdered(1, new GrpcTask<>(ctx, request,
-                        TaskPlan.SEND_MESSAGE_2_BROKER_TASK_PLAN, responseObserver, statusResponseCreator));
+                case ORDERED -> this.producerThreadPoolExecutor.executeOrdered(request.getTopic().hashCode(),
+                        new GrpcTask<>(ctx, request, TaskPlan.SEND_MESSAGE_2_BROKER_TASK_PLAN, responseObserver, statusResponseCreator));
             }
         } catch (Throwable t) {
             writeResponse(ctx, request, null, responseObserver, t, statusResponseCreator);

@@ -48,7 +48,7 @@ message GetMessageFromStorerResponse {
 
 message SendMessage2StorerRequest {
   repeated NumberedMessage message = 1;
-  string topic = 2;
+  string mode = 2;
 }
 
 message SendMessage2StorerResponse {

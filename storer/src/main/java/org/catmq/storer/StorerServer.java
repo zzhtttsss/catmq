@@ -4,6 +4,7 @@ import io.grpc.Context;
 import io.grpc.Metadata;
 import io.grpc.stub.StreamObserver;
 import lombok.extern.slf4j.Slf4j;
+import org.catmq.entity.TopicMode;
 import org.catmq.grpc.InterceptorConstants;
 import org.catmq.grpc.RequestContext;
 import org.catmq.grpc.ResponseBuilder;
@@ -69,12 +70,18 @@ public class StorerServer extends StorerServiceGrpc.StorerServiceImplBase {
     public void sendMessage2Storer(SendMessage2StorerRequest request, StreamObserver<SendMessage2StorerResponse> responseObserver) {
         Function<Status, SendMessage2StorerResponse> statusResponseCreator =
                 status -> SendMessage2StorerResponse.newBuilder().setStatus(status).build();
-        log.debug("receive a batch of message, num: {}", request.getMessageCount());
+        log.info("receive a batch of message, num: {}", request.getMessageCount());
         RequestContext ctx = createContext();
 
         try {
-            this.writeOrderedExecutor.executeOrdered(request.getMessage(0).getSegmentId(), new GrpcTask<>(ctx, request,
-                    TaskPlan.SEND_MESSAGE_2_STORER_TASK_PLAN, responseObserver, statusResponseCreator));
+            switch (TopicMode.fromString(request.getMode())) {
+                case NORMAL -> this.writeOrderedExecutor.execute(new GrpcTask<>(ctx, request,
+                        TaskPlan.SEND_MESSAGE_2_STORER_TASK_PLAN, responseObserver, statusResponseCreator));
+                case ORDERED -> this.writeOrderedExecutor.executeOrdered(request.getMessage(0).getSegmentId(),
+                        new GrpcTask<>(ctx, request, TaskPlan.SEND_MESSAGE_2_STORER_TASK_PLAN, responseObserver, statusResponseCreator));
+                default -> throw new RuntimeException("Unsupported topic mode.");
+            }
+
         } catch (Throwable t) {
             writeResponse(ctx, request, null, responseObserver, t, statusResponseCreator);
         }

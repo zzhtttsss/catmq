@@ -8,6 +8,7 @@ import io.grpc.ManagedChannel;
 import io.grpc.Metadata;
 import io.grpc.stub.MetadataUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.catmq.entity.TopicMode;
 import org.catmq.protocol.definition.NumberedMessage;
 import org.catmq.protocol.service.*;
 
@@ -54,17 +55,18 @@ public class StorerManager {
         return futureStub.createSegment(request);
     }
 
-    public CompletableFuture<List<SendMessage2StorerResponse>> sendMessage2Storer(List<NumberedMessage> messages, String[] storerAddresses) {
+    public CompletableFuture<List<SendMessage2StorerResponse>> sendMessage2Storer(List<NumberedMessage> messages,
+                                                                                  TopicMode topicMode, String[] storerAddresses) {
         List<ListenableFuture<SendMessage2StorerResponse>> listenableFutures = new ArrayList<>();
         for (String address : storerAddresses) {
-            log.warn("storer address is: {}", address);
-            listenableFutures.add(doSendMessage2Storer(messages, address));
+            listenableFutures.add(doSendMessage2Storer(messages, topicMode, address));
         }
         ListenableFuture<List<SendMessage2StorerResponse>> listenableFuture = Futures.allAsList(listenableFutures);
         return toCompletable(listenableFuture);
     }
 
-    private ListenableFuture<SendMessage2StorerResponse> doSendMessage2Storer(List<NumberedMessage> messages, String storerAddress) {
+    private ListenableFuture<SendMessage2StorerResponse> doSendMessage2Storer(List<NumberedMessage> messages,
+                                                                              TopicMode topicMode, String storerAddress) {
         ManagedChannel channel = BROKER.getGrpcConnectManager().get(storerAddress);
         Metadata metadata = new Metadata();
         metadata.put(Metadata.Key.of("action", Metadata.ASCII_STRING_MARSHALLER), "sendMessage");
@@ -72,8 +74,8 @@ public class StorerManager {
         StorerServiceGrpc.StorerServiceFutureStub futureStub = StorerServiceGrpc.newFutureStub(headChannel);
         SendMessage2StorerRequest request = SendMessage2StorerRequest.newBuilder()
                 .addAllMessage(messages)
+                .setMode(topicMode.getName())
                 .build();
-        log.warn("start to send message");
         return futureStub.sendMessage2Storer(request);
     }
 

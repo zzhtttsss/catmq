@@ -124,7 +124,6 @@ public class DefaultCatProducer extends ClientConfig {
                     .build();
             messages.add(message);
         }
-        log.warn("topic detail: {}", topicDetail.getCompleteTopicName());
 
         SendMessage2BrokerRequest request = SendMessage2BrokerRequest.newBuilder()
                 .addAllMessage(messages)
