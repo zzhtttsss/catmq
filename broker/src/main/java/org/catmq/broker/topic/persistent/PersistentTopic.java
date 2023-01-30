@@ -8,6 +8,7 @@ import org.catmq.broker.topic.BaseTopic;
 import org.catmq.broker.topic.Subscription;
 import org.catmq.broker.topic.Topic;
 import org.catmq.entity.TopicDetail;
+import org.catmq.entity.TopicMode;
 import org.catmq.protocol.definition.Code;
 import org.catmq.protocol.definition.NumberedMessage;
 import org.catmq.protocol.definition.OriginMessage;
@@ -42,18 +43,33 @@ public class PersistentTopic extends BaseTopic implements Topic {
 
     private long maxSegmentMessageNum;
 
+    /**
+     * The address of storer which are responsible for storing messages of the current segment.
+     */
     private String[] currentStorerAddresses;
 
+    /**
+     * The count of threads which are allocating entry id and segment id to a batch of messages.
+     */
     private final AtomicInteger runningCount = new AtomicInteger(0);
 
+    /**
+     * The flag of switching to next segment to make sure only one thread can switch topic to next segment.
+     */
     private final AtomicStampedReference<Boolean> isSwitching = new AtomicStampedReference<>(false, 1);
 
     private final BrokerZkManager brokerZkManager;
 
+    private final boolean threadSafe;
+
     @Override
     public CompletableFuture<SendMessage2BrokerResponse> putMessage(List<OriginMessage> messages) {
-        List<NumberedMessage> numberedMessages = new ArrayList<>();
+        List<NumberedMessage> numberedMessages;
         switch (getTopicDetail().getMode()) {
+            // For normal topic, SendMessage2BrokerRequest will be handled randomly by thread-pool,
+            // it means there are concurrency, so we need to allocate entry id thread safely.For
+            // ordered topic, all SendMessage2BrokerRequest of a same topic will be handled by one
+            // thread, so we don't need to care about concurrency.
             case NORMAL -> {
                 numberedMessages = allocateEntryIdThreadSafely(messages);
             }
@@ -61,62 +77,100 @@ public class PersistentTopic extends BaseTopic implements Topic {
                 numberedMessages = allocateEntryId(messages);
             }
             default -> {
-                // TODO 上层会进行拦截，应该不可能进入这里
+                throw new RuntimeException("Unsupported topic mode.");
             }
 
         }
-
-        CompletableFuture<SendMessage2BrokerResponse> future = BROKER.getStorerManager()
+        return BROKER.getStorerManager()
                 .sendMessage2Storer(numberedMessages, super.getTopicDetail().getMode(), currentStorerAddresses)
                 .thenApply(responses -> conv2SendMessage2BrokerResponse(responses));
-        return future;
     }
 
     private List<NumberedMessage> allocateEntryId(List<OriginMessage> messages) {
-        // TODO
-        return allocateEntryIdThreadSafely(messages);
+        List<NumberedMessage> numberedMessages = doAllocateEntryId(messages);
+        if (numberedMessages == null) {
+            switch2NextSegment();
+            numberedMessages = doAllocateEntryId(messages);
+        }
+        return numberedMessages;
     }
 
+    /**
+     * Allocate entry id and segment id for a batch of messages thread safely without lock.
+     * <p>When the current segment doesn't have enough space, we need to switch this topic to next
+     * segment. There must be no other thread allocating entry id and segment id (read and write
+     * lastAppendSegmentId and lastAppendEntryId) when switching. So we use a counter to count the
+     * number of threads which are allocating entry id and segment id. The switching thread will
+     * wait until the counter is 0. But there still exists a problem：
+     * <p> Assuming that the current counter is zero, the switching thread A just runs to the
+     * statement that judges that the counter is zero (!(runningCount.get() == 0)), and
+     * the other thread B executes the statement that increases the counter, and A completes
+     * the judgment before B increases the counter, so that as a result, B can allocate
+     * entry id and segment id when switching.
+     * <p> To solve this problem, A will sleep 1ms before judging the counter to ensure that B
+     * has enough time to increase the counter.
+     *
+     * @param messages List<OriginMessage>
+     * @return List<NumberedMessage>
+     */
     private List<NumberedMessage> allocateEntryIdThreadSafely(List<OriginMessage> messages) {
+        // If other thread is switching, start waiting.
+        if (isSwitching.getReference()) {
+            log.info("Other thread is switching, start waiting.");
+            while (isSwitching.getReference()) {
+
+            }
+        }
+        // If current segment has enough space, allocate entry id and segment id directly.
         int stamp = isSwitching.getStamp();
-        List<NumberedMessage> numberedMessages = doAllocateEntryIdThreadSafely(messages);
+        List<NumberedMessage> numberedMessages = doAllocateEntryId(messages);
+        // If current segment doesn't have enough space, try to cas to do switching.
         if (numberedMessages == null) {
-            // Only one writer thread can swap the writeCache.
             if (isSwitching.compareAndSet(false, true, stamp, stamp + 1)) {
-                log.warn("Cas success, start swapping.");
+                // CAS success, start switching.
+                log.info("Cas success, start switching.");
                 try {
+                    // Sleep 1ms to ensure that other thread has enough time to increase the counter.
                     Thread.sleep(1);
                 } catch (InterruptedException e) {
                     log.warn("Interrupted!", e);
                 }
+                // Wait until there is no other thread allocating entry id and segment id.
                 while (!(runningCount.get() == 0)) {
 
                 }
+                // Switch this topic to next segment.
                 switch2NextSegment();
             } else {
-                log.warn("Cas fail, start waiting.");
-                // Blocking if other writer thread is swapping the writeCache.
+                // CAS fail, waiting until other thread finishes switching.
+                log.info("Cas fail, start waiting.");
                 while (isSwitching.getReference()) {
 
                 }
             }
-            // After swapping, try again.
-            numberedMessages = doAllocateEntryIdThreadSafely(messages);
+            // try to allocate entry id and segment id again.
+            numberedMessages = doAllocateEntryId(messages);
         }
         return numberedMessages;
     }
 
 
-    private List<NumberedMessage> doAllocateEntryIdThreadSafely(List<OriginMessage> messages) {
+    private List<NumberedMessage> doAllocateEntryId(List<OriginMessage> messages) {
+        // If current segment doesn't have enough space, return null.
         if (maxSegmentMessageNum < lastAppendEntryId.get() + messages.size()) {
-            log.warn("no enough space");
+            log.info("Segment is full,segment id: {} last entry id: {}", lastAppendSegmentId, lastAppendEntryId.get());
             maxSegmentMessageNum = lastAppendEntryId.get();
             return null;
         }
-        runningCount.incrementAndGet();
+        // If we need to ensure thread safety, count.
+        if (threadSafe) {
+            runningCount.incrementAndGet();
+        }
         long firstEntryId = lastAppendEntryId.getAndAdd(messages.size()) + 1;
         long segmentId = lastAppendSegmentId;
-        runningCount.decrementAndGet();
+        if (threadSafe) {
+            runningCount.decrementAndGet();
+        }
         List<NumberedMessage> numberedMessages = new ArrayList<>(messages.size());
         for (OriginMessage om : messages) {
             numberedMessages.add(NumberedMessage.newBuilder()
@@ -127,11 +181,11 @@ public class PersistentTopic extends BaseTopic implements Topic {
             firstEntryId++;
         }
         return numberedMessages;
-
     }
 
     private SendMessage2BrokerResponse conv2SendMessage2BrokerResponse(List<SendMessage2StorerResponse> responses) {
         SendMessage2BrokerResponse.Builder builder = SendMessage2BrokerResponse.newBuilder();
+        // TODO: handle response
         for (SendMessage2StorerResponse response : responses) {
             if (response.getStatus().getCode() != Code.OK) {
                 throw new RuntimeException("fail to send message to storer");
@@ -144,12 +198,13 @@ public class PersistentTopic extends BaseTopic implements Topic {
     }
 
     private void switch2NextSegment() {
-        // TODO 通知storer 惰性通知，storer在拿到一个entryId为0的消息时即判断是一个新segment.
         lastAppendSegmentId = ZkIdGenerator.ZkIdGeneratorEnum.INSTANCE.getInstance().nextId(BROKER.getClient());
         lastAppendEntryId.set(0);
         this.currentStorerAddresses = brokerZkManager.selectStorer(1).orElseThrow();
         this.maxSegmentMessageNum = BROKER_CONFIG.getMaxSegmentMessageNum();
-        isSwitching.set(false, isSwitching.getStamp() + 1);
+        if (threadSafe) {
+            isSwitching.set(false, isSwitching.getStamp() + 1);
+        }
     }
 
     @Override
@@ -197,5 +252,6 @@ public class PersistentTopic extends BaseTopic implements Topic {
         this.lastAppendSegmentId = segmentId;
         this.lastAppendEntryId = new AtomicLong(0);
         this.currentStorerAddresses = brokerZkManager.selectStorer(1).orElseThrow();
+        this.threadSafe = super.getTopicDetail().getMode() == TopicMode.NORMAL;
     }
 }

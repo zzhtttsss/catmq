@@ -22,6 +22,7 @@ import org.catmq.protocol.definition.ProcessMode;
 import org.catmq.protocol.service.BrokerServiceGrpc;
 import org.catmq.protocol.service.SendMessage2BrokerRequest;
 import org.catmq.protocol.service.SendMessage2BrokerResponse;
+import org.catmq.zk.TopicZkInfo;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -42,6 +43,7 @@ public class DefaultCatProducer extends ClientConfig {
     private long producerId;
     @Getter
     private final CuratorFramework client;
+    // TODO 选择broker策略
     private PartitionSelector partitionSelector;
 
     private final ThreadPoolExecutor handleResponseExecutor;
@@ -50,20 +52,22 @@ public class DefaultCatProducer extends ClientConfig {
 
     private final GrpcConnectManager grpcConnectManager;
 
+    private final TopicZkInfo topicZkInfo;
+
 
     private DefaultCatProducer(String tenantId, String topic, CuratorFramework client,
                                PartitionSelector partitionSelector, ThreadPoolExecutor handleResponseExecutor,
-                               ThreadPoolExecutor handleRequestExecutor, GrpcConnectManager grpcConnectManager) {
+                               ThreadPoolExecutor handleRequestExecutor, GrpcConnectManager grpcConnectManager,
+                               TopicZkInfo topicZkInfo) {
         this.tenantId = tenantId;
         this.topicDetail = TopicDetail.get(topic);
-        log.warn("producer topic detail: {}", topicDetail.getCompleteTopicName());
         this.client = client;
         this.partitionSelector = partitionSelector;
         this.producerId = 1111L;
         this.handleRequestExecutor = handleRequestExecutor;
         this.handleResponseExecutor = handleResponseExecutor;
         this.grpcConnectManager = grpcConnectManager;
-
+        this.topicZkInfo = topicZkInfo;
     }
 
 
@@ -105,9 +109,11 @@ public class DefaultCatProducer extends ClientConfig {
     }
 
     private void doSend(MessageEntry messageEntry, ProcessMode processMode, SendCallback sendCallback, long timeout) {
-        ManagedChannel channel = grpcConnectManager.get("127.0.0.1:5432");
+        // TODO 使用选择broker策略
+        ManagedChannel channel = grpcConnectManager.get(topicZkInfo.getBrokerZkPaths().get(0));
         Metadata metadata = new Metadata();
         metadata.put(Metadata.Key.of("action", Metadata.ASCII_STRING_MARSHALLER), "sendMessage");
+        metadata.put(Metadata.Key.of("tenant-id", Metadata.ASCII_STRING_MARSHALLER), tenantId);
         Channel headChannel = ClientInterceptors.intercept(channel, MetadataUtils.newAttachHeadersInterceptor(metadata));
         BrokerServiceGrpc.BrokerServiceFutureStub futureStub = BrokerServiceGrpc.newFutureStub(headChannel);
         List<OriginMessage> messages = new ArrayList<>();
@@ -138,7 +144,7 @@ public class DefaultCatProducer extends ClientConfig {
                 try {
                     SendMessage2BrokerResponse response = responseFuture.get();
                     if (response.getStatus().getCode() != Code.OK) {
-                        log.error("fail..., message: {}", response.getStatus().getMessage());
+                        log.error("fail to send a message, message: {}", response.getStatus().getMessage());
                     }
 
                 } catch (ExecutionException | InterruptedException e) {
@@ -163,16 +169,18 @@ public class DefaultCatProducer extends ClientConfig {
     protected static DefaultCatProducerBuilder builder(String tenantId, CuratorFramework client,
                                                        ThreadPoolExecutor handleRequestExecutor,
                                                        ThreadPoolExecutor handleResponseExecutor,
-                                                       GrpcConnectManager grpcConnectManager) {
-        return new DefaultCatProducerBuilder(tenantId, client, handleRequestExecutor, handleResponseExecutor, grpcConnectManager);
+                                                       GrpcConnectManager grpcConnectManager, String topic,
+                                                       TopicZkInfo topicZkInfo) {
+        return new DefaultCatProducerBuilder(tenantId, client, handleRequestExecutor, handleResponseExecutor,
+                grpcConnectManager, topic, topicZkInfo);
     }
 
     public static class DefaultCatProducerBuilder {
         private final String tenantId;
 
-        private String topic;
+        private final String topic;
 
-        private CuratorFramework client;
+        private final CuratorFramework client;
 
         private PartitionSelector partitionSelector;
 
@@ -182,23 +190,19 @@ public class DefaultCatProducer extends ClientConfig {
 
         private final GrpcConnectManager grpcConnectManager;
 
+        private final TopicZkInfo topicZkInfo;
+
+
         protected DefaultCatProducerBuilder(String tenantId, CuratorFramework client, ThreadPoolExecutor handleRequestExecutor,
-                                            ThreadPoolExecutor handleResponseExecutor, GrpcConnectManager grpcConnectManager) {
+                                            ThreadPoolExecutor handleResponseExecutor, GrpcConnectManager grpcConnectManager,
+                                            String topic, TopicZkInfo topicZkInfo) {
             this.tenantId = tenantId;
             this.client = client;
             this.handleRequestExecutor = handleRequestExecutor;
             this.handleResponseExecutor = handleResponseExecutor;
             this.grpcConnectManager = grpcConnectManager;
-        }
-
-        public DefaultCatProducerBuilder setTopic(String topic) {
             this.topic = topic;
-            return this;
-        }
-
-        public DefaultCatProducerBuilder setZkAddress(CuratorFramework client) {
-            this.client = client;
-            return this;
+            this.topicZkInfo = topicZkInfo;
         }
 
         public DefaultCatProducerBuilder setPartitionSelector(PartitionSelector partitionSelector) {
@@ -207,8 +211,8 @@ public class DefaultCatProducer extends ClientConfig {
         }
 
         public DefaultCatProducer build() {
-            return new DefaultCatProducer(tenantId, topic, client, partitionSelector,
-                    handleRequestExecutor, handleResponseExecutor, grpcConnectManager);
+            return new DefaultCatProducer(tenantId, topic, client, partitionSelector, handleRequestExecutor,
+                    handleResponseExecutor, grpcConnectManager, topicZkInfo);
         }
     }
 

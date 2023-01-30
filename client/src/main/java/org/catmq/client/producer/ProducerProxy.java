@@ -3,8 +3,8 @@ package org.catmq.client.producer;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.curator.framework.CuratorFramework;
-import org.catmq.client.producer.balance.LoadBalance;
 import org.catmq.client.producer.balance.LeastUsedStrategy;
+import org.catmq.client.producer.balance.LoadBalance;
 import org.catmq.client.producer.balance.RoundRobinStrategy;
 
 import java.util.Optional;
@@ -30,7 +30,7 @@ public class ProducerProxy {
             case ROUND_ROBIN -> this.loadBalance = RoundRobinStrategy.RoundRobinStrategyEnum.INSTANCE.getStrategy();
             default -> {
                 log.warn("Load balance strategy not found, use default strategy: round robin");
-                this.loadBalance = RoundRobinStrategy.RoundRobinStrategyEnum.INSTANCE.getStrategy();
+                this.loadBalance = LeastUsedStrategy.LeastUsedStrategyEnum.INSTANCE.getStrategy();
             }
         }
     }

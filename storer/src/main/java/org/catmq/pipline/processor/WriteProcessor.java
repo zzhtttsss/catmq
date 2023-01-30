@@ -28,11 +28,7 @@ public class WriteProcessor implements Processor<SendMessage2StorerRequest, Send
             storer.getSegmentStorage().getSegments().put(request.getMessage(0).getSegmentId(),
                     new Segment(request.getMessage(0).getSegmentId()));
         }
-//        if (request.getMessageList().size() == 1) {
-//            processSingleMessage(ctx, request);
-//        } else {
-//            processMultiMessage(ctx, request);
-//        }
+        
         processMultiMessage(ctx, request);
         SendMessage2StorerResponse response = SendMessage2StorerResponse.newBuilder()
                 .setAck(true)
@@ -42,6 +38,7 @@ public class WriteProcessor implements Processor<SendMessage2StorerRequest, Send
         return response;
     }
 
+    @Deprecated
     private void processSingleMessage(RequestContext ctx, SendMessage2StorerRequest request) {
         NumberedMessage nm = request.getMessage(0);
         MessageEntry messageEntry = new MessageEntry(nm.getEntryId(), nm.getSegmentId(), nm.getBody().toByteArray());

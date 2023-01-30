@@ -28,6 +28,7 @@ public class StorerManager {
 
     }
 
+    @Deprecated
     public void createSegment(long segmentId) {
         try {
             String[] storerZkPaths = BROKER.getBrokerZkManager().selectStorer(1).orElseThrow();
@@ -42,6 +43,7 @@ public class StorerManager {
         }
     }
 
+    @Deprecated
     private ListenableFuture<CreateSegmentResponse> doCreateSegment(String storerZkPath, long segmentId) {
         ManagedChannel channel = BROKER.getGrpcConnectManager().get(storerZkPath);
         Metadata metadata = new Metadata();
@@ -58,6 +60,7 @@ public class StorerManager {
     public CompletableFuture<List<SendMessage2StorerResponse>> sendMessage2Storer(List<NumberedMessage> messages,
                                                                                   TopicMode topicMode, String[] storerAddresses) {
         List<ListenableFuture<SendMessage2StorerResponse>> listenableFutures = new ArrayList<>();
+        // send message to each storer.
         for (String address : storerAddresses) {
             listenableFutures.add(doSendMessage2Storer(messages, topicMode, address));
         }

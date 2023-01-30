@@ -4,10 +4,7 @@ import lombok.Getter;
 import org.catmq.broker.common.Consumer;
 import org.catmq.broker.topic.Dispatcher;
 import org.catmq.broker.topic.Subscription;
-import org.catmq.broker.topic.Topic;
 import org.catmq.broker.topic.nonpersistent.NonPersistentDispatcher;
-import org.catmq.broker.topic.nonpersistent.NonPersistentTopic;
-import org.catmq.broker.topic.nonpersistent.SingleActiveConsumerNonPersistentDispatcher;
 
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
@@ -33,7 +30,7 @@ public class PersistentSubscription implements Subscription {
     @Override
     public void addConsumer(Consumer consumer) {
         if (dispatcher == null) {
-//            dispatcher = new SingleActiveConsumerNonPersistentDispatcher(this, topic);
+            // TODO
         }
         dispatcher.addConsumer(consumer);
     }

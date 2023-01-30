@@ -27,11 +27,11 @@ public class Storer {
     public void init() {
         storerInfo = new StorerInfo();
         client = ZkUtil.createClient(storerInfo.getZkAddress());
-        storerZkManager = new StorerZkManager();
+        storerZkManager = StorerZkManager.StorerZkManagerEnum.INSTANCE.getInstance();
         storerZkManager.register2Zk();
-        messageLogStorage = new MessageLogStorage();
-        segmentStorage = new SegmentStorage();
-        flushMessageEntryService = new FlushMessageEntryService();
+        messageLogStorage = MessageLogStorage.MessageLogStorageEnum.INSTANCE.getInstance();
+        segmentStorage = SegmentStorage.SegmentStorageEnum.INSTANCE.getInstance();
+        flushMessageEntryService = FlushMessageEntryService.FlushMessageEntryServiceEnum.INSTANCE.getInstance();
         flushMessageEntryService.start();
         segmentFileManager = SegmentFileManager.SegmentFileServiceEnum.INSTANCE.getInstance();
     }
@@ -42,6 +42,5 @@ public class Storer {
     public MessageLogStorage messageLogStorage;
     public SegmentStorage segmentStorage;
     public FlushMessageEntryService flushMessageEntryService;
-
     private SegmentFileManager segmentFileManager;
 }

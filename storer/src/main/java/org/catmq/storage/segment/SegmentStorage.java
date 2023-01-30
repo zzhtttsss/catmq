@@ -51,11 +51,13 @@ public class SegmentStorage {
     @Getter
     private final ConcurrentHashMap<Long, Segment> segments;
 
+
     /**
      * Append an {@link MessageEntry} to the writeCache4Append.
      *
      * @param messageEntry message entry need to be appended to writeCache4Append
      */
+    @Deprecated
     public void appendEntry2WriteCache(MessageEntry messageEntry) {
         int stamp = isSwapping.getStamp();
         boolean ok = writeCache4Append.appendEntry(messageEntry);
@@ -165,7 +167,7 @@ public class SegmentStorage {
     }
 
 
-    public SegmentStorage() {
+    private SegmentStorage() {
         this.path = STORER_CONFIG.getSegmentStoragePath();
         this.writeCache4Append = new WriteCache(MAX_CACHE_SIZE);
         this.writeCache4Flush = new WriteCache(MAX_CACHE_SIZE);
@@ -176,5 +178,18 @@ public class SegmentStorage {
         entryPositionIndex = new EntryPositionIndex(KeyValueStorageRocksDB.factory,
                 STORER_CONFIG.getSegmentIndexStoragePath());
         flushWriteCacheService.start();
+    }
+    
+    public enum SegmentStorageEnum {
+        INSTANCE;
+        private final SegmentStorage segmentStorage;
+
+        SegmentStorageEnum() {
+            segmentStorage = new SegmentStorage();
+        }
+
+        public SegmentStorage getInstance() {
+            return segmentStorage;
+        }
     }
 }

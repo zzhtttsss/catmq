@@ -24,7 +24,6 @@ public class TopicManager {
     public void createPartition(String topicName, long segmentId) {
         TopicDetail topicDetail = TopicDetail.get(topicName);
         brokerZkManager.createPartition(topicDetail, brokerZkManager.getBrokerPath());
-        log.warn("topic name: {}, topic type: {}", topicDetail.getCompleteTopicName(), topicDetail.getType());
         topics.computeIfAbsent(topicDetail.getCompleteTopicName(), name -> {
             if (topicDetail.isPersistent()) {
                 return new PersistentTopic(topicDetail, segmentId);

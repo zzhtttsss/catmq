@@ -28,7 +28,7 @@ public class TopicDetail {
 
 
     // full name of topic
-    // <topicType>:<topicMode>://<tenant>/<topic>
+    // <topicType>:<topicMode>:$<tenant>:<topic>#<partitionIndex>
     private final String completeTopicName;
 
     private final TopicType type;
@@ -126,18 +126,8 @@ public class TopicDetail {
         return partitionIndex != -1;
     }
 
-
     /**
-     * For partitions in a topic, return the base partitioned topic name.
-     * Eg:
-     * <ul>
-     *  <li><code>persistent://prop/my-topic-partition-1</code> -->
-     *  <code>persistent://prop/my-topic</code>
-     *  <li><code>persistent://prop/my-topic</code> -->
-     *  <code>persistent://prop/my-topic</code>
-     * </ul>
-     *
-     * @return the base partitioned topic name without partition index.
+     * @return the topic name without partition index.
      */
     public String getTopicNameWithoutIndex() {
         if (isPartitioned()) {
@@ -154,15 +144,12 @@ public class TopicDetail {
 
     /**
      * Create a topic name from a string.
-     *
-     * @param name long type: [TopicType]://[tenant]/[localName]<br/>
-     *             short type: [localName]
      */
     protected TopicDetail(String name) {
         log.info("create a new topic named {}", name);
         if (!name.contains(TOPIC_DOMAIN_SEPARATOR)) {
-            // short name like <topic> with default TopicType.NON_PERSISTENT and default tenant
-            // non-persistent://public/<name>
+            // short name like <topic> with default TopicType.NON_PERSISTENT, TopicMode.NORMAL and
+            // default tenant
             this.type = TopicType.NON_PERSISTENT;
             this.mode = TopicMode.NORMAL;
             this.tenant = PUBLIC_TENANT;
@@ -173,7 +160,7 @@ public class TopicDetail {
             this.partitionIndex = getPartitionIndex(name);
 
         } else {
-            // long name like persistent://tenant/topic
+            // long name like persistent:$tenant:topic
             List<String> parts = Splitter.on(TOPIC_DOMAIN_SEPARATOR).limit(2).splitToList(name);
             List<String> headers = Splitter.on(TOPIC_INNER_SEPARATOR).limit(2).splitToList(parts.get(0));
 
@@ -181,7 +168,7 @@ public class TopicDetail {
             this.mode = TopicMode.fromString(headers.get(1));
             String rest = parts.get(1);
             // The rest of the name is like:
-            // new:    tenant/<topic>
+            // new:    <tenant>:<topic>#<partitionIndex>
             parts = Splitter.on(TOPIC_INNER_SEPARATOR).limit(2).splitToList(rest);
             if (parts.size() == 2) {
                 this.tenant = parts.get(0);

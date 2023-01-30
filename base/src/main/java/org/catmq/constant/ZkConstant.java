@@ -4,7 +4,7 @@ public class ZkConstant {
     // Address constants
     public static final String BROKER_ROOT_PATH = "/broker";
 
-    public static final String TMP_BROKER_PATH = "/broker/tmp";
+    public static final String TMP_BROKER_PATH = "/brokerTmp";
 
     public static final String BROKER_ADDRESS_PATH = "/address/broker";
 
@@ -21,6 +21,6 @@ public class ZkConstant {
 
     public static final String STORER_ROOT_PATH = "/storer";
 
-    public static final String TMP_STORER_PATH = "/storer/tmp";
+    public static final String TMP_STORER_PATH = "/storerTmp";
 
 }

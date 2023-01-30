@@ -39,15 +39,15 @@ public class BrokerServer extends BrokerServiceGrpc.BrokerServiceImplBase {
 
 
     protected void init() {
-        producerThreadPoolExecutor = createExecutor(1, "producerThreadPoolExecutor",
-                NO_TASK_LIMIT);
+        producerThreadPoolExecutor = createExecutor(BROKER_CONFIG.getGrpcProducerThreadPoolNums(),
+                "producerThreadPoolExecutor", NO_TASK_LIMIT);
         this.adminThreadPoolExecutor = new ThreadPoolExecutor(
-                BROKER_CONFIG.getGrpcProducerThreadPoolNums(),
-                BROKER_CONFIG.getGrpcProducerThreadPoolNums(),
+                BROKER_CONFIG.getGrpcAdminThreadPoolNums(),
+                BROKER_CONFIG.getGrpcAdminThreadPoolNums(),
                 1,
                 TimeUnit.MINUTES,
                 new LinkedBlockingQueue<>(BROKER_CONFIG.getGrpcProducerThreadQueueCapacity()),
-                new ThreadFactoryBuilder().setNameFormat("GrpcProducerThreadPool" + "-%d").build(),
+                new ThreadFactoryBuilder().setNameFormat("GrpcAdminThreadPool" + "-%d").build(),
                 new ThreadPoolExecutor.DiscardOldestPolicy());
         log.info("BrokerServer init success");
 
@@ -64,13 +64,13 @@ public class BrokerServer extends BrokerServiceGrpc.BrokerServiceImplBase {
                 .setStatus(status)
                 .build();
         RequestContext ctx = createContext();
-        // TODO 获取segment id， 用该id hash
         try {
             switch (TopicDetail.get(request.getTopic()).getMode()) {
                 case NORMAL -> this.producerThreadPoolExecutor.execute(new GrpcTask<>(ctx, request,
                         TaskPlan.SEND_MESSAGE_2_BROKER_TASK_PLAN, responseObserver, statusResponseCreator));
                 case ORDERED -> this.producerThreadPoolExecutor.executeOrdered(request.getTopic().hashCode(),
-                        new GrpcTask<>(ctx, request, TaskPlan.SEND_MESSAGE_2_BROKER_TASK_PLAN, responseObserver, statusResponseCreator));
+                        new GrpcTask<>(ctx, request, TaskPlan.SEND_MESSAGE_2_BROKER_TASK_PLAN, responseObserver,
+                                statusResponseCreator));
             }
         } catch (Throwable t) {
             writeResponse(ctx, request, null, responseObserver, t, statusResponseCreator);

@@ -1,11 +1,15 @@
 package org.catmq.client;
 
 import com.alibaba.fastjson2.JSON;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.grpc.Channel;
 import io.grpc.ClientInterceptors;
 import io.grpc.Metadata;
 import io.grpc.stub.MetadataUtils;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.zookeeper.CreateMode;
@@ -13,21 +17,27 @@ import org.catmq.client.producer.ProducerProxy;
 import org.catmq.constant.FileConstant;
 import org.catmq.constant.ZkConstant;
 import org.catmq.entity.GrpcConnectManager;
+import org.catmq.entity.JsonSerializable;
 import org.catmq.entity.TopicDetail;
-import org.catmq.entity.TopicMode;
-import org.catmq.entity.TopicType;
+import org.catmq.protocol.definition.Code;
 import org.catmq.protocol.service.BrokerServiceGrpc;
 import org.catmq.protocol.service.CreatePartitionRequest;
 import org.catmq.protocol.service.CreatePartitionResponse;
 import org.catmq.util.Concat2String;
+import org.catmq.util.StringUtil;
 import org.catmq.zk.TopicZkInfo;
 import org.catmq.zk.ZkUtil;
 
 import java.util.HashMap;
 import java.util.NoSuchElementException;
+import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+
+import static org.catmq.entity.TopicDetail.PARTITIONED_INDEX_SEPARATOR;
+import static org.catmq.util.ConfigUtil.PROCESSOR_NUMBER;
 
 @Slf4j
 public class CatClient {
@@ -45,14 +55,27 @@ public class CatClient {
 
     private final GrpcConnectManager grpcConnectManager;
 
+    /**
+     * topic name -> broker address list
+     */
+    protected final LoadingCache<String, TopicZkInfo> topicBrokerCache = CacheBuilder
+            .newBuilder()
+            .maximumSize(100)
+            .expireAfterAccess(30, TimeUnit.MINUTES)
+            .build(new CacheLoader<>() {
+                @Override
+                public @NonNull TopicZkInfo load(@NonNull String topic) {
+                    return getTopicZkInfo(topic).orElseThrow();
+                }
+            });
 
     private CatClient(String zkAddress, String tenantId, ProducerProxy producerProxy) {
         this.client = ZkUtil.createClient(zkAddress);
         this.tenantId = tenantId;
         this.producerProxy = producerProxy;
         this.producerHandleRequestExecutor = new ThreadPoolExecutor(
-                4,
-                4,
+                PROCESSOR_NUMBER,
+                PROCESSOR_NUMBER,
                 1,
                 TimeUnit.MINUTES,
                 new LinkedBlockingQueue<>(10000),
@@ -74,17 +97,23 @@ public class CatClient {
         return new CatClientBuilder();
     }
 
-    public DefaultCatProducer.DefaultCatProducerBuilder createProducer() {
-        return DefaultCatProducer.builder(tenantId, client, producerHandleRequestExecutor, producerHandleResponseExecutor,
-                grpcConnectManager);
+    public DefaultCatProducer.DefaultCatProducerBuilder createProducer(String topic) {
+        try {
+            return DefaultCatProducer.builder(tenantId, client, producerHandleRequestExecutor, producerHandleResponseExecutor,
+                    grpcConnectManager, topic, topicBrokerCache.get(topic));
+        } catch (ExecutionException e) {
+            log.warn("Fail to get broker list of topic.", e);
+            throw new RuntimeException(e);
+        }
+
     }
 
-    public void createSinglePartitionTopic(String topic, TopicType type, TopicMode mode) {
+    public void createSinglePartitionTopic(String topic, String type, String mode) {
         createTopic(topic, type, mode, 1);
     }
 
-    public void createTopic(String topic, TopicType type, TopicMode mode, int partitionNum) {
-        TopicDetail topicDetail = TopicDetail.get(type.getName(), mode.getName(), this.tenantId, topic);
+    public void createTopic(String topic, String type, String mode, int partitionNum) {
+        TopicDetail topicDetail = TopicDetail.get(type, mode, this.tenantId, topic);
         try {
             String[] brokers = createTopicZkNode(topicDetail, partitionNum);
             createPartition(topicDetail, partitionNum, brokers);
@@ -134,13 +163,35 @@ public class CatClient {
             BrokerServiceGrpc.BrokerServiceBlockingStub stub = BrokerServiceGrpc.newBlockingStub(headChannel);
 
             CreatePartitionRequest request = CreatePartitionRequest.newBuilder()
-                    .setTopic(topicDetail.getTopicNameWithoutIndex() + "#" + i)
+                    .setTopic(StringUtil.concatString(topicDetail.getTopicNameWithoutIndex(),
+                            PARTITIONED_INDEX_SEPARATOR, String.valueOf(i)))
                     .setTopicType(topicDetail.getType().getName())
                     .setTopicMode(topicDetail.getMode().getName())
                     .build();
             CreatePartitionResponse response = stub.createPartition(request);
-            // TODO handle response
-            log.info("create partition {} in broker {}", topicDetail.getCompleteTopicName(), brokers[i]);
+            if (response.getStatus().getCode() != Code.OK) {
+
+            } else {
+                log.info("create partition {} in broker {}", topicDetail.getCompleteTopicName(), brokers[i]);
+            }
+        }
+    }
+
+    private Optional<TopicZkInfo> getTopicZkInfo(String topic) {
+        String topicPath = Concat2String.builder()
+                .concat(ZkConstant.TENANT_ROOT_PATH)
+                .concat(FileConstant.LEFT_SLASH)
+                .concat(tenantId)
+                .concat(FileConstant.LEFT_SLASH)
+                .concat(topic)
+                .build();
+        try {
+            byte[] bytes = client.getData().forPath(topicPath);
+            TopicZkInfo info = JsonSerializable.fromBytes(bytes, TopicZkInfo.class);
+            return Optional.ofNullable(info);
+        } catch (Exception e) {
+            log.error("Fail to get broker list of this topic.", e);
+            return Optional.empty();
         }
     }
 

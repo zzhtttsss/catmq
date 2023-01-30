@@ -7,7 +7,6 @@ import org.apache.zookeeper.CreateMode;
 import org.catmq.command.BooleanError;
 import org.catmq.constant.FileConstant;
 import org.catmq.constant.ZkConstant;
-import org.catmq.entity.BrokerInfo;
 import org.catmq.entity.JsonSerializable;
 import org.catmq.entity.StorerInfo;
 import org.catmq.entity.TopicDetail;
@@ -31,11 +30,6 @@ public class BrokerZkManager extends BaseZookeeper {
             log.error("Register broker info to zk failed. {}", res.getError());
             System.exit(-1);
         }
-//        res = registerBrokerConnection();
-//        if (!res.isSuccess()) {
-//            log.error("Register broker address to zk failed. {}", res.getError());
-//            System.exit(-1);
-//        }
         try {
             Thread.sleep(1000);
         } catch (Exception e) {
@@ -86,39 +80,14 @@ public class BrokerZkManager extends BaseZookeeper {
                     .creatingParentsIfNeeded()
                     .withMode(CreateMode.PERSISTENT)
                     .forPath(this.brokerPath, BROKER.getBrokerInfo().toBytes());
-//            this.client.create()
-//                    .creatingParentsIfNeeded()
-//                    .withMode(CreateMode.EPHEMERAL)
-//                    .forPath(StringUtil.concatString(ZkConstant.TMP_BROKER_PATH, FileConstant.LEFT_SLASH, BROKER.getBrokerInfo().getBrokerAddress()));
+            this.client.create()
+                    .creatingParentsIfNeeded()
+                    .withMode(CreateMode.EPHEMERAL)
+                    .forPath(StringUtil.concatString(ZkConstant.TMP_BROKER_PATH, FileConstant.LEFT_SLASH, BROKER.getBrokerInfo().getBrokerAddress()));
         } catch (Exception e) {
             e.printStackTrace();
             return BooleanError.fail(e.getMessage());
         }
-        return BooleanError.ok();
-    }
-
-    private BooleanError registerBrokerConnection() {
-        BrokerInfo info = BROKER.getBrokerInfo();
-        log.info("Register broker address to zk. {}", info.getBrokerIp() + FileConstant.COLON + info.getBrokerPort());
-        try {
-            // /address/broker/127.0.0.1:5432
-            client.create()
-                    .creatingParentsIfNeeded()
-                    .withMode(CreateMode.EPHEMERAL)
-                    .forPath(Concat2String.builder()
-                            .concat(ZkConstant.BROKER_ADDRESS_PATH)
-                            .concat(FileConstant.LEFT_SLASH)
-                            .concat(info.getBrokerIp())
-                            .concat(FileConstant.COLON)
-                            .concat(info.getBrokerPort())
-                            .build(), info.toBytes());
-            /*CuratorCache cc = CuratorCache.build(client, ZkConstant.BROKER_ADDRESS_PATH);
-            cc.listenable().addListener(new DeadNodeListener(info));
-            cc.start();*/
-        } catch (Exception e) {
-            return BooleanError.fail(e.getMessage());
-        }
-
         return BooleanError.ok();
     }
 
@@ -170,7 +139,8 @@ public class BrokerZkManager extends BaseZookeeper {
 
     public BrokerZkManager(CuratorFramework client) {
         super(client);
-        this.brokerPath = String.format("/broker/%s", BROKER.getBrokerInfo().getBrokerAddress());
+        this.brokerPath = StringUtil.concatString(ZkConstant.BROKER_ROOT_PATH,
+                FileConstant.LEFT_SLASH, BROKER.getBrokerInfo().getBrokerAddress());
     }
 
     public enum BrokerZkManagerEnum {

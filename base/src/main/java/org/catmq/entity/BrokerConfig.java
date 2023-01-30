@@ -28,7 +28,8 @@ public class BrokerConfig {
     private int brokerPort = 5432;
     private int grpcProducerThreadQueueCapacity = 10000;
     private int grpcProducerThreadPoolNums = PROCESSOR_NUMBER;
-    private int maxSegmentMessageNum = 100000;
+    private int grpcAdminThreadPoolNums = 1;
+    private int maxSegmentMessageNum;
 
 
     private BrokerConfig() {
@@ -48,5 +49,6 @@ public class BrokerConfig {
         grpcProducerThreadQueueCapacity = Integer.parseInt(properties.getProperty(ConfigConstant.GRPC_PRODUCER_THREAD_QUEUE_CAPACITY, String.valueOf(grpcProducerThreadQueueCapacity)));
         grpcProducerThreadPoolNums = Integer.parseInt(properties.getProperty(ConfigConstant.GRPC_PRODUCER_THREAD_POOL_NUMS, String.valueOf(grpcProducerThreadPoolNums)));
         zkAddress = properties.getProperty(ConfigConstant.ZK_ADDRESS, ZkConstant.ZK_DEFAULT_ADDRESS);
+        maxSegmentMessageNum = Integer.parseInt(properties.getProperty(ConfigConstant.TOPIC_MAX_SEGMENT_MESSAGE_NUM, String.valueOf(10000)));
     }
 }

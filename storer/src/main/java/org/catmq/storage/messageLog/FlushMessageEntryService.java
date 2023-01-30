@@ -30,7 +30,7 @@ public class FlushMessageEntryService extends ServiceThread {
     private static final RecyclableArrayList.Recycler<MessageEntry> entryListRecycler =
             new RecyclableArrayList.Recycler<>();
 
-    public FlushMessageEntryService() {
+    private FlushMessageEntryService() {
         // TODO 忙等待优化 BlockingMpscQueue
         this.flushMessageEntryQueue = new ArrayBlockingQueue<>(STORER_CONFIG.getFlushMessageEntryQueueCapacity());
     }
@@ -94,6 +94,7 @@ public class FlushMessageEntryService extends ServiceThread {
         log.info("{} service end.", this.getServiceName());
     }
 
+    @Deprecated
     public void putMessageEntry2Queue(MessageEntry messageEntry) {
         try {
             flushMessageEntryQueue.put(messageEntry);
@@ -110,6 +111,18 @@ public class FlushMessageEntryService extends ServiceThread {
         } catch (InterruptedException e) {
             log.warn("Interrupted!", e);
         }
+    }
 
+    public enum FlushMessageEntryServiceEnum {
+        INSTANCE;
+        private final FlushMessageEntryService flushMessageEntryService;
+
+        FlushMessageEntryServiceEnum() {
+            flushMessageEntryService = new FlushMessageEntryService();
+        }
+
+        public FlushMessageEntryService getInstance() {
+            return flushMessageEntryService;
+        }
     }
 }

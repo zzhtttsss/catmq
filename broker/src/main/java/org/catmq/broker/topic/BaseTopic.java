@@ -12,7 +12,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public abstract class BaseTopic implements Topic {
     protected final String topicName;
     @Getter
-    private TopicDetail topicDetail;
+    private final TopicDetail topicDetail;
 
     /**
      * Producers currently connected to this topic
