@@ -1,4 +1,4 @@
-package org.catmq.broker;
+package org.catmq.entity;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -8,7 +8,6 @@ import org.catmq.constant.ZkConstant;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
-import java.util.UUID;
 
 import static org.catmq.util.ConfigUtil.PROCESSOR_NUMBER;
 
@@ -16,14 +15,21 @@ import static org.catmq.util.ConfigUtil.PROCESSOR_NUMBER;
 @Getter
 public class BrokerConfig {
 
-    private String brokerId = UUID.randomUUID().toString();
+    public static final BrokerConfig BROKER_CONFIG;
+
+    static {
+        BROKER_CONFIG = new BrokerConfig();
+    }
+
+    private long brokerId;
     private String brokerName;
     private String brokerIp;
-
     private String zkAddress;
     private int brokerPort = 5432;
     private int grpcProducerThreadQueueCapacity = 10000;
     private int grpcProducerThreadPoolNums = PROCESSOR_NUMBER;
+    private int grpcAdminThreadPoolNums = 1;
+    private int maxSegmentMessageNum;
 
 
     private BrokerConfig() {
@@ -43,22 +49,6 @@ public class BrokerConfig {
         grpcProducerThreadQueueCapacity = Integer.parseInt(properties.getProperty(ConfigConstant.GRPC_PRODUCER_THREAD_QUEUE_CAPACITY, String.valueOf(grpcProducerThreadQueueCapacity)));
         grpcProducerThreadPoolNums = Integer.parseInt(properties.getProperty(ConfigConstant.GRPC_PRODUCER_THREAD_POOL_NUMS, String.valueOf(grpcProducerThreadPoolNums)));
         zkAddress = properties.getProperty(ConfigConstant.ZK_ADDRESS, ZkConstant.ZK_DEFAULT_ADDRESS);
-    }
-
-    public enum BrokerConfigEnum {
-        /**
-         * Singleton
-         */
-        INSTANCE;
-        private final BrokerConfig brokerConfig;
-
-
-        BrokerConfigEnum() {
-            brokerConfig = new BrokerConfig();
-        }
-
-        public BrokerConfig getInstance() {
-            return brokerConfig;
-        }
+        maxSegmentMessageNum = Integer.parseInt(properties.getProperty(ConfigConstant.TOPIC_MAX_SEGMENT_MESSAGE_NUM, String.valueOf(10000)));
     }
 }

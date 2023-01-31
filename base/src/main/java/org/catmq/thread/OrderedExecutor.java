@@ -74,6 +74,24 @@ public class OrderedExecutor implements ExecutorService {
         }
     }
 
+    public static OrderedExecutor createExecutor(
+            int numThreads,
+            String nameFormat,
+            int maxTasksInQueue) {
+        if (numThreads <= 0) {
+            return null;
+        } else {
+            return OrderedExecutor.newBuilder()
+                    .numThreads(numThreads)
+                    .name(nameFormat)
+                    .traceTaskExecution(false)
+                    .preserveMdcForTaskExecution(false)
+                    .maxTasksInQueue(maxTasksInQueue)
+                    .enableThreadScopedMetrics(true)
+                    .build();
+        }
+    }
+
 //    /**
 //     * Abstract builder class to build {@link OrderedScheduler}.
 //     */

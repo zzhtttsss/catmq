@@ -1,4 +1,4 @@
-package org.catmq.broker.topic;
+package org.catmq.entity;
 
 import com.google.common.base.Splitter;
 import com.google.common.cache.CacheBuilder;
@@ -6,8 +6,8 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.catmq.constant.FileConstant;
 import org.catmq.util.StringUtil;
 
 import java.util.List;
@@ -17,50 +17,64 @@ import java.util.concurrent.TimeUnit;
 
 @Getter
 @Slf4j
-public class TopicName {
+public class TopicDetail {
     public static final String PUBLIC_TENANT = "public";
 
-    public static final String PARTITIONED_TOPIC_SUFFIX = "-partition-";
+    public static final String PARTITIONED_INDEX_SEPARATOR = "#";
 
-    private static final String TOPIC_DOMAIN_SEPARATOR = "://";
+    private static final String TOPIC_DOMAIN_SEPARATOR = ":$";
+
+    private static final String TOPIC_INNER_SEPARATOR = ":";
+
 
     // full name of topic
-    // <topicType>://<tenant>/<topic>
+    // <topicType>:<topicMode>:$<tenant>:<topic>#<partitionIndex>
     private final String completeTopicName;
 
     private final TopicType type;
+    private final TopicMode mode;
     private final String tenant;
-    private final String localName;
+    private final String simpleName;
 
     private final int partitionIndex;
 
-    private static final LoadingCache<String, TopicName> CACHE = CacheBuilder
+    @Setter
+    private String brokerZkPath;
+
+    private static final LoadingCache<String, TopicDetail> CACHE = CacheBuilder
             .newBuilder()
             .maximumSize(100)
             .expireAfterAccess(30, TimeUnit.MINUTES)
             .build(new CacheLoader<>() {
                 @Override
-                public @NonNull TopicName load(@NonNull String name) {
-                    return new TopicName(name);
+                public @NonNull TopicDetail load(@NonNull String name) {
+                    return new TopicDetail(name);
                 }
             });
 
-    public static TopicName get(String domain, String topic) {
+    public static TopicDetail get(String domain, String topic) {
         String name = StringUtil.concatString(domain, TOPIC_DOMAIN_SEPARATOR, PUBLIC_TENANT,
-                FileConstant.LEFT_SLASH, topic);
-        return TopicName.get(name);
+                TOPIC_INNER_SEPARATOR, topic);
+        return TopicDetail.get(name);
     }
 
-    public static TopicName get(String domain, String tenant, String topic) {
+    public static TopicDetail get(String domain, String tenant, String topic) {
         String name = StringUtil.concatString(domain, TOPIC_DOMAIN_SEPARATOR, tenant,
-                FileConstant.LEFT_SLASH, topic);
-        return TopicName.get(name);
+                TOPIC_INNER_SEPARATOR, topic);
+        return TopicDetail.get(name);
     }
 
-    public static TopicName get(String topic) {
+    public static TopicDetail get(String type, String mode, String tenant, String topic) {
+        String name = StringUtil.concatString(type, TOPIC_INNER_SEPARATOR, mode, TOPIC_DOMAIN_SEPARATOR, tenant,
+                TOPIC_INNER_SEPARATOR, topic);
+        return TopicDetail.get(name);
+    }
+
+    public static TopicDetail get(String topic) {
         try {
             return CACHE.get(topic);
         } catch (ExecutionException e) {
+            log.warn("exception");
             throw new RuntimeException(e);
         }
     }
@@ -82,9 +96,9 @@ public class TopicName {
      */
     public static int getPartitionIndex(String topic) {
         int partitionIndex = -1;
-        if (topic.contains(PARTITIONED_TOPIC_SUFFIX)) {
+        if (topic.contains(PARTITIONED_INDEX_SEPARATOR)) {
             try {
-                String idx = StringUtil.substringAfterLast(topic, PARTITIONED_TOPIC_SUFFIX);
+                String idx = StringUtil.substringAfterLast(topic, PARTITIONED_INDEX_SEPARATOR);
                 partitionIndex = Integer.parseInt(idx);
                 if (partitionIndex < 0) {
                     // for the "topic-partition--1"
@@ -112,25 +126,16 @@ public class TopicName {
         return partitionIndex != -1;
     }
 
-
     /**
-     * For partitions in a topic, return the base partitioned topic name.
-     * Eg:
-     * <ul>
-     *  <li><code>persistent://prop/my-topic-partition-1</code> -->
-     *  <code>persistent://prop/my-topic</code>
-     *  <li><code>persistent://prop/my-topic</code> -->
-     *  <code>persistent://prop/my-topic</code>
-     * </ul>
-     *
-     * @return the base partitioned topic name without partition index.
+     * @return the topic name without partition index.
      */
-    public String getPartitionedTopicName() {
+    public String getTopicNameWithoutIndex() {
         if (isPartitioned()) {
-            return completeTopicName.substring(0, completeTopicName.lastIndexOf("-partition-"));
+            return completeTopicName.substring(0, completeTopicName.lastIndexOf("#"));
         } else {
             return completeTopicName;
         }
+
     }
 
     public boolean isPersistent() {
@@ -139,42 +144,45 @@ public class TopicName {
 
     /**
      * Create a topic name from a string.
-     *
-     * @param name long type: [TopicType]://[tenant]/[namespace]/[localName]<br/>
-     *             short type: [localName]
      */
-    private TopicName(String name) {
+    protected TopicDetail(String name) {
         log.info("create a new topic named {}", name);
         if (!name.contains(TOPIC_DOMAIN_SEPARATOR)) {
-            // short name like <topic> with default TopicType.NON_PERSISTENT and default tenant
-            // non-persistent://public/<name>
+            // short name like <topic> with default TopicType.NON_PERSISTENT, TopicMode.NORMAL and
+            // default tenant
             this.type = TopicType.NON_PERSISTENT;
+            this.mode = TopicMode.NORMAL;
             this.tenant = PUBLIC_TENANT;
-            this.localName = name;
+            this.simpleName = name;
             this.completeTopicName = StringUtil.concatString(TopicType.NON_PERSISTENT.getName(),
                     TOPIC_DOMAIN_SEPARATOR, PUBLIC_TENANT,
-                    FileConstant.LEFT_SLASH, name);
+                    TOPIC_INNER_SEPARATOR, name);
             this.partitionIndex = getPartitionIndex(name);
 
         } else {
-            // long name like persistent://tenant/topic
+            // long name like persistent:$tenant:topic
             List<String> parts = Splitter.on(TOPIC_DOMAIN_SEPARATOR).limit(2).splitToList(name);
-            this.type = TopicType.fromString(parts.get(0));
+            List<String> headers = Splitter.on(TOPIC_INNER_SEPARATOR).limit(2).splitToList(parts.get(0));
+
+            this.type = TopicType.fromString(headers.get(0));
+            this.mode = TopicMode.fromString(headers.get(1));
             String rest = parts.get(1);
             // The rest of the name is like:
-            // new:    tenant/<topic>
-            parts = Splitter.on(FileConstant.LEFT_SLASH).limit(2).splitToList(rest);
+            // new:    <tenant>:<topic>#<partitionIndex>
+            parts = Splitter.on(TOPIC_INNER_SEPARATOR).limit(2).splitToList(rest);
             if (parts.size() == 2) {
                 this.tenant = parts.get(0);
-                this.localName = parts.get(1);
+                this.simpleName = parts.get(1);
                 this.completeTopicName = name;
                 this.partitionIndex = getPartitionIndex(name);
+
             } else {
                 throw new IllegalArgumentException("Invalid topic name: " + name);
             }
         }
-        if (StringUtil.isEmpty(this.localName)) {
+        if (StringUtil.isEmpty(this.simpleName)) {
             throw new IllegalArgumentException("Invalid topic name: " + completeTopicName);
         }
     }
+
 }

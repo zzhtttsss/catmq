@@ -1,4 +1,4 @@
-package org.catmq.storer;
+package org.catmq.entity;
 
 import io.netty.util.internal.PlatformDependent;
 import lombok.Getter;
@@ -45,6 +45,7 @@ public class StorerConfig {
     private long segmentMaxFileSize;
     private String segmentIndexStoragePath;
     private long maxSegmentEntryNum;
+    private FlushMode flushMode;
 
     private long readCacheExpireTime;
 
@@ -65,7 +66,7 @@ public class StorerConfig {
         storerName = properties.getProperty(ConfigConstant.STORER_NAME, "default");
         storerIp = properties.getProperty(ConfigConstant.STORER_IP, "127.0.0.1");
         storerPort = Integer.parseInt(properties.getProperty(ConfigConstant.STORER_PORT, "4321"));
-        writeOrderedExecutorThreadNums = Integer.parseInt(properties.getProperty(ConfigConstant.WRITE_ORDERED_EXECUTOR_THREAD_NUMS, "1"));
+        writeOrderedExecutorThreadNums = Integer.parseInt(properties.getProperty(ConfigConstant.WRITE_ORDERED_EXECUTOR_THREAD_NUMS, "4"));
         readOrderedExecutorThreadNums = Integer.parseInt(properties.getProperty(ConfigConstant.READ_ORDERED_EXECUTOR_THREAD_NUMS,
                 String.valueOf(PROCESSOR_NUMBER)));
         needWarmMappedFile = Boolean.parseBoolean(properties.getProperty(ConfigConstant.NEED_WARM_MAPPED_FILE, "false"));
@@ -81,5 +82,7 @@ public class StorerConfig {
         readCacheExpireTime = Long.parseLong(properties.getProperty(ConfigConstant.READ_CACHE_EXPIRE_TIME, String.valueOf(5000)));
         readCacheCleanUpInterval = Long.parseLong(properties.getProperty(ConfigConstant.READ_CACHE_CLEAN_UP_INTERVAL, String.valueOf(60000)));
         readCacheRemainingThreshold = Float.parseFloat(properties.getProperty(ConfigConstant.READ_CACHE_REMAINING_THRESHOLD, String.valueOf(0.9)));
+        flushMode = FlushMode.fromString(properties.getProperty(ConfigConstant.FLUSH_MODE, "async"));
+
     }
 }

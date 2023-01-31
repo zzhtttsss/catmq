@@ -34,7 +34,7 @@ public class SingleActiveConsumerNonPersistentDispatcher implements NonPersisten
     }
 
     @Override
-    public void sendMessages(String msg) {
+    public void sendMessages(byte[] msg) {
         Consumer consumer = activeConsumer;
         if (consumer != null) {
             consumer.sendMessages(msg);

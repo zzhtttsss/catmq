@@ -3,7 +3,7 @@ package org.catmq.broker.common;
 import lombok.Getter;
 import lombok.Setter;
 import org.catmq.broker.topic.Subscription;
-import org.catmq.broker.topic.TopicName;
+import org.catmq.entity.TopicDetail;
 
 import java.util.Optional;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -24,20 +24,20 @@ public class Consumer {
     /**
      * Non-blocking message queue for consumers to pull
      */
-    private final ConcurrentLinkedQueue<String> messageQueue;
+    private final ConcurrentLinkedQueue<byte[]> messageQueue;
 
 
-    public void sendMessages(String msg) {
+    public void sendMessages(byte[] msg) {
         this.messageQueue.offer(msg);
     }
 
-    public Optional<String> getMessage() {
+    public Optional<byte[]> getMessage() {
         return Optional.ofNullable(this.messageQueue.poll());
     }
 
     public void setTopicName(String topicName) {
         this.topicName = topicName;
-        this.partitionIdx = TopicName.getPartitionIndex(topicName);
+        this.partitionIdx = TopicDetail.getPartitionIndex(topicName);
     }
 
     public Consumer(Subscription subscription, String topicName, long consumerId,
@@ -45,7 +45,7 @@ public class Consumer {
 
         this.subscription = subscription;
         this.topicName = topicName;
-        this.partitionIdx = TopicName.getPartitionIndex(topicName);
+        this.partitionIdx = TopicDetail.getPartitionIndex(topicName);
         this.consumerId = consumerId;
         this.consumerName = consumerName;
         this.messageQueue = new ConcurrentLinkedQueue<>();

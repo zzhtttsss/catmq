@@ -2,7 +2,7 @@ package org.catmq.pipline.preparer;
 
 import lombok.extern.slf4j.Slf4j;
 import org.catmq.broker.common.Consumer;
-import org.catmq.broker.service.ClientManageService;
+import org.catmq.broker.manager.ClientManager;
 import org.catmq.grpc.RequestContext;
 import org.catmq.pipline.Preparer;
 
@@ -10,7 +10,7 @@ import org.catmq.pipline.Preparer;
 public class RegisterClientPreparer implements Preparer {
     public static final String REGISTER_CLIENT_PREPARER = "RegisterClientPreparer";
 
-    private final ClientManageService clientService;
+    private final ClientManager clientService;
 
     @Override
     public void prepare(RequestContext ctx) {
@@ -20,7 +20,7 @@ public class RegisterClientPreparer implements Preparer {
     }
 
     private RegisterClientPreparer() {
-        clientService = ClientManageService.ClientManageServiceEnum.INSTANCE.getInstance();
+        clientService = ClientManager.ClientManagerEnum.INSTANCE.getInstance();
     }
 
     public enum RegisterClientPreparerEnum {

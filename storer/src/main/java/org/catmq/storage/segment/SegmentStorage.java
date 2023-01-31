@@ -10,7 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicStampedReference;
 import java.util.concurrent.locks.ReentrantLock;
 
-import static org.catmq.storer.StorerConfig.STORER_CONFIG;
+import static org.catmq.entity.StorerConfig.STORER_CONFIG;
 
 /**
  * Manage all segment.
@@ -47,32 +47,63 @@ public class SegmentStorage {
      * Make sure that only one writer thread can {@link WriteCache} each time when {@link WriteCache}
      * is full. We use {@link AtomicStampedReference} to prevent the ABA problem.
      */
-    private final AtomicStampedReference<Boolean> isSwapping = new AtomicStampedReference<>(false, 1);
+    public final AtomicStampedReference<Boolean> isSwapping = new AtomicStampedReference<>(false, 1);
     @Getter
     private final ConcurrentHashMap<Long, Segment> segments;
+
 
     /**
      * Append an {@link MessageEntry} to the writeCache4Append.
      *
      * @param messageEntry message entry need to be appended to writeCache4Append
      */
+    @Deprecated
     public void appendEntry2WriteCache(MessageEntry messageEntry) {
+        while (isSwapping.getReference()) {
+
+        }
         int stamp = isSwapping.getStamp();
         boolean ok = writeCache4Append.appendEntry(messageEntry);
         if (!ok) {
-            // Only one writer thread can swap the writeCache.
-            if (isSwapping.compareAndSet(false, true, stamp, stamp + 1)) {
-                log.warn("Cas success, start swapping.");
-                swapAndFlush();
-            } else {
-                log.warn("Cas fail, start waiting.");
-                // Blocking if other writer thread is swapping the writeCache.
-                while (isSwapping.getReference()) {
-
-                }
-            }
+            swapOrWait(stamp);
             // After swapping, try again.
             this.writeCache4Append.appendEntry(messageEntry);
+        }
+    }
+
+    public void batchAppendEntry2WriteCache(MessageEntryBatch messageEntryBatch) {
+        while (isSwapping.getReference()) {
+
+        }
+        int stamp = isSwapping.getStamp();
+        boolean ok = writeCache4Append.batchAppendEntry(messageEntryBatch);
+        if (!ok) {
+            swapOrWait(stamp);
+            // After swapping, try again.
+            this.writeCache4Append.batchAppendEntry(messageEntryBatch);
+        }
+
+    }
+
+    private void swapOrWait(int stamp) {
+        // Only one writer thread can swap the writeCache.
+        if (isSwapping.compareAndSet(false, true, stamp, stamp + 1)) {
+            log.warn("Cas success, start swapping.");
+            try {
+                Thread.sleep(1);
+            } catch (InterruptedException e) {
+                log.warn("Interrupted!", e);
+            }
+            while (!writeCache4Append.ready2Swap()) {
+
+            }
+            swapAndFlush();
+        } else {
+            log.warn("Cas fail, start waiting.");
+            // Blocking if other writer thread is swapping the writeCache.
+            while (isSwapping.getReference()) {
+
+            }
         }
     }
 
@@ -142,16 +173,29 @@ public class SegmentStorage {
     }
 
 
-    public SegmentStorage() {
+    private SegmentStorage() {
         this.path = STORER_CONFIG.getSegmentStoragePath();
         this.writeCache4Append = new WriteCache(MAX_CACHE_SIZE);
         this.writeCache4Flush = new WriteCache(MAX_CACHE_SIZE);
         this.readCache = new ReadCache(MAX_CACHE_SIZE);
         this.segmentFileManager = SegmentFileManager.SegmentFileServiceEnum.INSTANCE.getInstance();
-        segments = new ConcurrentHashMap<>();
+        this.segments = new ConcurrentHashMap<>();
         this.flushWriteCacheService = new FlushWriteCacheService(this, segmentFileManager);
-        entryPositionIndex = new EntryPositionIndex(KeyValueStorageRocksDB.factory,
+        this.entryPositionIndex = new EntryPositionIndex(KeyValueStorageRocksDB.factory,
                 STORER_CONFIG.getSegmentIndexStoragePath());
-        flushWriteCacheService.start();
+        this.flushWriteCacheService.start();
+    }
+
+    public enum SegmentStorageEnum {
+        INSTANCE;
+        private final SegmentStorage segmentStorage;
+
+        SegmentStorageEnum() {
+            segmentStorage = new SegmentStorage();
+        }
+
+        public SegmentStorage getInstance() {
+            return segmentStorage;
+        }
     }
 }

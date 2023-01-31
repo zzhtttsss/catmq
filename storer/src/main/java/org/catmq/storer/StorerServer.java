@@ -4,6 +4,7 @@ import io.grpc.Context;
 import io.grpc.Metadata;
 import io.grpc.stub.StreamObserver;
 import lombok.extern.slf4j.Slf4j;
+import org.catmq.entity.TopicMode;
 import org.catmq.grpc.InterceptorConstants;
 import org.catmq.grpc.RequestContext;
 import org.catmq.grpc.ResponseBuilder;
@@ -15,12 +16,11 @@ import org.catmq.protocol.definition.Code;
 import org.catmq.protocol.definition.Status;
 import org.catmq.protocol.service.*;
 import org.catmq.thread.OrderedExecutor;
-import org.catmq.zk.StorerZooKeeperClient;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
-import static org.catmq.storer.StorerConfig.*;
+import static org.catmq.entity.StorerConfig.*;
 import static org.catmq.thread.OrderedExecutor.NO_TASK_LIMIT;
 import static org.catmq.util.StringUtil.defaultString;
 
@@ -38,21 +38,17 @@ public class StorerServer extends StorerServiceGrpc.StorerServiceImplBase {
      */
     protected OrderedExecutor readThreadPoolExecutor;
 
-    private StorerZooKeeperClient storerZooKeeperClient;
-
 
     public StorerServer() {
         writeOrderedExecutor = createExecutor(STORER_CONFIG.getWriteOrderedExecutorThreadNums(),
                 WRITE_ORDERED_EXECUTOR_NAME, NO_TASK_LIMIT);
         readThreadPoolExecutor = createExecutor(STORER_CONFIG.getReadOrderedExecutorThreadNums(),
                 READ_ORDERED_EXECUTOR_NAME, NO_TASK_LIMIT);
-        storerZooKeeperClient = new StorerZooKeeperClient("127.0.0.1:2181");
 
         this.init();
     }
 
     protected void init() {
-        storerZooKeeperClient.register2Zk();
     }
 
     private OrderedExecutor createExecutor(int numThreads, String nameFormat, int maxTasksInQueue) {
@@ -74,12 +70,18 @@ public class StorerServer extends StorerServiceGrpc.StorerServiceImplBase {
     public void sendMessage2Storer(SendMessage2StorerRequest request, StreamObserver<SendMessage2StorerResponse> responseObserver) {
         Function<Status, SendMessage2StorerResponse> statusResponseCreator =
                 status -> SendMessage2StorerResponse.newBuilder().setStatus(status).build();
-        log.debug("receive a message: {}", request.getBody());
+        log.info("receive a batch of message, num: {}", request.getMessageCount());
         RequestContext ctx = createContext();
 
         try {
-            this.writeOrderedExecutor.executeOrdered(ctx.getSegmentId(), new GrpcTask<>(ctx, request,
-                    TaskPlan.SEND_MESSAGE_2_STORER_TASK_PLAN, responseObserver, statusResponseCreator));
+            switch (TopicMode.fromString(request.getMode())) {
+                case NORMAL -> this.writeOrderedExecutor.execute(new GrpcTask<>(ctx, request,
+                        TaskPlan.SEND_MESSAGE_2_STORER_TASK_PLAN, responseObserver, statusResponseCreator));
+                case ORDERED -> this.writeOrderedExecutor.executeOrdered(request.getMessage(0).getSegmentId(),
+                        new GrpcTask<>(ctx, request, TaskPlan.SEND_MESSAGE_2_STORER_TASK_PLAN, responseObserver, statusResponseCreator));
+                default -> throw new RuntimeException("Unsupported topic mode.");
+            }
+
         } catch (Throwable t) {
             writeResponse(ctx, request, null, responseObserver, t, statusResponseCreator);
         }
@@ -156,8 +158,6 @@ public class StorerServer extends StorerServiceGrpc.StorerServiceImplBase {
         Context ctx = Context.current();
         Metadata headers = InterceptorConstants.METADATA.get(ctx);
         RequestContext context = RequestContext.create()
-                .setEntryId(getValueFromMetadata(headers, InterceptorConstants.ENTRY_ID))
-                .setSegmentId(getValueFromMetadata(headers, InterceptorConstants.SEGMENT_ID))
                 .setLocalAddress(getValueFromMetadata(headers, InterceptorConstants.LOCAL_ADDRESS))
                 .setRemoteAddress(getValueFromMetadata(headers, InterceptorConstants.REMOTE_ADDRESS))
                 .setAction(getValueFromMetadata(headers, InterceptorConstants.RPC_NAME));

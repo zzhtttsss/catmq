@@ -1,9 +1,11 @@
 package org.catmq.broker;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.grpc.Context;
 import io.grpc.Metadata;
 import io.grpc.stub.StreamObserver;
 import lombok.extern.slf4j.Slf4j;
+import org.catmq.entity.TopicDetail;
 import org.catmq.grpc.InterceptorConstants;
 import org.catmq.grpc.RequestContext;
 import org.catmq.grpc.ResponseBuilder;
@@ -14,36 +16,45 @@ import org.catmq.pipline.TaskPlan;
 import org.catmq.protocol.definition.Code;
 import org.catmq.protocol.definition.Status;
 import org.catmq.protocol.service.*;
+import org.catmq.thread.OrderedExecutor;
 import org.catmq.thread.ThreadFactoryWithIndex;
-import org.catmq.thread.ThreadPoolMonitor;
-import org.catmq.zk.BrokerZooKeeper;
 
 import java.util.concurrent.*;
 import java.util.function.Function;
 
+import static org.catmq.broker.Broker.BROKER;
+import static org.catmq.entity.BrokerConfig.BROKER_CONFIG;
+import static org.catmq.thread.OrderedExecutor.NO_TASK_LIMIT;
+import static org.catmq.thread.OrderedExecutor.createExecutor;
 import static org.catmq.util.StringUtil.defaultString;
 
 @Slf4j
 public class BrokerServer extends BrokerServiceGrpc.BrokerServiceImplBase {
 
-    public BrokerInfo brokerInfo;
-    public BrokerZooKeeper brokerZooKeeper;
-
     private ScheduledExecutorService timeExecutor;
 
-    protected ThreadPoolExecutor producerThreadPoolExecutor;
+    protected OrderedExecutor producerThreadPoolExecutor;
+
+    protected ThreadPoolExecutor adminThreadPoolExecutor;
+
 
     protected void init() {
-        GrpcTaskRejectedExecutionHandler rejectedExecutionHandler = new GrpcTaskRejectedExecutionHandler();
-        this.producerThreadPoolExecutor.setRejectedExecutionHandler(rejectedExecutionHandler);
-
-        this.brokerZooKeeper.register2Zk();
+        producerThreadPoolExecutor = createExecutor(BROKER_CONFIG.getGrpcProducerThreadPoolNums(),
+                "producerThreadPoolExecutor", NO_TASK_LIMIT);
+        this.adminThreadPoolExecutor = new ThreadPoolExecutor(
+                BROKER_CONFIG.getGrpcAdminThreadPoolNums(),
+                BROKER_CONFIG.getGrpcAdminThreadPoolNums(),
+                1,
+                TimeUnit.MINUTES,
+                new LinkedBlockingQueue<>(BROKER_CONFIG.getGrpcProducerThreadQueueCapacity()),
+                new ThreadFactoryBuilder().setNameFormat("GrpcAdminThreadPool" + "-%d").build(),
+                new ThreadPoolExecutor.DiscardOldestPolicy());
         log.info("BrokerServer init success");
 
     }
 
     public void close() {
-        this.brokerZooKeeper.close();
+
     }
 
     @Override
@@ -54,8 +65,13 @@ public class BrokerServer extends BrokerServiceGrpc.BrokerServiceImplBase {
                 .build();
         RequestContext ctx = createContext();
         try {
-            this.producerThreadPoolExecutor.submit(new GrpcTask<>(ctx, request,
-                    TaskPlan.SEND_MESSAGE_2_BROKER_TASK_PLAN, responseObserver, statusResponseCreator));
+            switch (TopicDetail.get(request.getTopic()).getMode()) {
+                case NORMAL -> this.producerThreadPoolExecutor.execute(new GrpcTask<>(ctx, request,
+                        TaskPlan.SEND_MESSAGE_2_BROKER_TASK_PLAN, responseObserver, statusResponseCreator));
+                case ORDERED -> this.producerThreadPoolExecutor.executeOrdered(request.getTopic().hashCode(),
+                        new GrpcTask<>(ctx, request, TaskPlan.SEND_MESSAGE_2_BROKER_TASK_PLAN, responseObserver,
+                                statusResponseCreator));
+            }
         } catch (Throwable t) {
             writeResponse(ctx, request, null, responseObserver, t, statusResponseCreator);
         }
@@ -67,10 +83,25 @@ public class BrokerServer extends BrokerServiceGrpc.BrokerServiceImplBase {
                 .newBuilder()
                 .setStatus(status)
                 .build();
-        RequestContext ctx = createContext().setBrokerPath(this.brokerZooKeeper.getBrokerPath());
+        RequestContext ctx = createContext().setBrokerPath(BROKER.getBrokerZkManager().getBrokerPath());
         try {
             this.producerThreadPoolExecutor.submit(new GrpcTask<>(ctx, request,
                     TaskPlan.CREATE_TOPIC_TASK_PLAN, responseObserver, statusResponseCreator));
+        } catch (Throwable t) {
+            writeResponse(ctx, request, null, responseObserver, t, statusResponseCreator);
+        }
+    }
+
+    @Override
+    public void createPartition(CreatePartitionRequest request, StreamObserver<CreatePartitionResponse> responseObserver) {
+        Function<Status, CreatePartitionResponse> statusResponseCreator = status -> CreatePartitionResponse
+                .newBuilder()
+                .setStatus(status)
+                .build();
+        RequestContext ctx = createContext().setBrokerPath(BROKER.getBrokerZkManager().getBrokerPath());
+        try {
+            this.adminThreadPoolExecutor.submit(new GrpcTask<>(ctx, request,
+                    TaskPlan.CREATE_PARTITION_TASK_PLAN, responseObserver, statusResponseCreator));
         } catch (Throwable t) {
             writeResponse(ctx, request, null, responseObserver, t, statusResponseCreator);
         }
@@ -117,7 +148,8 @@ public class BrokerServer extends BrokerServiceGrpc.BrokerServiceImplBase {
         return RequestContext.create()
                 .setLocalAddress(getValueFromMetadata(headers, InterceptorConstants.LOCAL_ADDRESS))
                 .setRemoteAddress(getValueFromMetadata(headers, InterceptorConstants.REMOTE_ADDRESS))
-                .setAction(getValueFromMetadata(headers, InterceptorConstants.RPC_NAME));
+                .setAction(getValueFromMetadata(headers, InterceptorConstants.RPC_NAME))
+                .setTenantId(getValueFromMetadata(headers, InterceptorConstants.TENANT_ID));
     }
 
     protected String getValueFromMetadata(Metadata headers, Metadata.Key<String> key) {
@@ -125,17 +157,6 @@ public class BrokerServer extends BrokerServiceGrpc.BrokerServiceImplBase {
     }
 
     public BrokerServer() {
-        BrokerConfig config = BrokerConfig.BrokerConfigEnum.INSTANCE.getInstance();
-        this.producerThreadPoolExecutor = ThreadPoolMonitor.createAndMonitor(
-                config.getGrpcProducerThreadPoolNums(),
-                config.getGrpcProducerThreadPoolNums(),
-                1,
-                TimeUnit.MINUTES,
-                "GrpcProducerThreadPool",
-                config.getGrpcProducerThreadQueueCapacity()
-        );
-        this.brokerInfo = new BrokerInfo(config);
-        this.brokerZooKeeper = new BrokerZooKeeper(config.getZkAddress(), this);
         this.timeExecutor = new ScheduledThreadPoolExecutor(4,
                 new ThreadFactoryWithIndex("BrokerTimerThread_"));
         this.init();
@@ -161,7 +182,7 @@ public class BrokerServer extends BrokerServiceGrpc.BrokerServiceImplBase {
 
         }
 
-        public CompletableFuture<T> execute(RequestContext ctx, V request, TaskPlan<V, T> taskPlan) {
+        private CompletableFuture<T> execute(RequestContext ctx, V request, TaskPlan<V, T> taskPlan) {
             CompletableFuture<T> future = new CompletableFuture<>();
             try {
                 for (Preparer p : taskPlan.preparers()) {

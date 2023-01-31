@@ -1,17 +1,23 @@
 package org.catmq.broker.topic;
 
+import org.catmq.broker.common.MessageEntry;
+import org.catmq.protocol.definition.OriginMessage;
+import org.catmq.protocol.service.SendMessage2BrokerResponse;
+
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+
 public interface Topic {
 
     /**
      * put message to the consumers who have this topic
      *
-     * @param message message
      */
-    void putMessage(String message);
+    CompletableFuture<SendMessage2BrokerResponse> putMessage(List<OriginMessage> messages);
 
     void subscribe(String subscriptionName, long consumerId);
 
-    Subscription createSubscription(String subscriptionName);
+    Subscription getOrCreateSubscription(String subscriptionName);
 
     String getTopicName();
     

@@ -6,13 +6,14 @@ import io.grpc.Server;
 import io.grpc.protobuf.services.ChannelzService;
 import io.grpc.protobuf.services.ProtoReflectionService;
 import lombok.extern.slf4j.Slf4j;
-import org.catmq.broker.BrokerConfig;
 import org.catmq.broker.BrokerServer;
-import org.catmq.broker.service.ZkService;
 import org.catmq.grpc.ContextInterceptor;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
+
+import static org.catmq.broker.Broker.BROKER;
+import static org.catmq.entity.BrokerConfig.BROKER_CONFIG;
 
 @Slf4j
 public class BrokerStartup {
@@ -21,9 +22,9 @@ public class BrokerStartup {
 
     public static void start() throws IOException {
         // read config first
-        BrokerConfig config = BrokerConfig.BrokerConfigEnum.INSTANCE.getInstance();
+        BROKER.init();
         // The port on which the server should run
-        int port = config.getBrokerPort();
+        int port = BROKER_CONFIG.getBrokerPort();
         brokerServer = new BrokerServer();
         server = Grpc.newServerBuilderForPort(port, InsecureServerCredentials.create())
                 .addService(brokerServer)
@@ -49,12 +50,12 @@ public class BrokerStartup {
         });
     }
 
-    public static void stop() throws InterruptedException, IOException {
+    public static void stop() throws InterruptedException {
         if (server != null) {
             brokerServer.close();
             server.shutdown().awaitTermination(30, TimeUnit.SECONDS);
         }
-        ZkService.ZkServiceEnum.INSTANCE.getInstance().close();
+        BROKER.getBrokerZkManager().close();
     }
 
     /**

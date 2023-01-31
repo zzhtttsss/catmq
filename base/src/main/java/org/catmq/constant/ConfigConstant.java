@@ -16,7 +16,9 @@ public class ConfigConstant {
     public static final String BROKER_NAME = "broker.name";
     public static final String GRPC_PRODUCER_THREAD_QUEUE_CAPACITY = "grpc.producer.threadQueueCapacity";
     public static final String GRPC_PRODUCER_THREAD_POOL_NUMS = "grpc.producer.threadPoolNums";
-    //TODO: config directory problem
+    public static final String GRPC_ADMIN_THREAD_POOL_NUMS = "grpc.admin.threadPoolNums";
+    public static final String TOPIC_MAX_SEGMENT_MESSAGE_NUM = "topic.maxSegmentMessageNum";
+//TODO: config directory problem
     /**
      * broker config is in resource directory and producer config is in conf directory
      */
@@ -41,6 +43,7 @@ public class ConfigConstant {
     public static final String SEGMENT_MAX_FILE_SIZE = "segment.maxFileSize";
     public static final String SEGMENT_INDEX_STORAGE_PATH = "segment.indexStoragePath";
     public static final String MAX_SEGMENT_ENTRY_NUM = "segment.maxSegmentEntryNum";
+    public static final String FLUSH_MODE = "messageLog.flushMode";
 
     public static final String READ_CACHE_EXPIRE_TIME = "readCache.expireTime";
 

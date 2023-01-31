@@ -1,12 +1,13 @@
 package org.catmq.broker.topic;
 
+import org.catmq.entity.TopicType;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class TopicNameTest {
+public class TopicDetailTest {
     @Test
     public void testTopicType() {
         String domain = "persistent";

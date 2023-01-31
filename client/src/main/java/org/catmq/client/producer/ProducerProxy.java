@@ -2,8 +2,9 @@ package org.catmq.client.producer;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.catmq.client.producer.balance.LoadBalance;
+import org.apache.curator.framework.CuratorFramework;
 import org.catmq.client.producer.balance.LeastUsedStrategy;
+import org.catmq.client.producer.balance.LoadBalance;
 import org.catmq.client.producer.balance.RoundRobinStrategy;
 
 import java.util.Optional;
@@ -16,11 +17,11 @@ public class ProducerProxy {
     /**
      * Get optimal broker address from zookeeper using the specified algorithm
      *
-     * @param zkAddress zookeeper address
+     * @param client zookeeper client
      * @return broker address path like /address/broker/127.0.0.1:5432
      */
-    public Optional<String> selectBroker(String zkAddress) {
-        return loadBalance.selectBroker(zkAddress);
+    public Optional<String[]> selectBrokers(CuratorFramework client, int num) {
+        return loadBalance.selectBroker(client, num);
     }
 
     public ProducerProxy(LoadBalanceEnum loadBalanceEnum) {
@@ -29,7 +30,7 @@ public class ProducerProxy {
             case ROUND_ROBIN -> this.loadBalance = RoundRobinStrategy.RoundRobinStrategyEnum.INSTANCE.getStrategy();
             default -> {
                 log.warn("Load balance strategy not found, use default strategy: round robin");
-                this.loadBalance = RoundRobinStrategy.RoundRobinStrategyEnum.INSTANCE.getStrategy();
+                this.loadBalance = LeastUsedStrategy.LeastUsedStrategyEnum.INSTANCE.getStrategy();
             }
         }
     }

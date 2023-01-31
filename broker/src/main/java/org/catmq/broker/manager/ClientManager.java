@@ -1,4 +1,4 @@
-package org.catmq.broker.service;
+package org.catmq.broker.manager;
 
 import lombok.Getter;
 import org.catmq.broker.common.Consumer;
@@ -6,7 +6,7 @@ import org.catmq.broker.common.Producer;
 
 import java.util.concurrent.ConcurrentHashMap;
 
-public class ClientManageService {
+public class ClientManager {
 
     private final ConcurrentHashMap<Long, Producer> producers;
     private final ConcurrentHashMap<Long, Consumer> consumers;
@@ -35,18 +35,18 @@ public class ClientManageService {
         return consumers.containsKey(consumerId);
     }
 
-    private ClientManageService() {
+    private ClientManager() {
         producers = new ConcurrentHashMap<>();
         consumers = new ConcurrentHashMap<>();
     }
 
-    public enum ClientManageServiceEnum {
+    public enum ClientManagerEnum {
         INSTANCE();
         @Getter
-        private final ClientManageService instance;
+        private final ClientManager instance;
 
-        ClientManageServiceEnum() {
-            this.instance = new ClientManageService();
+        ClientManagerEnum() {
+            this.instance = new ClientManager();
         }
     }
 }

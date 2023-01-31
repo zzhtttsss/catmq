@@ -1,7 +1,5 @@
 package org.catmq.pipline;
 
-import org.catmq.pipline.finisher.ExampleFinisher;
-import org.catmq.pipline.preparer.ExamplePreparer;
 import org.catmq.pipline.processor.CreateSegmentProcessor;
 import org.catmq.pipline.processor.ReadProcessor;
 import org.catmq.pipline.processor.WriteProcessor;
@@ -19,14 +17,14 @@ import org.catmq.protocol.service.*;
 public record TaskPlan<V, T>(Preparer[] preparers, Processor<V, T> processor, Finisher[] finishers) {
 
     public static final TaskPlan<SendMessage2StorerRequest, SendMessage2StorerResponse> SEND_MESSAGE_2_STORER_TASK_PLAN =
-            new TaskPlan<>(new Preparer[]{ExamplePreparer.ExamplePreparerEnum.INSTANCE.getInstance()},
+            new TaskPlan<>(new Preparer[]{},
                     WriteProcessor.WriteProcessorEnum.INSTANCE.getInstance(),
-                    new Finisher[]{ExampleFinisher.ExampleFinisherEnum.INSTANCE.getInstance()});
+                    new Finisher[]{});
 
     public static final TaskPlan<CreateSegmentRequest, CreateSegmentResponse> CREATE_SEGMENT_TASK_PLAN =
-            new TaskPlan<>(new Preparer[]{ExamplePreparer.ExamplePreparerEnum.INSTANCE.getInstance()},
+            new TaskPlan<>(new Preparer[]{},
                     CreateSegmentProcessor.CreateSegmentProcessorEnum.INSTANCE.getInstance(),
-                    new Finisher[]{ExampleFinisher.ExampleFinisherEnum.INSTANCE.getInstance()});
+                    new Finisher[]{});
     public static final TaskPlan<GetMessageFromStorerRequest, GetMessageFromStorerResponse>
             GET_MESSAGE_FROM_STORER_TASK_PLAN = new TaskPlan<>(new Preparer[]{},
             ReadProcessor.ReadProcessorEnum.INSTANCE.getInstance(),

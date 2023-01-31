@@ -8,10 +8,9 @@ option java_string_check_utf8 = true;
 import "definition.proto";
 
 message SendMessage2BrokerRequest {
-
-  string message = 1;
-  string topic = 2;
+  repeated OriginMessage message = 1;
   int64 producerId = 3;
+  string topic = 4;
 }
 
 message SendMessage2BrokerResponse {
@@ -30,7 +29,7 @@ message GetMessageFromBrokerResponse {
   bool ack = 1;
   string res = 2;
   Status status = 3;
-  string message = 4;
+  bytes message = 4;
 }
 
 message GetMessageFromStorerRequest {
@@ -48,7 +47,8 @@ message GetMessageFromStorerResponse {
 }
 
 message SendMessage2StorerRequest {
-  bytes body = 1;
+  repeated NumberedMessage message = 1;
+  string mode = 2;
 }
 
 message SendMessage2StorerResponse {
@@ -68,6 +68,20 @@ message CreateTopicResponse {
   Status status = 3;
 }
 
+message CreatePartitionRequest {
+  string topic = 1;
+  int32 partitionIndex = 2;
+  string topicType = 3;
+  string topicMode = 4;
+}
+
+message CreatePartitionResponse {
+  bool ack = 1;
+  string res = 2;
+  Status status = 3;
+}
+
+
 message CreateSegmentRequest {
   int64 segmentId = 1;
 }
@@ -82,6 +96,8 @@ service BrokerService{
   rpc SendMessage2Broker (SendMessage2BrokerRequest) returns (SendMessage2BrokerResponse) {}
   rpc GetMessageFromBroker (GetMessageFromBrokerRequest) returns (GetMessageFromBrokerResponse) {}
   rpc CreateTopic (CreateTopicRequest) returns (CreateTopicResponse) {}
+  rpc CreatePartition (CreatePartitionRequest) returns (CreatePartitionResponse) {}
+
 }
 
 service StorerService{

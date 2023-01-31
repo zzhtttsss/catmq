@@ -1,4 +1,4 @@
-package org.catmq.broker.topic;
+package org.catmq.entity;
 
 import lombok.Getter;
 
