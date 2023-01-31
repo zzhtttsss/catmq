@@ -107,11 +107,11 @@ public class PersistentTopic extends BaseTopic implements Topic {
      * the other thread B executes the statement that increases the counter, and A completes
      * the judgment before B increases the counter, so that as a result, B can allocate
      * entry id and segment id when switching.
-     * <p> To solve this problem, A will sleep 1ms before judging the counter to ensure that B
+     * <p> To solve this problem, A will wait for 0.01ms before judging the counter to ensure that B
      * has enough time to increase the counter.
      *
-     * @param messages List<OriginMessage>
-     * @return List<NumberedMessage>
+     * @param messages batch of OriginMessage
+     * @return batch of NumberedMessage
      */
     private List<NumberedMessage> allocateEntryIdThreadSafely(List<OriginMessage> messages) {
         // If other thread is switching, start waiting.
@@ -126,14 +126,9 @@ public class PersistentTopic extends BaseTopic implements Topic {
             if (isSwitching.compareAndSet(false, true, stamp, stamp + 1)) {
                 // CAS success, start switching.
                 log.info("Cas success, start switching.");
-                try {
-                    // Sleep 1ms to ensure that other thread has enough time to increase the counter.
-                    Thread.sleep(1);
-                } catch (InterruptedException e) {
-                    log.warn("Interrupted!", e);
-                }
                 // Wait until there is no other thread allocating entry id and segment id.
-                while (runningCount.get() != 0) {
+                long current = System.nanoTime();
+                while (System.nanoTime() - current < 10000 || runningCount.get() != 0) {
 
                 }
                 // Switch this topic to next segment.

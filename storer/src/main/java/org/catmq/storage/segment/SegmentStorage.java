@@ -89,12 +89,8 @@ public class SegmentStorage {
         // Only one writer thread can swap the writeCache.
         if (isSwapping.compareAndSet(false, true, stamp, stamp + 1)) {
             log.warn("Cas success, start swapping.");
-            try {
-                Thread.sleep(1);
-            } catch (InterruptedException e) {
-                log.warn("Interrupted!", e);
-            }
-            while (!writeCache4Append.ready2Swap()) {
+            long current = System.nanoTime();
+            while (System.nanoTime() - current < 10000 || !writeCache4Append.ready2Swap()) {
 
             }
             swapAndFlush();
