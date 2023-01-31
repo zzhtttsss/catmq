@@ -115,11 +115,8 @@ public class PersistentTopic extends BaseTopic implements Topic {
      */
     private List<NumberedMessage> allocateEntryIdThreadSafely(List<OriginMessage> messages) {
         // If other thread is switching, start waiting.
-        if (isSwitching.getReference()) {
-            log.info("Other thread is switching, start waiting.");
-            while (isSwitching.getReference()) {
+        while (isSwitching.getReference()) {
 
-            }
         }
         // If current segment has enough space, allocate entry id and segment id directly.
         int stamp = isSwitching.getStamp();
@@ -136,7 +133,7 @@ public class PersistentTopic extends BaseTopic implements Topic {
                     log.warn("Interrupted!", e);
                 }
                 // Wait until there is no other thread allocating entry id and segment id.
-                while (!(runningCount.get() == 0)) {
+                while (runningCount.get() != 0) {
 
                 }
                 // Switch this topic to next segment.
@@ -148,7 +145,10 @@ public class PersistentTopic extends BaseTopic implements Topic {
 
                 }
             }
-            // try to allocate entry id and segment id again.
+            // Try to allocate entry id and segment id again.
+            // Because the number of threads to wait for switching is much less than the number of
+            // a segment can hold, so we don't need to worry about this time the current segment
+            // doesn't have enough space.
             numberedMessages = doAllocateEntryId(messages);
         }
         return numberedMessages;

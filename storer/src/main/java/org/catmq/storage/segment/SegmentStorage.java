@@ -59,6 +59,9 @@ public class SegmentStorage {
      */
     @Deprecated
     public void appendEntry2WriteCache(MessageEntry messageEntry) {
+        while (isSwapping.getReference()) {
+
+        }
         int stamp = isSwapping.getStamp();
         boolean ok = writeCache4Append.appendEntry(messageEntry);
         if (!ok) {
@@ -69,6 +72,9 @@ public class SegmentStorage {
     }
 
     public void batchAppendEntry2WriteCache(MessageEntryBatch messageEntryBatch) {
+        while (isSwapping.getReference()) {
+
+        }
         int stamp = isSwapping.getStamp();
         boolean ok = writeCache4Append.batchAppendEntry(messageEntryBatch);
         if (!ok) {
@@ -173,13 +179,13 @@ public class SegmentStorage {
         this.writeCache4Flush = new WriteCache(MAX_CACHE_SIZE);
         this.readCache = new ReadCache(MAX_CACHE_SIZE);
         this.segmentFileManager = SegmentFileManager.SegmentFileServiceEnum.INSTANCE.getInstance();
-        segments = new ConcurrentHashMap<>();
+        this.segments = new ConcurrentHashMap<>();
         this.flushWriteCacheService = new FlushWriteCacheService(this, segmentFileManager);
-        entryPositionIndex = new EntryPositionIndex(KeyValueStorageRocksDB.factory,
+        this.entryPositionIndex = new EntryPositionIndex(KeyValueStorageRocksDB.factory,
                 STORER_CONFIG.getSegmentIndexStoragePath());
-        flushWriteCacheService.start();
+        this.flushWriteCacheService.start();
     }
-    
+
     public enum SegmentStorageEnum {
         INSTANCE;
         private final SegmentStorage segmentStorage;
