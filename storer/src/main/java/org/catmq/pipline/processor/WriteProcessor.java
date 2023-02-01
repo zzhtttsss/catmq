@@ -28,7 +28,7 @@ public class WriteProcessor implements Processor<SendMessage2StorerRequest, Send
             storer.getSegmentStorage().getSegments().put(request.getMessage(0).getSegmentId(),
                     new Segment(request.getMessage(0).getSegmentId()));
         }
-        
+
         processMultiMessage(ctx, request);
         SendMessage2StorerResponse response = SendMessage2StorerResponse.newBuilder()
                 .setAck(true)
@@ -72,7 +72,7 @@ public class WriteProcessor implements Processor<SendMessage2StorerRequest, Send
     private MessageEntryBatch conv2MessageEntryBatch(List<NumberedMessage> numberedMessages) {
         MessageEntryBatch messageEntryBatch = new MessageEntryBatch();
         for (NumberedMessage nm : numberedMessages) {
-            messageEntryBatch.put(new MessageEntry(nm.getEntryId(), nm.getSegmentId(), nm.getBody().toByteArray()));
+            messageEntryBatch.put(new MessageEntry(nm.getSegmentId(), nm.getEntryId(), nm.getBody().toByteArray()));
         }
         return messageEntryBatch;
     }
