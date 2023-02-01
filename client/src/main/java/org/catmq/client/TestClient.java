@@ -33,26 +33,26 @@ public class TestClient {
 
         client.createTopic("test", "persistent", "normal", 1);
 
-        DefaultCatProducer producer0 = client.createProducer("persistent:normal:$zzh:test")
-                .build();
-        for (int i = 0; i < 1000; i++) {
-            List<MessageEntry> list = new ArrayList<>(10);
-            for (int j = 0; j < 10; j++) {
-                MessageEntry messageEntry = MessageEntry.builder()
-                        .setBody(StringUtil.concatString("message, batch: ", String.valueOf(i), ", index: ", String.valueOf(j), test).getBytes())
-                        .build();
-                list.add(messageEntry);
-            }
-            producer0.sendMessage(list, 10000);
+//        DefaultCatProducer producer0 = client.createProducer("persistent:normal:$zzh:test")
+//                .build();
+//        for (int i = 0; i < 1000; i++) {
+//            List<MessageEntry> list = new ArrayList<>(10);
+//            for (int j = 0; j < 10; j++) {
+//                MessageEntry messageEntry = MessageEntry.builder()
+//                        .setBody(StringUtil.concatString("message, batch: ", String.valueOf(i), ", index: ", String.valueOf(j), test).getBytes())
+//                        .build();
+//                list.add(messageEntry);
+//            }
+//            producer0.sendMessage(list, 10000);
+//
+//
+////            MessageEntry messageEntry = MessageEntry.builder()
+////                    .setBody(StringUtil.concatString("message, thread:", String.valueOf(i), test).getBytes())
+////                    .build();
+////            producer0.sendMessage(messageEntry, 10000);
+//        }
 
-
-//            MessageEntry messageEntry = MessageEntry.builder()
-//                    .setBody(StringUtil.concatString("message, thread:", String.valueOf(i), test).getBytes())
-//                    .build();
-//            producer0.sendMessage(messageEntry, 10000);
-        }
-
-
+//        Random random = new Random();
         long start = System.currentTimeMillis();
         for (int i = 0; i < 20; i++) {
             int index = i;
@@ -61,24 +61,26 @@ public class TestClient {
 
                 DefaultCatProducer producer = client.createProducer("persistent:normal:$zzh:test" + index)
                         .build();
-                for (int j = 0; j < 1000; j++) {
-                    List<MessageEntry> list = new ArrayList<>(10);
-                    for (int k = 0; k < 10; k++) {
-                        MessageEntry messageEntry = MessageEntry.builder()
-                                .setBody(StringUtil.concatString("message, thread:", String.valueOf(index),
-                                        ", batch: ", String.valueOf(j), ", index: ", String.valueOf(k), test).getBytes())
-                                .build();
-                        list.add(messageEntry);
-                    }
-                    long startTime = System.currentTimeMillis();
-                    producer.sendMessage(list, 10000);
-
+                for (int j = 0; j < 100; j++) {
+//                    List<MessageEntry> list = new ArrayList<>(10);
+//
+////                    int size = random.nextInt(10) + 1;
+//                    for (int k = 0; k < 10; k++) {
+//                        MessageEntry messageEntry = MessageEntry.builder()
+//                                .setBody(StringUtil.concatString("message, thread:", String.valueOf(index),
+//                                        ", batch: ", String.valueOf(j), ", index: ", String.valueOf(k), test).getBytes())
+//                                .build();
+//                        list.add(messageEntry);
+//                    }
 //                    long startTime = System.currentTimeMillis();
-//                    MessageEntry messageEntry = MessageEntry.builder()
-//                            .setBody(StringUtil.concatString("message, thread:", String.valueOf(index),
-//                                    ", batch: ", String.valueOf(j), test).getBytes())
-//                            .build();
-//                    producer.sendMessage(messageEntry, 10000);
+//                    producer.sendMessage(list, 10000);
+
+                    long startTime = System.currentTimeMillis();
+                    MessageEntry messageEntry = MessageEntry.builder()
+                            .setBody(StringUtil.concatString("message, thread:", String.valueOf(index),
+                                    ", batch: ", String.valueOf(j), test).getBytes())
+                            .build();
+                    producer.sendMessage(messageEntry, 10000);
 
                     timeList.add(System.currentTimeMillis() - startTime);
                 }
@@ -93,20 +95,20 @@ public class TestClient {
         }
         long end = System.currentTimeMillis();
 
-        double avg = timeList.stream().mapToLong(Long::valueOf).average().getAsDouble();
-//        long p50 = timeList.stream().sorted().limit(100000).toList().get(99999);
-//        long p90 = timeList.stream().sorted().limit(180000).toList().get(179999);
-//        long p95 = timeList.stream().sorted().limit(190000).toList().get(189999);
-        long p50 = timeList.stream().sorted().limit(10000).toList().get(9999);
-        long p90 = timeList.stream().sorted().limit(18000).toList().get(17999);
-        long p95 = timeList.stream().sorted().limit(19000).toList().get(18999);
-        System.out.println("total cost: " + (end - start));
-        System.out.println("avg: " + avg);
-        System.out.println("p50: " + p50);
-        System.out.println("p90: " + p90);
-        System.out.println("p95: " + p95);
-        System.out.println("TPS: " + 20000 * 1000 / (end - start));
-        System.out.println("finish");
+//        double avg = timeList.stream().mapToLong(Long::valueOf).average().getAsDouble();
+////        long p50 = timeList.stream().sorted().limit(100000).toList().get(99999);
+////        long p90 = timeList.stream().sorted().limit(180000).toList().get(179999);
+////        long p95 = timeList.stream().sorted().limit(190000).toList().get(189999);
+//        long p50 = timeList.stream().sorted().limit(10000).toList().get(9999);
+//        long p90 = timeList.stream().sorted().limit(18000).toList().get(17999);
+//        long p95 = timeList.stream().sorted().limit(19000).toList().get(18999);
+//        System.out.println("total cost: " + (end - start));
+//        System.out.println("avg: " + avg);
+//        System.out.println("p50: " + p50);
+//        System.out.println("p90: " + p90);
+//        System.out.println("p95: " + p95);
+//        System.out.println("TPS: " + 20000 * 1000 / (end - start));
+//        System.out.println("finish");
     }
 
 

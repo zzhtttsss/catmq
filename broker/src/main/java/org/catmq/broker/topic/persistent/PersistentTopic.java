@@ -168,6 +168,7 @@ public class PersistentTopic extends BaseTopic implements Topic {
         }
         List<NumberedMessage> numberedMessages = new ArrayList<>(messages.size());
         for (OriginMessage om : messages) {
+            log.warn("segment id: {} entry id: {}", segmentId, firstEntryId);
             numberedMessages.add(NumberedMessage.newBuilder()
                     .setBody(om.getBody())
                     .setEntryId(firstEntryId)

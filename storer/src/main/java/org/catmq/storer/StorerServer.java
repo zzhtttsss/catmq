@@ -70,7 +70,7 @@ public class StorerServer extends StorerServiceGrpc.StorerServiceImplBase {
     public void sendMessage2Storer(SendMessage2StorerRequest request, StreamObserver<SendMessage2StorerResponse> responseObserver) {
         Function<Status, SendMessage2StorerResponse> statusResponseCreator =
                 status -> SendMessage2StorerResponse.newBuilder().setStatus(status).build();
-        log.info("receive a batch of message, num: {}", request.getMessageCount());
+//        log.info("receive a batch of message, num: {}", request.getMessageCount());
         RequestContext ctx = createContext();
 
         try {
