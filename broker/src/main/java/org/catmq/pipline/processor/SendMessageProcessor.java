@@ -2,7 +2,9 @@ package org.catmq.pipline.processor;
 
 import lombok.extern.slf4j.Slf4j;
 import org.catmq.broker.manager.TopicManager;
+import org.catmq.broker.service.ScheduleDelayedMessageService;
 import org.catmq.broker.topic.Topic;
+import org.catmq.collection.DelayedMessageIndex;
 import org.catmq.entity.TopicDetail;
 import org.catmq.grpc.RequestContext;
 import org.catmq.pipline.Processor;
@@ -18,17 +20,34 @@ import static org.catmq.broker.Broker.BROKER;
 public class SendMessageProcessor implements Processor<SendMessage2BrokerRequest, SendMessage2BrokerResponse> {
 
     public static final String PRODUCE_PROCESSOR_NAME = "ProduceProcessor";
-    private final TopicManager topicManager = TopicManager.TopicManagerEnum.INSTANCE.getInstance();
+    private final TopicManager topicManager = BROKER.getTopicManager();
+    private final ScheduleDelayedMessageService scheduleDelayedMessageService = BROKER.getScheduleDelayedMessageService();
 
     @Override
     public SendMessage2BrokerResponse process(RequestContext ctx, SendMessage2BrokerRequest request) {
         SendMessage2BrokerResponse response;
-        TopicDetail topicDetail = TopicDetail.get(request.getTopic());
-        Topic topic = BROKER.getTopicManager().getTopic(topicDetail.getCompleteTopicName());
+        String topicName = request.getTopic();
+        long expireTime = request.getMessage(0).getExpireTime();
+        log.info("expire time: {}, current time : {}", expireTime, System.currentTimeMillis());
+        boolean isDelayMessage = expireTime > System.currentTimeMillis();
+        if (isDelayMessage) {
+            log.info("delay message expire time: {}", expireTime);
+            if (expireTime > System.currentTimeMillis() + 1000 * 60 * 60 * 24) {
+                throw new RuntimeException("delay time is too long");
+            }
+            topicName = "persistent:normal:$catmq:delayMessage";
+        }
+        TopicDetail topicDetail = TopicDetail.get(topicName);
+        Topic topic = topicManager.getTopic(topicDetail.getCompleteTopicName());
         var messageList = request.getMessageList();
         CompletableFuture<SendMessage2BrokerResponse> future = topic.putMessage(messageList);
         try {
             response = future.get();
+            if (isDelayMessage) {
+                scheduleDelayedMessageService.getDelayedMessageTimer().
+                        add(new DelayedMessageIndex(expireTime, request.getTopic(),
+                                response.getSegmentId(), response.getFirstEntryId()));
+            }
         } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException(e);
         }

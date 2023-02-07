@@ -1,7 +1,6 @@
 package org.catmq.client.common;
 
 import lombok.Getter;
-import org.catmq.client.DefaultCatProducer;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -11,13 +10,15 @@ public class MessageEntry {
 
     private Map<String, String> properties;
     private byte[] body;
+    private long expireTime;
 
     public MessageEntry() {
     }
 
-    public MessageEntry(byte[] body) {
+    public MessageEntry(byte[] body, long expireTime) {
         this.properties = new HashMap<>();
         this.body = body;
+        this.expireTime = expireTime;
     }
 
     public static MessageEntryBuilder builder() {
@@ -28,6 +29,8 @@ public class MessageEntry {
 
         private Map<String, String> properties;
         private byte[] body;
+
+        private long expireTime;
 
         public MessageEntryBuilder() {
             this.properties = new HashMap<>();
@@ -43,13 +46,17 @@ public class MessageEntry {
             return this;
         }
 
+        public MessageEntryBuilder setExpireTime(long expireTime) {
+            this.expireTime = expireTime;
+            return this;
+        }
+
         public MessageEntry build() {
-            MessageEntry messageEntry = new MessageEntry(body);
+            MessageEntry messageEntry = new MessageEntry(body, expireTime);
             messageEntry.properties = this.properties;
             return messageEntry;
         }
     }
-
 
 
 }

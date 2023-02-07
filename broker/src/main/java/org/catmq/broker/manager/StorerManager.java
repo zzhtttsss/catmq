@@ -82,6 +82,19 @@ public class StorerManager {
         return futureStub.sendMessage2Storer(request);
     }
 
+    public CompletableFuture<GetMessageFromStorerResponse> getMessageFromStorer(long segmentId, long entryId, String storerAddress) {
+        ManagedChannel channel = BROKER.getGrpcConnectManager().get(storerAddress);
+        Metadata metadata = new Metadata();
+        metadata.put(Metadata.Key.of("action", Metadata.ASCII_STRING_MARSHALLER), "getMessage");
+        Channel headChannel = ClientInterceptors.intercept(channel, MetadataUtils.newAttachHeadersInterceptor(metadata));
+        StorerServiceGrpc.StorerServiceFutureStub futureStub = StorerServiceGrpc.newFutureStub(headChannel);
+        GetMessageFromStorerRequest request = GetMessageFromStorerRequest.newBuilder()
+                .setSegmentId(segmentId)
+                .setEntryId(entryId)
+                .build();
+        return toCompletable(futureStub.getMessageFromStorer(request));
+    }
+
     public enum StorerManagerEnum {
         INSTANCE;
         private final StorerManager storerManager;

@@ -33,8 +33,8 @@ public class TestClient {
 
         client.createTopic("test", "persistent", "normal", 1);
 
-//        DefaultCatProducer producer0 = client.createProducer("persistent:normal:$zzh:test")
-//                .build();
+        DefaultCatProducer producer0 = client.createProducer("persistent:normal:$zzh:test")
+                .build();
 //        for (int i = 0; i < 1000; i++) {
 //            List<MessageEntry> list = new ArrayList<>(10);
 //            for (int j = 0; j < 10; j++) {
@@ -52,48 +52,69 @@ public class TestClient {
 ////            producer0.sendMessage(messageEntry, 10000);
 //        }
 
+//        List<MessageEntry> list = new ArrayList<>(10);
+//        for (int j = 0; j < 10; j++) {
+//            MessageEntry messageEntry = MessageEntry.builder()
+//                    .setBody(StringUtil.concatString("message, batch: ", String.valueOf(0), ", index: ", String.valueOf(j), test).getBytes())
+//                    .build();
+//            list.add(messageEntry);
+//        }
+//        producer0.sendMessage(list, 10000);
+        MessageEntry messageEntry = MessageEntry.builder()
+                .setBody(StringUtil.concatString("message, thread:", String.valueOf(0), test).getBytes())
+                .setExpireTime(System.currentTimeMillis() + 75000)
+                .build();
+        producer0.sendMessage(messageEntry, 10000);
+        MessageEntry messageEntry2 = MessageEntry.builder()
+                .setBody(StringUtil.concatString("message, thread:", String.valueOf(1), test).getBytes())
+                .setExpireTime(System.currentTimeMillis() + 65000)
+                .build();
+        producer0.sendMessage(messageEntry2, 10000);
+
+
 //        Random random = new Random();
-        long start = System.currentTimeMillis();
-        for (int i = 0; i < 20; i++) {
-            int index = i;
-            new Thread(() -> {
-                client.createTopic("test" + index, "persistent", "normal", 1);
-
-                DefaultCatProducer producer = client.createProducer("persistent:normal:$zzh:test" + index)
-                        .build();
-                for (int j = 0; j < 100; j++) {
-//                    List<MessageEntry> list = new ArrayList<>(10);
+//        long start = System.currentTimeMillis();
+//        for (int i = 0; i < 20; i++) {
+//            int index = i;
+//            new Thread(() -> {
+//                client.createTopic("test" + index, "persistent", "normal", 1);
 //
-////                    int size = random.nextInt(10) + 1;
-//                    for (int k = 0; k < 10; k++) {
-//                        MessageEntry messageEntry = MessageEntry.builder()
-//                                .setBody(StringUtil.concatString("message, thread:", String.valueOf(index),
-//                                        ", batch: ", String.valueOf(j), ", index: ", String.valueOf(k), test).getBytes())
-//                                .build();
-//                        list.add(messageEntry);
-//                    }
+//                DefaultCatProducer producer = client.createProducer("persistent:normal:$zzh:test" + index)
+//                        .build();
+//                for (int j = 0; j < 100; j++) {
+////                    List<MessageEntry> list = new ArrayList<>(10);
+////
+//////                    int size = random.nextInt(10) + 1;
+////                    for (int k = 0; k < 10; k++) {
+////                        MessageEntry messageEntry = MessageEntry.builder()
+////                                .setBody(StringUtil.concatString("message, thread:", String.valueOf(index),
+////                                        ", batch: ", String.valueOf(j), ", index: ", String.valueOf(k), test).getBytes())
+////                                .build();
+////                        list.add(messageEntry);
+////                    }
+////                    long startTime = System.currentTimeMillis();
+////                    producer.sendMessage(list, 10000);
+//
 //                    long startTime = System.currentTimeMillis();
-//                    producer.sendMessage(list, 10000);
+//                    MessageEntry messageEntry = MessageEntry.builder()
+//                            .setBody(StringUtil.concatString("message, thread:", String.valueOf(index),
+//                                    ", batch: ", String.valueOf(j), test).getBytes())
+//                            .build();
+//                    producer.sendMessage(messageEntry, 10000);
+//
+//                    timeList.add(System.currentTimeMillis() - startTime);
+//                }
+//                countDownLatch.countDown();
+//            }).start();
+//        }
+//
+//        try {
+//            countDownLatch.await();
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
+//        long end = System.currentTimeMillis();
 
-                    long startTime = System.currentTimeMillis();
-                    MessageEntry messageEntry = MessageEntry.builder()
-                            .setBody(StringUtil.concatString("message, thread:", String.valueOf(index),
-                                    ", batch: ", String.valueOf(j), test).getBytes())
-                            .build();
-                    producer.sendMessage(messageEntry, 10000);
-
-                    timeList.add(System.currentTimeMillis() - startTime);
-                }
-                countDownLatch.countDown();
-            }).start();
-        }
-
-        try {
-            countDownLatch.await();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        long end = System.currentTimeMillis();
 
 //        double avg = timeList.stream().mapToLong(Long::valueOf).average().getAsDouble();
 ////        long p50 = timeList.stream().sorted().limit(100000).toList().get(99999);

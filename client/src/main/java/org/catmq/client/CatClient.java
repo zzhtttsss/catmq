@@ -148,7 +148,7 @@ public class CatClient {
                 .creatingParentsIfNeeded()
                 .withMode(CreateMode.PERSISTENT)
                 .forPath(topicPath, info.toBytes());
-        log.warn("create success");
+        log.warn("create success, info is: {}", JSON.toJSONString(info));
         return brokerAddresses;
     }
 
