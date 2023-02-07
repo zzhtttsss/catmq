@@ -81,9 +81,13 @@ public class PersistentTopic extends BaseTopic implements Topic {
             }
 
         }
+        log.warn("putMessage: {}", numberedMessages.size());
+        long segmentId = numberedMessages.get(0).getSegmentId();
+        long firstEntryId = numberedMessages.get(0).getEntryId();
+        long lastEntryId = numberedMessages.get(numberedMessages.size() - 1).getEntryId();
         return BROKER.getStorerManager()
                 .sendMessage2Storer(numberedMessages, super.getTopicDetail().getMode(), currentStorerAddresses)
-                .thenApply(responses -> conv2SendMessage2BrokerResponse(responses));
+                .thenApply(responses -> conv2SendMessage2BrokerResponse(responses, segmentId, firstEntryId, lastEntryId));
     }
 
     private List<NumberedMessage> allocateEntryId(List<OriginMessage> messages) {
@@ -178,7 +182,8 @@ public class PersistentTopic extends BaseTopic implements Topic {
         return numberedMessages;
     }
 
-    private SendMessage2BrokerResponse conv2SendMessage2BrokerResponse(List<SendMessage2StorerResponse> responses) {
+    private SendMessage2BrokerResponse conv2SendMessage2BrokerResponse(List<SendMessage2StorerResponse> responses,
+                                                                       long segmentId, long firstEntryId, long lastEntryId) {
         SendMessage2BrokerResponse.Builder builder = SendMessage2BrokerResponse.newBuilder();
         // TODO: handle response
         for (SendMessage2StorerResponse response : responses) {
@@ -186,7 +191,10 @@ public class PersistentTopic extends BaseTopic implements Topic {
                 throw new RuntimeException("fail to send message to storer");
             }
         }
-        builder.setStatus(Status.newBuilder().setCode(Code.OK).build())
+        builder.setSegmentId(segmentId)
+                .setFirstEntryId(firstEntryId)
+                .setLastEntryId(lastEntryId)
+                .setStatus(Status.newBuilder().setCode(Code.OK).build())
                 .setRes("success")
                 .setAck(true);
         return builder.build();

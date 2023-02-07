@@ -6,10 +6,12 @@ import org.catmq.broker.topic.Topic;
 import org.catmq.broker.topic.nonpersistent.NonPersistentTopic;
 import org.catmq.broker.topic.persistent.PersistentTopic;
 import org.catmq.entity.TopicDetail;
+import org.catmq.zk.ZkIdGenerator;
 
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.catmq.broker.Broker.BROKER;
+import static org.catmq.constant.StringConstant.DELAYED_MESSAGE_TOPIC_NAME;
 
 @Slf4j
 public class TopicManager {
@@ -50,6 +52,8 @@ public class TopicManager {
     private TopicManager() {
         topics = new ConcurrentHashMap<>();
         brokerZkManager = BROKER.getBrokerZkManager();
+        long segmentId = ZkIdGenerator.ZkIdGeneratorEnum.INSTANCE.getInstance().nextId(brokerZkManager.client);
+        createPartition(DELAYED_MESSAGE_TOPIC_NAME, segmentId);
     }
 
     public enum TopicManagerEnum {

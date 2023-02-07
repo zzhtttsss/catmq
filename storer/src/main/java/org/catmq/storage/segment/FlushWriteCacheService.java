@@ -79,7 +79,9 @@ public class FlushWriteCacheService extends ServiceThread {
                 KeyValueStorage.Batch batch = entryPositionIndex.newBatch();
 
                 writeCache.getCache().forEach((segmentId, map) -> {
+                    log.warn("flush2File segmentId {}, size is {}", segmentId, map.size());
                     map.forEach((entryId, messageEntry) -> {
+                        log.warn("flush2File segmentId {} entryId {}.", segmentId, entryId);
                         ByteBuf byteBuf = Unpooled.directBuffer(messageEntry.getTotalSize());
                         messageEntry.dump2ByteBuf(byteBuf);
                         try {

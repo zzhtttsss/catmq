@@ -56,10 +56,10 @@ public class StorerZkManager extends BaseZookeeper {
                     .withMode(CreateMode.PERSISTENT)
                     .forPath(this.storerPath, STORER.getStorerInfo().toBytes());
             // TODO
-            this.client.create()
-                    .creatingParentsIfNeeded()
-                    .withMode(CreateMode.EPHEMERAL)
-                    .forPath(StringUtil.concatString(ZkConstant.TMP_STORER_PATH, FileConstant.LEFT_SLASH, STORER.getStorerInfo().getStorerAddress()));
+//            this.client.create()
+//                    .creatingParentsIfNeeded()
+//                    .withMode(CreateMode.EPHEMERAL)
+//                    .forPath(StringUtil.concatString(ZkConstant.TMP_STORER_PATH, FileConstant.LEFT_SLASH, STORER.getStorerInfo().getStorerAddress()));
         } catch (Exception e) {
             log.error("Fail to register storer information to zookeeper.", e);
             return BooleanError.fail(e.getMessage());
