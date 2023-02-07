@@ -3,11 +3,21 @@ package org.catmq.broker;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.curator.framework.CuratorFramework;
-import org.catmq.broker.manager.*;
+import org.catmq.broker.manager.BrokerZkManager;
+import org.catmq.broker.manager.ClientManager;
+import org.catmq.broker.manager.StorerManager;
+import org.catmq.broker.manager.TopicManager;
+import org.catmq.broker.service.HandleDelayedMessageService;
+import org.catmq.broker.service.ScheduleDelayedMessageService;
+import org.catmq.collection.TimerTaskList;
 import org.catmq.entity.BrokerInfo;
 import org.catmq.entity.GrpcConnectManager;
 import org.catmq.zk.ZkIdGenerator;
 import org.catmq.zk.ZkUtil;
+
+import java.util.List;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import static org.catmq.entity.BrokerConfig.BROKER_CONFIG;
 
@@ -34,6 +44,10 @@ public class Broker {
 
     private CuratorFramework client;
 
+    private HandleDelayedMessageService handleDelayedMessageService;
+
+    private ScheduleDelayedMessageService scheduleDelayedMessageService;
+
 
     public static final Broker BROKER;
 
@@ -43,6 +57,7 @@ public class Broker {
 
 
     private Broker() {
+
 
     }
 
@@ -54,9 +69,14 @@ public class Broker {
         this.grpcConnectManager = new GrpcConnectManager(100);
         this.clientManager = ClientManager.ClientManagerEnum.INSTANCE.getInstance();
         this.brokerZkManager = BrokerZkManager.BrokerZkManagerEnum.INSTANCE.getInstance();
+        brokerZkManager.register2Zk();
         this.topicManager = TopicManager.TopicManagerEnum.INSTANCE.getInstance();
         this.storerManager = StorerManager.StorerManagerEnum.INSTANCE.getInstance();
-        brokerZkManager.register2Zk();
+        BlockingQueue<List<TimerTaskList.TimerTaskEntry>> blockingQueue = new LinkedBlockingQueue<>();
+        this.handleDelayedMessageService = new HandleDelayedMessageService(blockingQueue);
+        handleDelayedMessageService.start();
+        this.scheduleDelayedMessageService = new ScheduleDelayedMessageService(blockingQueue);
+        scheduleDelayedMessageService.start();
     }
 }
 

@@ -279,6 +279,7 @@ message Status {
 }
 
 message OriginMessage{
+  int64 expireTime = 1;
   bytes body = 2;
 }
 

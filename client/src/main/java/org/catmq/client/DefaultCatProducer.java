@@ -120,12 +120,14 @@ public class DefaultCatProducer extends ClientConfig {
             for (MessageEntry me : batchMessageEntry) {
                 OriginMessage message = OriginMessage.newBuilder()
                         .setBody(ByteString.copyFrom(me.getBody()))
+                        .setExpireTime(me.getExpireTime())
                         .build();
                 messages.add(message);
             }
         } else {
             OriginMessage message = OriginMessage.newBuilder()
                     .setBody(ByteString.copyFrom(messageEntry.getBody()))
+                    .setExpireTime(messageEntry.getExpireTime())
                     .build();
             messages.add(message);
         }
@@ -135,6 +137,7 @@ public class DefaultCatProducer extends ClientConfig {
                 .setTopic(topicDetail.getCompleteTopicName() + "#0")
                 .setProducerId(this.producerId)
                 .build();
+        log.warn("send message: {}", request.getMessage(0).getExpireTime());
         ListenableFuture<SendMessage2BrokerResponse> responseFuture = futureStub.sendMessage2Broker(request);
 
 

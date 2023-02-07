@@ -14,9 +14,12 @@ message SendMessage2BrokerRequest {
 }
 
 message SendMessage2BrokerResponse {
-  bool ack = 1;
-  string res = 2;
-  Status status = 3;
+  int64 segmentId = 1;
+  int64 firstEntryId = 2;
+  int64 lastEntryId = 3;
+  bool ack = 4;
+  string res = 5;
+  Status status = 6;
 }
 
 message GetMessageFromBrokerRequest {
