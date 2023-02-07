@@ -172,7 +172,6 @@ public class PersistentTopic extends BaseTopic implements Topic {
         }
         List<NumberedMessage> numberedMessages = new ArrayList<>(messages.size());
         for (OriginMessage om : messages) {
-            log.warn("segment id: {} entry id: {}", segmentId, firstEntryId);
             numberedMessages.add(NumberedMessage.newBuilder()
                     .setBody(om.getBody())
                     .setEntryId(firstEntryId)
@@ -192,7 +191,6 @@ public class PersistentTopic extends BaseTopic implements Topic {
                 throw new RuntimeException("fail to send message to storer");
             }
         }
-        log.warn("segment id: {} first entry id: {} last entry id: {}", segmentId, firstEntryId, lastEntryId);
         builder.setSegmentId(segmentId)
                 .setFirstEntryId(firstEntryId)
                 .setLastEntryId(lastEntryId)

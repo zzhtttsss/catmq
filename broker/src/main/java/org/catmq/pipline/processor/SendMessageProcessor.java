@@ -15,6 +15,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 import static org.catmq.broker.Broker.BROKER;
+import static org.catmq.constant.StringConstant.DELAYED_MESSAGE_TOPIC_NAME;
 
 @Slf4j
 public class SendMessageProcessor implements Processor<SendMessage2BrokerRequest, SendMessage2BrokerResponse> {
@@ -28,14 +29,12 @@ public class SendMessageProcessor implements Processor<SendMessage2BrokerRequest
         SendMessage2BrokerResponse response;
         String topicName = request.getTopic();
         long expireTime = request.getMessage(0).getExpireTime();
-        log.info("expire time: {}, current time : {}", expireTime, System.currentTimeMillis());
         boolean isDelayMessage = expireTime > System.currentTimeMillis();
         if (isDelayMessage) {
-            log.info("delay message expire time: {}", expireTime);
             if (expireTime > System.currentTimeMillis() + 1000 * 60 * 60 * 24) {
                 throw new RuntimeException("delay time is too long");
             }
-            topicName = "persistent:normal:$catmq:delayMessage";
+            topicName = DELAYED_MESSAGE_TOPIC_NAME;
         }
         TopicDetail topicDetail = TopicDetail.get(topicName);
         Topic topic = topicManager.getTopic(topicDetail.getCompleteTopicName());

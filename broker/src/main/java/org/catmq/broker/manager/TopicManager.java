@@ -11,6 +11,7 @@ import org.catmq.zk.ZkIdGenerator;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.catmq.broker.Broker.BROKER;
+import static org.catmq.constant.StringConstant.DELAYED_MESSAGE_TOPIC_NAME;
 
 @Slf4j
 public class TopicManager {
@@ -52,7 +53,7 @@ public class TopicManager {
         topics = new ConcurrentHashMap<>();
         brokerZkManager = BROKER.getBrokerZkManager();
         long segmentId = ZkIdGenerator.ZkIdGeneratorEnum.INSTANCE.getInstance().nextId(brokerZkManager.client);
-        createPartition("persistent:normal:$catmq:delayMessage", segmentId);
+        createPartition(DELAYED_MESSAGE_TOPIC_NAME, segmentId);
     }
 
     public enum TopicManagerEnum {
