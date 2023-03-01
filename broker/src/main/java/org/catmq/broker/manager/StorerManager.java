@@ -10,6 +10,7 @@ import io.grpc.stub.MetadataUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.catmq.broker.common.NumberedMessageBatch;
 import org.catmq.entity.TopicMode;
+import org.catmq.protocol.definition.NumberedMessage;
 import org.catmq.protocol.service.*;
 
 import java.util.ArrayList;
