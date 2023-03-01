@@ -15,4 +15,6 @@ public class ContextVariable {
 
     public static final String ENTRY_ID = "entry-id";
 
+    public static final String CONSUME_BATCH_POLICY = "consume-batch-policy";
+
 }

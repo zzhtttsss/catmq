@@ -1,19 +1,22 @@
 package org.catmq.pipline.processor;
 
-import com.google.protobuf.ByteString;
+import lombok.extern.slf4j.Slf4j;
 import org.catmq.broker.common.Consumer;
 import org.catmq.broker.manager.ClientManager;
 import org.catmq.broker.manager.TopicManager;
 import org.catmq.broker.topic.Topic;
+import org.catmq.entity.ConsumerBatchPolicy;
 import org.catmq.entity.TopicDetail;
+import org.catmq.grpc.ContextVariable;
 import org.catmq.grpc.RequestContext;
 import org.catmq.pipline.Processor;
+import org.catmq.protocol.definition.NumberedMessage;
 import org.catmq.protocol.service.GetMessageFromBrokerRequest;
 import org.catmq.protocol.service.GetMessageFromBrokerResponse;
 
-import java.util.Arrays;
-import java.util.Optional;
+import java.util.List;
 
+@Slf4j
 public class GetMessageProcessor implements Processor<GetMessageFromBrokerRequest, GetMessageFromBrokerResponse> {
 
     public static final String CONSUME_PROCESSOR_NAME = "ConsumeProcessor";
@@ -25,23 +28,17 @@ public class GetMessageProcessor implements Processor<GetMessageFromBrokerReques
     public GetMessageFromBrokerResponse process(RequestContext ctx, GetMessageFromBrokerRequest request) {
         TopicDetail topicDetail = TopicDetail.get(request.getTopic());
         Topic topic = topicManager.getTopic(topicDetail.getCompleteTopicName());
-        if (!topic.isSubscribe(topicDetail.getCompleteTopicName(), request.getConsumerId())) {
-            topic.subscribe(topicDetail.getCompleteTopicName(), request.getConsumerId());
+        if (!topic.isSubscribe(request.getSubscription(), request.getConsumerId())) {
+            topic.subscribe(request.getSubscription(), request.getConsumerId());
         }
         Consumer consumer = clientManager.getConsumer(request.getConsumerId());
-        Optional<byte[]> message = consumer.getMessage();
-        return message
-                .map(s -> GetMessageFromBrokerResponse
-                        .newBuilder()
-                        .setAck(true)
-                        .setRes(Arrays.toString(s))
-                        .setMessage(ByteString.copyFrom(s))
-                        .build())
-                .orElseGet(() -> GetMessageFromBrokerResponse
-                        .newBuilder()
-                        .setAck(false)
-                        .setRes("no message yet")
-                        .build());
+        ConsumerBatchPolicy policy = ctx.getVal(ContextVariable.CONSUME_BATCH_POLICY, ConsumerBatchPolicy.class);
+        List<NumberedMessage> message = consumer.getBatchMessage(policy);
+        log.warn("get message from broker: {}", message);
+        return GetMessageFromBrokerResponse
+                .newBuilder()
+                .addAllMessage(message)
+                .build();
 
     }
 

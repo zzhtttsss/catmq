@@ -13,6 +13,9 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Manager of grpc connection whose key is broker path like /address/broker/127.0.0.1:5432
+ */
 @Slf4j
 public class GrpcConnectManager {
     @Getter

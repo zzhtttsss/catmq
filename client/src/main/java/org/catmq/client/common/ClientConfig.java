@@ -1,9 +1,11 @@
 package org.catmq.client.common;
 
 
+import lombok.Data;
 import org.catmq.util.ConfigUtil;
 
+@Data
 public class ClientConfig {
-
-    private String clientIP = ConfigUtil.getLocalAddress();
+    public String clientIP = ConfigUtil.getLocalAddress();
+    
 }

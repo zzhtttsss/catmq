@@ -2,12 +2,14 @@ package org.catmq.broker.topic.nonpersistent;
 
 import lombok.extern.slf4j.Slf4j;
 import org.catmq.broker.common.Consumer;
+import org.catmq.broker.common.NumberedMessageBatch;
+import org.catmq.protocol.definition.OriginMessage;
 
 import java.util.Collections;
 import java.util.List;
 
 @Slf4j
-public class SingleActiveConsumerNonPersistentDispatcher implements NonPersistentDispatcher {
+public class SingleConsumerNonPersistentDispatcher implements NonPersistentDispatcher {
     private final NonPersistentSubscription subscription;
 
     //TODO: bug here
@@ -34,10 +36,10 @@ public class SingleActiveConsumerNonPersistentDispatcher implements NonPersisten
     }
 
     @Override
-    public void sendMessages(byte[] msg) {
+    public void sendMessages(List<OriginMessage> msg) {
         Consumer consumer = activeConsumer;
         if (consumer != null) {
-            consumer.sendMessages(msg);
+            consumer.sendOriginMessages(msg);
         } else {
             //TODO: send to dead letter queue
             log.warn("No active consumer for topic {}", topic);
@@ -46,10 +48,15 @@ public class SingleActiveConsumerNonPersistentDispatcher implements NonPersisten
 
     @Override
     public boolean isActiveConsumer(Consumer consumer) {
-        return activeConsumer == consumer;
+        return activeConsumer.getConsumerId() == consumer.getConsumerId();
     }
 
-    public SingleActiveConsumerNonPersistentDispatcher(NonPersistentSubscription subscription, NonPersistentTopic topic) {
+    @Override
+    public void sendConsume(NumberedMessageBatch entryBatch) {
+        throw new UnsupportedOperationException("Single consumer dispatcher does not support sendConsume");
+    }
+
+    public SingleConsumerNonPersistentDispatcher(NonPersistentSubscription subscription, NonPersistentTopic topic) {
         this.subscription = subscription;
         this.topic = topic;
     }

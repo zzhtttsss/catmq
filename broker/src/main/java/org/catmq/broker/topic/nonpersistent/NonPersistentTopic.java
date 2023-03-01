@@ -31,8 +31,8 @@ public class NonPersistentTopic extends BaseTopic implements Topic {
         log.warn("non-persistent!");
         subscriptions.forEach((name, subscription) -> {
             subscription.getDispatcher().ifPresent(dispatcher -> {
-                if (dispatcher instanceof SingleActiveConsumerNonPersistentDispatcher singleActiveConsumer) {
-                    singleActiveConsumer.sendMessages(messages.get(0).toByteArray());
+                if (dispatcher instanceof SingleConsumerNonPersistentDispatcher singleActiveConsumer) {
+                    singleActiveConsumer.sendMessages(messages);
                 } else {
                     log.error("Unknown dispatcher type {}", dispatcher.getClass());
                 }

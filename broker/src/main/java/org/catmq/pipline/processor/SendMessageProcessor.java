@@ -18,13 +18,13 @@ import static org.catmq.broker.Broker.BROKER;
 public class SendMessageProcessor implements Processor<SendMessage2BrokerRequest, SendMessage2BrokerResponse> {
 
     public static final String PRODUCE_PROCESSOR_NAME = "ProduceProcessor";
-    private final TopicManager topicManager = TopicManager.TopicManagerEnum.INSTANCE.getInstance();
+    private final TopicManager topicManager = BROKER.getTopicManager();
 
     @Override
     public SendMessage2BrokerResponse process(RequestContext ctx, SendMessage2BrokerRequest request) {
         SendMessage2BrokerResponse response;
         TopicDetail topicDetail = TopicDetail.get(request.getTopic());
-        Topic topic = BROKER.getTopicManager().getTopic(topicDetail.getCompleteTopicName());
+        Topic topic = topicManager.getTopic(topicDetail.getCompleteTopicName());
         var messageList = request.getMessageList();
         CompletableFuture<SendMessage2BrokerResponse> future = topic.putMessage(messageList);
         try {

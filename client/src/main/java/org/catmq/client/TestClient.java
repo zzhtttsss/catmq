@@ -107,6 +107,8 @@ public class TestClient {
         System.out.println("p95: " + p95);
         System.out.println("TPS: " + 20000 * 1000 / (end - start));
         System.out.println("finish");
+
+
     }
 
 

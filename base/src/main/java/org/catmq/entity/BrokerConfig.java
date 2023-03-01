@@ -31,6 +31,10 @@ public class BrokerConfig {
     private int grpcAdminThreadPoolNums = 1;
     private int maxSegmentMessageNum;
 
+    private int maxReadBatchSize = 100;
+
+    private int maxReadCacheSize = 10 * 1024 * 1024;
+
 
     private BrokerConfig() {
         InputStream stream = this.getClass().getResourceAsStream(ConfigConstant.BROKER_CONFIG_PATH);
@@ -50,5 +54,7 @@ public class BrokerConfig {
         grpcProducerThreadPoolNums = Integer.parseInt(properties.getProperty(ConfigConstant.GRPC_PRODUCER_THREAD_POOL_NUMS, String.valueOf(grpcProducerThreadPoolNums)));
         zkAddress = properties.getProperty(ConfigConstant.ZK_ADDRESS, ZkConstant.ZK_DEFAULT_ADDRESS);
         maxSegmentMessageNum = Integer.parseInt(properties.getProperty(ConfigConstant.TOPIC_MAX_SEGMENT_MESSAGE_NUM, String.valueOf(10000)));
+        maxReadBatchSize = Integer.parseInt(properties.getProperty(ConfigConstant.TOPIC_MAX_READ_BATCH_SIZE, String.valueOf(maxReadBatchSize)));
+        maxReadCacheSize = Integer.parseInt(properties.getProperty(ConfigConstant.TOPIC_MAX_READ_CACHE_SIZE, String.valueOf(maxReadCacheSize)));
     }
 }

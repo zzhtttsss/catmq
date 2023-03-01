@@ -30,6 +30,9 @@ public class LeastUsedStrategy implements LoadBalance {
                 String fullPath = StringUtil.concatString(addressDirectory, path);
                 byte[] bytes = client.getData().forPath(fullPath);
                 BrokerInfo info = JsonSerializable.fromBytes(bytes, BrokerInfo.class);
+                if (info == null) {
+                    continue;
+                }
                 map.put(path, info.getLoad());
             }
             if (map.size() < num) {
@@ -39,7 +42,7 @@ public class LeastUsedStrategy implements LoadBalance {
             String[] brokerZkPaths = map.entrySet().stream()
                     .sorted(Map.Entry.comparingByValue())
                     .limit(num)
-                    .map(stringIntegerEntry -> stringIntegerEntry.getKey())
+                    .map(Map.Entry::getKey)
                     .toArray(String[]::new);
             return Optional.of(brokerZkPaths);
 

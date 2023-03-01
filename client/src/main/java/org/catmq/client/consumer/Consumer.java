@@ -33,7 +33,7 @@ public class Consumer {
         }
         log.info("ack: {} \nresponse: {} \nstatus msg: {} \nstatus code: {} \nmessage: {}",
                 response.getAck(), response.getRes(), response.getStatus().getMessage(),
-                response.getStatus().getCode().getNumber(), response.getMessage());
+                response.getStatus().getCode().getNumber(), response.getMessage(0));
     }
 
     public void close() {

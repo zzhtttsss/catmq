@@ -22,6 +22,8 @@ public class Broker {
 
     private GrpcConnectManager grpcConnectManager;
 
+    private ReadCacheManager readCacheManager;
+
     private ClientManager clientManager;
 
     private TopicManager topicManager;
@@ -48,6 +50,7 @@ public class Broker {
         this.brokerInfo = new BrokerInfo(BROKER_CONFIG);
         this.client = ZkUtil.createClient(brokerInfo.getZkAddress());
         this.brokerInfo.setBrokerId(ZkIdGenerator.ZkIdGeneratorEnum.INSTANCE.getInstance().nextId(client));
+        this.readCacheManager = ReadCacheManager.ReadCacheManagerEnum.INSTANCE.getInstance();
         this.grpcConnectManager = new GrpcConnectManager(100);
         this.clientManager = ClientManager.ClientManagerEnum.INSTANCE.getInstance();
         this.brokerZkManager = BrokerZkManager.BrokerZkManagerEnum.INSTANCE.getInstance();

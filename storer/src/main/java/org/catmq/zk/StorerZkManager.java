@@ -3,9 +3,9 @@ package org.catmq.zk;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.zookeeper.CreateMode;
-import org.catmq.command.BooleanError;
 import org.catmq.constant.FileConstant;
 import org.catmq.constant.ZkConstant;
+import org.catmq.entity.BooleanError;
 import org.catmq.util.StringUtil;
 
 import static org.catmq.storer.Storer.STORER;

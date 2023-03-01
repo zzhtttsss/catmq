@@ -1,4 +1,4 @@
-package org.catmq.command;
+package org.catmq.entity;
 
 import lombok.Data;
 

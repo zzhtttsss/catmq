@@ -8,8 +8,6 @@ import org.catmq.pipline.Preparer;
 
 @Slf4j
 public class RegisterClientPreparer implements Preparer {
-    public static final String REGISTER_CLIENT_PREPARER = "RegisterClientPreparer";
-
     private final ClientManager clientService;
 
     @Override

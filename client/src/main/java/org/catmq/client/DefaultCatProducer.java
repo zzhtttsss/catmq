@@ -34,9 +34,8 @@ import java.util.concurrent.ThreadPoolExecutor;
 
 @Slf4j
 public class DefaultCatProducer extends ClientConfig {
-
     @Getter
-    private final String tenantId;
+    private String tenantId;
     @Getter
     private final TopicDetail topicDetail;
     @Getter
@@ -162,6 +161,7 @@ public class DefaultCatProducer extends ClientConfig {
                     sendCallback.onException(t);
                 }
             }, MoreExecutors.directExecutor());
+            default -> log.error("Unknown process mode: {}", processMode);
         }
     }
 

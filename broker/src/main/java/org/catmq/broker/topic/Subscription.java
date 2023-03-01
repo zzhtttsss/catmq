@@ -14,4 +14,6 @@ public interface Subscription {
     Optional<Dispatcher> getDispatcher();
 
     void addConsumer(Consumer consumer);
+
+    void notifyConsume();
 }

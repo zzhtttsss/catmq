@@ -8,8 +8,8 @@ import io.grpc.ManagedChannel;
 import io.grpc.Metadata;
 import io.grpc.stub.MetadataUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.catmq.broker.common.NumberedMessageBatch;
 import org.catmq.entity.TopicMode;
-import org.catmq.protocol.definition.NumberedMessage;
 import org.catmq.protocol.service.*;
 
 import java.util.ArrayList;
@@ -57,7 +57,7 @@ public class StorerManager {
         return futureStub.createSegment(request);
     }
 
-    public CompletableFuture<List<SendMessage2StorerResponse>> sendMessage2Storer(List<NumberedMessage> messages,
+    public CompletableFuture<List<SendMessage2StorerResponse>> sendMessage2Storer(NumberedMessageBatch messages,
                                                                                   TopicMode topicMode, String[] storerAddresses) {
         List<ListenableFuture<SendMessage2StorerResponse>> listenableFutures = new ArrayList<>();
         // send message to each storer.
@@ -68,7 +68,18 @@ public class StorerManager {
         return toCompletable(listenableFuture);
     }
 
-    private ListenableFuture<SendMessage2StorerResponse> doSendMessage2Storer(List<NumberedMessage> messages,
+    public CompletableFuture<GetMessageFromStorerResponse> getMessageFromStorer(String topicName, long segmentId,
+                                                                                long entryId, String[] storerAddresses) {
+        List<CompletableFuture<GetMessageFromStorerResponse>> futures = new ArrayList<>();
+        for (String address : storerAddresses) {
+            futures.add(doGetMessageFromStorer(topicName, segmentId, entryId, address));
+        }
+        return CompletableFuture
+                .anyOf(futures.toArray(new CompletableFuture[0]))
+                .thenApply(r -> (GetMessageFromStorerResponse) r);
+    }
+
+    private ListenableFuture<SendMessage2StorerResponse> doSendMessage2Storer(NumberedMessageBatch messages,
                                                                               TopicMode topicMode, String storerAddress) {
         ManagedChannel channel = BROKER.getGrpcConnectManager().get(storerAddress);
         Metadata metadata = new Metadata();
@@ -76,11 +87,27 @@ public class StorerManager {
         Channel headChannel = ClientInterceptors.intercept(channel, MetadataUtils.newAttachHeadersInterceptor(metadata));
         StorerServiceGrpc.StorerServiceFutureStub futureStub = StorerServiceGrpc.newFutureStub(headChannel);
         SendMessage2StorerRequest request = SendMessage2StorerRequest.newBuilder()
-                .addAllMessage(messages)
+                .addAllMessage(messages.getBatch())
                 .setMode(topicMode.getName())
                 .build();
         return futureStub.sendMessage2Storer(request);
     }
+
+    private CompletableFuture<GetMessageFromStorerResponse> doGetMessageFromStorer(String topicName, long segmentId,
+                                                                                   long entryId, String storerAddress) {
+        ManagedChannel channel = BROKER.getGrpcConnectManager().get(storerAddress);
+        Metadata metadata = new Metadata();
+        metadata.put(Metadata.Key.of("action", Metadata.ASCII_STRING_MARSHALLER), "getMessage");
+        Channel headChannel = ClientInterceptors.intercept(channel, MetadataUtils.newAttachHeadersInterceptor(metadata));
+        StorerServiceGrpc.StorerServiceFutureStub futureStub = StorerServiceGrpc.newFutureStub(headChannel);
+        GetMessageFromStorerRequest request = GetMessageFromStorerRequest.newBuilder()
+                .setTopic(topicName)
+                .setSegmentId(segmentId)
+                .setEntryId(entryId)
+                .build();
+        return toCompletable(futureStub.getMessageFromStorer(request));
+    }
+
 
     public enum StorerManagerEnum {
         INSTANCE;

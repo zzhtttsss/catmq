@@ -49,4 +49,6 @@ public class ConfigConstant {
 
     public static final String READ_CACHE_CLEAN_UP_INTERVAL = "readCache.cleanUpInterval";
     public static final String READ_CACHE_REMAINING_THRESHOLD = "readCache.remainingThreshold";
+    public static final String TOPIC_MAX_READ_BATCH_SIZE = "topic.maxReadBatchSize";
+    public static final String TOPIC_MAX_READ_CACHE_SIZE = "topic.maxReadCacheSize";
 }
