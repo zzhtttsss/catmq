@@ -35,6 +35,6 @@ public interface Dispatcher {
      *
      * @param entryBatch
      */
-    void sendConsume(NumberedMessageBatch entryBatch);
+    void sendMessage4Consuming(NumberedMessageBatch entryBatch);
 
 }

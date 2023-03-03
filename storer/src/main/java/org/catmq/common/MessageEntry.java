@@ -48,7 +48,7 @@ public class MessageEntry {
         byteBuf.writeBytes(conv2Bytes());
     }
 
-    public NumberedMessage dump2NumberedMessage() {
+    public NumberedMessage conv2NumberedMessage() {
         return NumberedMessage.newBuilder()
                 .setSegmentId(segmentId)
                 .setEntryId(entryId)

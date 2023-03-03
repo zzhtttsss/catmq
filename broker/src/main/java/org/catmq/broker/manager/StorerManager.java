@@ -2,15 +2,11 @@ package org.catmq.broker.manager;
 
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import io.grpc.Channel;
-import io.grpc.ClientInterceptors;
-import io.grpc.ManagedChannel;
-import io.grpc.Metadata;
+import io.grpc.*;
 import io.grpc.stub.MetadataUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.catmq.broker.common.NumberedMessageBatch;
 import org.catmq.entity.TopicMode;
-import org.catmq.protocol.definition.NumberedMessage;
 import org.catmq.protocol.service.*;
 
 import java.util.ArrayList;
@@ -18,6 +14,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 import static org.catmq.broker.Broker.BROKER;
 import static org.catmq.thread.ListenableFutureAdapter.toCompletable;
@@ -71,17 +68,22 @@ public class StorerManager {
 
     public CompletableFuture<GetMessageFromStorerResponse> getMessageFromStorer(String topicName, long segmentId,
                                                                                 long entryId, String[] storerAddresses) {
-        List<CompletableFuture<GetMessageFromStorerResponse>> futures = new ArrayList<>();
+        CompletableFuture<GetMessageFromStorerResponse> res = null;
         for (String address : storerAddresses) {
-            futures.add(doGetMessageFromStorer(topicName, segmentId, entryId, address));
+            try {
+                res = doGetMessageFromStorer(topicName, segmentId, entryId, address);
+                break;
+            } catch (StatusRuntimeException e) {
+                log.warn("Get message from storer[{}] error.", address, e);
+            }
         }
-        return CompletableFuture
-                .anyOf(futures.toArray(new CompletableFuture[0]))
-                .thenApply(r -> (GetMessageFromStorerResponse) r);
+        return res;
+
     }
 
     private ListenableFuture<SendMessage2StorerResponse> doSendMessage2Storer(NumberedMessageBatch messages,
-                                                                              TopicMode topicMode, String storerAddress) {
+                                                                              TopicMode topicMode,
+                                                                              String storerAddress) {
         ManagedChannel channel = BROKER.getGrpcConnectManager().get(storerAddress);
         Metadata metadata = new Metadata();
         metadata.put(Metadata.Key.of("action", Metadata.ASCII_STRING_MARSHALLER), "sendMessage");
@@ -95,7 +97,8 @@ public class StorerManager {
     }
 
     private CompletableFuture<GetMessageFromStorerResponse> doGetMessageFromStorer(String topicName, long segmentId,
-                                                                                   long entryId, String storerAddress) {
+                                                                                   long entryId,
+                                                                                   String storerAddress) throws StatusRuntimeException {
         ManagedChannel channel = BROKER.getGrpcConnectManager().get(storerAddress);
         Metadata metadata = new Metadata();
         metadata.put(Metadata.Key.of("action", Metadata.ASCII_STRING_MARSHALLER), "getMessage");
@@ -106,7 +109,8 @@ public class StorerManager {
                 .setSegmentId(segmentId)
                 .setEntryId(entryId)
                 .build();
-        return toCompletable(futureStub.getMessageFromStorer(request));
+        return toCompletable(futureStub.withDeadlineAfter(3, TimeUnit.MILLISECONDS).getMessageFromStorer(request));
+
     }
 
 

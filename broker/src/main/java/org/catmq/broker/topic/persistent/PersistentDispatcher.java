@@ -28,7 +28,7 @@ public class PersistentDispatcher implements Dispatcher {
     }
 
     @Override
-    public void sendConsume(NumberedMessageBatch entryBatch) {
+    public void sendMessage4Consuming(NumberedMessageBatch entryBatch) {
 
     }
 }

@@ -34,7 +34,16 @@ public class RequestContext {
     }
 
     public <T> T getVal(String key, Class<T> clazz) {
-        return this.value.get(key) == null ? null : clazz.cast(this.value.get(key));
+        var value = this.value.get(key);
+        if (value == null) {
+            return null;
+        }
+        try {
+            return clazz.cast(value);
+        } catch (ClassCastException e) {
+            log.error("cast error, key: {}, value: {}, clazz: {}", key, value, clazz);
+            return null;
+        }
     }
 
     /**

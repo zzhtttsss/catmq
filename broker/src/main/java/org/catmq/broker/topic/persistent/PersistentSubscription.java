@@ -63,7 +63,7 @@ public class PersistentSubscription implements Subscription {
                     if (size > 0) {
                         lastConsumeSegmentId.set(entryBatch.getSegmentId());
                         lastConsumeEntryId.set(entryBatch.getBatch().get(size - 1).getEntryId() + 1);
-                        dispatcher.sendConsume(entryBatch);
+                        dispatcher.sendMessage4Consuming(entryBatch);
                     }
                 });
         // 2. poll message from cache in storer
@@ -73,7 +73,7 @@ public class PersistentSubscription implements Subscription {
                     if (size > 0) {
                         lastConsumeSegmentId.set(entryBatch.getSegmentId());
                         lastConsumeEntryId.set(entryBatch.getBatch().get(size - 1).getEntryId() + 1);
-                        dispatcher.sendConsume(entryBatch);
+                        dispatcher.sendMessage4Consuming(entryBatch);
                     }
                 });
         // 3. check whether consume to the end of the segment. If so, move to the next segment.

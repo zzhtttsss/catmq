@@ -29,6 +29,10 @@ public class BrokerConfig {
     private int grpcProducerThreadQueueCapacity = 10000;
     private int grpcProducerThreadPoolNums = PROCESSOR_NUMBER;
     private int grpcAdminThreadPoolNums = 1;
+
+    private int grpcConsumerThreadQueueCapacity = 10000;
+
+    private int grpcConsumerThreadPoolNums = PROCESSOR_NUMBER;
     private int maxSegmentMessageNum;
 
     private int maxReadBatchSize = 100;
@@ -52,6 +56,9 @@ public class BrokerConfig {
         brokerPort = Integer.parseInt(properties.getProperty(ConfigConstant.BROKER_PORT, String.valueOf(brokerPort)));
         grpcProducerThreadQueueCapacity = Integer.parseInt(properties.getProperty(ConfigConstant.GRPC_PRODUCER_THREAD_QUEUE_CAPACITY, String.valueOf(grpcProducerThreadQueueCapacity)));
         grpcProducerThreadPoolNums = Integer.parseInt(properties.getProperty(ConfigConstant.GRPC_PRODUCER_THREAD_POOL_NUMS, String.valueOf(grpcProducerThreadPoolNums)));
+        grpcAdminThreadPoolNums = Integer.parseInt(properties.getProperty(ConfigConstant.GRPC_ADMIN_THREAD_POOL_NUMS, String.valueOf(grpcAdminThreadPoolNums)));
+        grpcConsumerThreadQueueCapacity = Integer.parseInt(properties.getProperty(ConfigConstant.GRPC_CONSUMER_THREAD_QUEUE_CAPACITY, String.valueOf(grpcConsumerThreadQueueCapacity)));
+        grpcConsumerThreadPoolNums = Integer.parseInt(properties.getProperty(ConfigConstant.GRPC_CONSUMER_THREAD_POOL_NUMS, String.valueOf(grpcConsumerThreadPoolNums)));
         zkAddress = properties.getProperty(ConfigConstant.ZK_ADDRESS, ZkConstant.ZK_DEFAULT_ADDRESS);
         maxSegmentMessageNum = Integer.parseInt(properties.getProperty(ConfigConstant.TOPIC_MAX_SEGMENT_MESSAGE_NUM, String.valueOf(10000)));
         maxReadBatchSize = Integer.parseInt(properties.getProperty(ConfigConstant.TOPIC_MAX_READ_BATCH_SIZE, String.valueOf(maxReadBatchSize)));

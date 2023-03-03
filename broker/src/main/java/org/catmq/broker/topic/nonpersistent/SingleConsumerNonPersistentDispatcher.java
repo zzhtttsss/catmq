@@ -52,7 +52,7 @@ public class SingleConsumerNonPersistentDispatcher implements NonPersistentDispa
     }
 
     @Override
-    public void sendConsume(NumberedMessageBatch entryBatch) {
+    public void sendMessage4Consuming(NumberedMessageBatch entryBatch) {
         throw new UnsupportedOperationException("Single consumer dispatcher does not support sendConsume");
     }
 
