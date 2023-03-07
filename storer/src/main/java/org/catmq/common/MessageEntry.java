@@ -1,9 +1,11 @@
 package org.catmq.common;
 
+import com.google.protobuf.ByteString;
 import io.netty.buffer.ByteBuf;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.catmq.protocol.definition.NumberedMessage;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.CountDownLatch;
@@ -46,6 +48,13 @@ public class MessageEntry {
         byteBuf.writeBytes(conv2Bytes());
     }
 
+    public NumberedMessage conv2NumberedMessage() {
+        return NumberedMessage.newBuilder()
+                .setSegmentId(segmentId)
+                .setEntryId(entryId)
+                .setBody(ByteString.copyFrom(message))
+                .build();
+    }
 
     public byte[] conv2Bytes() {
         ByteBuffer byteBuffer = ByteBuffer.allocate(getTotalSize());

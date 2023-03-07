@@ -1,10 +1,7 @@
 package org.catmq.pipline;
 
 import org.catmq.pipline.preparer.RegisterClientPreparer;
-import org.catmq.pipline.processor.CreatePartitionProcessor;
-import org.catmq.pipline.processor.CreateTopicProcessor;
-import org.catmq.pipline.processor.GetMessageProcessor;
-import org.catmq.pipline.processor.SendMessageProcessor;
+import org.catmq.pipline.processor.*;
 import org.catmq.protocol.service.*;
 
 public record TaskPlan<V, T>(Preparer[] preparers, Processor<V, T> processor, Finisher[] finishers) {
@@ -35,4 +32,12 @@ public record TaskPlan<V, T>(Preparer[] preparers, Processor<V, T> processor, Fi
             GetMessageProcessor.GetMessageProcessorEnum.INSTANCE.getInstance(),
             new Finisher[]{}
     );
+    public static final TaskPlan<SubscribeRequest, SubscribeResponse> SUBSCRIBE_FROM_CONSUMER =
+            new TaskPlan<>(
+                    new Preparer[]{
+                            RegisterClientPreparer.RegisterClientPreparerEnum.INSTANCE.getInstance()
+                    },
+                    SubscribeProcessor.SubscribeProcessorEnum.INSTANCE.getInstance(),
+                    new Finisher[]{}
+            );
 }

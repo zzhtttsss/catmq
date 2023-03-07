@@ -8,6 +8,7 @@ import org.catmq.collection.DelayedMessageIndex;
 import org.catmq.collection.TimerTaskList;
 import org.catmq.entity.TopicDetail;
 import org.catmq.protocol.definition.Code;
+import org.catmq.protocol.definition.NumberedMessage;
 import org.catmq.protocol.definition.OriginMessage;
 import org.catmq.protocol.service.GetMessageFromStorerResponse;
 import org.catmq.protocol.service.SendMessage2BrokerResponse;
@@ -62,7 +63,7 @@ public class HandleDelayedMessageService extends ServiceThread {
 
     private CompletableFuture<HandleResult> handleExpireDelayedMessage(DelayedMessageIndex delayedMessageIndex) {
         return storerManager
-                .getMessageFromStorer(delayedMessageIndex.getSegmentId(), delayedMessageIndex.getEntryId(), "127.0.0.1:4321")
+                .getMessageFromStorer(delayedMessageIndex.getSegmentId(), delayedMessageIndex.getEntryId(), new String[]{"127.0.0.1:4321"})
                 .thenCompose(getMessageFromStorerResponse -> sendMessage2RealTopic(delayedMessageIndex, getMessageFromStorerResponse))
                 .thenApply(sendMessage2BrokerResponse -> {
                     if (sendMessage2BrokerResponse.getStatus().getCode() != Code.OK) {
@@ -82,7 +83,10 @@ public class HandleDelayedMessageService extends ServiceThread {
         TopicDetail topicDetail = TopicDetail.get(delayedMessageIndex.getCompleteTopic());
         Topic topic = topicManager.getTopic(topicDetail.getCompleteTopicName());
         List<OriginMessage> messageList = new ArrayList<>();
-        messageList.add(OriginMessage.newBuilder().setBody(getMessageFromStorerResponse.getBody()).build());
+        for (NumberedMessage msg : getMessageFromStorerResponse.getMessageList()) {
+            //flush message by resetting the offset
+            messageList.add(OriginMessage.newBuilder().setBody(msg.getBody()).build());
+        }
         return topic.putMessage(messageList);
     }
 

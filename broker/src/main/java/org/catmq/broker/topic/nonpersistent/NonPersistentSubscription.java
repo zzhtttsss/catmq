@@ -24,9 +24,14 @@ public class NonPersistentSubscription implements Subscription {
     @Override
     public void addConsumer(Consumer consumer) {
         if (dispatcher == null) {
-            dispatcher = new SingleActiveConsumerNonPersistentDispatcher(this, topic);
+            dispatcher = new SingleConsumerNonPersistentDispatcher(this, topic);
         }
         dispatcher.addConsumer(consumer);
+    }
+
+    @Override
+    public void notifyConsume() {
+        throw new UnsupportedOperationException("Not support notify consume.");
     }
 
     @Override

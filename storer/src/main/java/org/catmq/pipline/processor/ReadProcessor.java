@@ -1,6 +1,5 @@
 package org.catmq.pipline.processor;
 
-import com.google.protobuf.ByteString;
 import lombok.extern.slf4j.Slf4j;
 import org.catmq.common.MessageEntry;
 import org.catmq.grpc.RequestContext;
@@ -23,24 +22,25 @@ public class ReadProcessor implements Processor<GetMessageFromStorerRequest, Get
         long segmentId = request.getSegmentId();
         long entryId = request.getEntryId();
         var builder = GetMessageFromStorerResponse.newBuilder().setAck(true);
+        //TODO batch read
         Optional<MessageEntry> entry;
         // 1. query from write cache
         entry = segmentStorage.getEntryFromWriteCacheById(segmentId, entryId);
         if (entry.isPresent()) {
             log.debug("read {}@{} from write cache", segmentId, entryId);
-            return builder.setBody(ByteString.copyFrom(entry.get().conv2Bytes())).build();
+            return builder.addMessage(entry.get().conv2NumberedMessage()).build();
         }
         // 2. query from read cache
         entry = segmentStorage.getEntryFromReadCacheById(segmentId, entryId);
         if (entry.isPresent()) {
             log.debug("read {}@{} from read cache", segmentId, entryId);
-            return builder.setBody(ByteString.copyFrom(entry.get().conv2Bytes())).build();
+            return builder.addMessage(entry.get().conv2NumberedMessage()).build();
         }
         // 3. query from db and load into read cache
         entry = segmentStorage.getEntryFromFileById(segmentId, entryId);
         if (entry.isPresent()) {
             log.debug("read {}@{} from file", segmentId, entryId);
-            return builder.setBody(ByteString.copyFrom(entry.get().conv2Bytes())).build();
+            return builder.addMessage(entry.get().conv2NumberedMessage()).build();
         }
         log.error("{}@{} message not found", segmentId, entryId);
         return builder

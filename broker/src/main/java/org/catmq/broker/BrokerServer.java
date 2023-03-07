@@ -5,11 +5,9 @@ import io.grpc.Context;
 import io.grpc.Metadata;
 import io.grpc.stub.StreamObserver;
 import lombok.extern.slf4j.Slf4j;
+import org.catmq.entity.ConsumerBatchPolicy;
 import org.catmq.entity.TopicDetail;
-import org.catmq.grpc.InterceptorConstants;
-import org.catmq.grpc.RequestContext;
-import org.catmq.grpc.ResponseBuilder;
-import org.catmq.grpc.ResponseWriter;
+import org.catmq.grpc.*;
 import org.catmq.pipline.Finisher;
 import org.catmq.pipline.Preparer;
 import org.catmq.pipline.TaskPlan;
@@ -37,9 +35,11 @@ public class BrokerServer extends BrokerServiceGrpc.BrokerServiceImplBase {
 
     protected ThreadPoolExecutor adminThreadPoolExecutor;
 
+    protected ThreadPoolExecutor consumerThreadPoolExecutor;
+
 
     protected void init() {
-        producerThreadPoolExecutor = createExecutor(BROKER_CONFIG.getGrpcProducerThreadPoolNums(),
+        this.producerThreadPoolExecutor = createExecutor(BROKER_CONFIG.getGrpcProducerThreadPoolNums(),
                 "producerThreadPoolExecutor", NO_TASK_LIMIT);
         this.adminThreadPoolExecutor = new ThreadPoolExecutor(
                 BROKER_CONFIG.getGrpcAdminThreadPoolNums(),
@@ -49,12 +49,22 @@ public class BrokerServer extends BrokerServiceGrpc.BrokerServiceImplBase {
                 new LinkedBlockingQueue<>(BROKER_CONFIG.getGrpcProducerThreadQueueCapacity()),
                 new ThreadFactoryBuilder().setNameFormat("GrpcAdminThreadPool" + "-%d").build(),
                 new ThreadPoolExecutor.DiscardOldestPolicy());
+        this.consumerThreadPoolExecutor = new ThreadPoolExecutor(
+                BROKER_CONFIG.getGrpcConsumerThreadPoolNums(),
+                BROKER_CONFIG.getGrpcConsumerThreadPoolNums(),
+                1,
+                TimeUnit.MINUTES,
+                new LinkedBlockingQueue<>(BROKER_CONFIG.getGrpcConsumerThreadQueueCapacity()),
+                new ThreadFactoryWithIndex("GrpcConsumerThreadPool"),
+                new ThreadPoolExecutor.DiscardOldestPolicy());
         log.info("BrokerServer init success");
 
     }
 
     public void close() {
-
+        this.producerThreadPoolExecutor.shutdown();
+        this.adminThreadPoolExecutor.shutdown();
+        this.consumerThreadPoolExecutor.shutdown();
     }
 
     @Override
@@ -71,6 +81,7 @@ public class BrokerServer extends BrokerServiceGrpc.BrokerServiceImplBase {
                 case ORDERED -> this.producerThreadPoolExecutor.executeOrdered(request.getTopic().hashCode(),
                         new GrpcTask<>(ctx, request, TaskPlan.SEND_MESSAGE_2_BROKER_TASK_PLAN, responseObserver,
                                 statusResponseCreator));
+                default -> log.error("unknown topic mode");
             }
         } catch (Throwable t) {
             writeResponse(ctx, request, null, responseObserver, t, statusResponseCreator);
@@ -114,9 +125,33 @@ public class BrokerServer extends BrokerServiceGrpc.BrokerServiceImplBase {
                 .setStatus(status)
                 .build();
         RequestContext ctx = createContext().setConsumerId(request.getConsumerId());
+
+        ConsumerBatchPolicy batchPolicy = ConsumerBatchPolicy
+                .ConsumerBatchPolicyBuilder
+                .builder()
+                .setTimeoutInMs(request.getTimeoutInMs())
+                .setBatchNumber(request.getBatchNumber())
+                .build();
+        ctx.withVal(ContextVariable.CONSUME_BATCH_POLICY, batchPolicy);
         try {
             this.producerThreadPoolExecutor.submit(new GrpcTask<>(ctx, request,
                     TaskPlan.GET_MESSAGE_FROM_BROKER_TASK_PLAN, responseObserver, statusResponseCreator));
+        } catch (Throwable t) {
+            writeResponse(ctx, request, null, responseObserver, t, statusResponseCreator);
+        }
+    }
+
+    @Override
+    public void subscribe(SubscribeRequest request, StreamObserver<SubscribeResponse> responseObserver) {
+        Function<Status, SubscribeResponse> statusResponseCreator = status -> SubscribeResponse
+                .newBuilder()
+                .setStatus(status)
+                .build();
+        RequestContext ctx = createContext().setConsumerId(request.getConsumerId());
+        ctx.setConsumerId(request.getConsumerId());
+        try {
+            this.adminThreadPoolExecutor.submit(new GrpcTask<>(ctx, request,
+                    TaskPlan.SUBSCRIBE_FROM_CONSUMER, responseObserver, statusResponseCreator));
         } catch (Throwable t) {
             writeResponse(ctx, request, null, responseObserver, t, statusResponseCreator);
         }

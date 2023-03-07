@@ -1,6 +1,5 @@
 package org.catmq.broker.topic;
 
-import org.catmq.broker.common.MessageEntry;
 import org.catmq.protocol.definition.OriginMessage;
 import org.catmq.protocol.service.SendMessage2BrokerResponse;
 
@@ -11,7 +10,6 @@ public interface Topic {
 
     /**
      * put message to the consumers who have this topic
-     *
      */
     CompletableFuture<SendMessage2BrokerResponse> putMessage(List<OriginMessage> messages);
 
@@ -20,6 +18,6 @@ public interface Topic {
     Subscription getOrCreateSubscription(String subscriptionName);
 
     String getTopicName();
-    
+
     boolean isSubscribe(String subscriptionName, long consumerId);
 }

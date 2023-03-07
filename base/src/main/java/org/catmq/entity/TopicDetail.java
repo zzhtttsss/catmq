@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.catmq.util.Concat2String;
 import org.catmq.util.StringUtil;
 
 import java.util.List;
@@ -154,18 +155,30 @@ public class TopicDetail {
             this.mode = TopicMode.NORMAL;
             this.tenant = PUBLIC_TENANT;
             this.simpleName = name;
-            this.completeTopicName = StringUtil.concatString(TopicType.NON_PERSISTENT.getName(),
-                    TOPIC_DOMAIN_SEPARATOR, PUBLIC_TENANT,
-                    TOPIC_INNER_SEPARATOR, name);
+            this.completeTopicName = Concat2String.builder()
+                    .concat(this.type.getName())
+                    .concat(TOPIC_INNER_SEPARATOR)
+                    .concat(this.mode.getName())
+                    .concat(TOPIC_DOMAIN_SEPARATOR)
+                    .concat(PUBLIC_TENANT)
+                    .concat(TOPIC_INNER_SEPARATOR)
+                    .concat(name)
+                    .build();
             this.partitionIndex = getPartitionIndex(name);
 
         } else {
-            // long name like persistent:$tenant:topic
+            // long name like persistent:normal:$tenant:topic
             List<String> parts = Splitter.on(TOPIC_DOMAIN_SEPARATOR).limit(2).splitToList(name);
-            List<String> headers = Splitter.on(TOPIC_INNER_SEPARATOR).limit(2).splitToList(parts.get(0));
+            String header = parts.get(0);
+            // The header is like: persistent:normal
+            List<String> headers = Splitter.on(TOPIC_INNER_SEPARATOR).limit(2).splitToList(header);
+            if (headers.size() == 2) {
+                this.type = TopicType.fromString(headers.get(0));
+                this.mode = TopicMode.fromString(headers.get(1));
+            } else {
+                throw new IllegalArgumentException("Invalid topic name: " + name);
+            }
 
-            this.type = TopicType.fromString(headers.get(0));
-            this.mode = TopicMode.fromString(headers.get(1));
             String rest = parts.get(1);
             // The rest of the name is like:
             // new:    <tenant>:<topic>#<partitionIndex>
@@ -185,4 +198,8 @@ public class TopicDetail {
         }
     }
 
+    @Override
+    public String toString() {
+        return this.completeTopicName;
+    }
 }

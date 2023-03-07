@@ -17,8 +17,11 @@ public class ConfigConstant {
     public static final String GRPC_PRODUCER_THREAD_QUEUE_CAPACITY = "grpc.producer.threadQueueCapacity";
     public static final String GRPC_PRODUCER_THREAD_POOL_NUMS = "grpc.producer.threadPoolNums";
     public static final String GRPC_ADMIN_THREAD_POOL_NUMS = "grpc.admin.threadPoolNums";
+
+    public static final String GRPC_CONSUMER_THREAD_QUEUE_CAPACITY = "grpc.consumer.threadQueueCapacity";
+    public static final String GRPC_CONSUMER_THREAD_POOL_NUMS = "grpc.consumer.threadPoolNums";
     public static final String TOPIC_MAX_SEGMENT_MESSAGE_NUM = "topic.maxSegmentMessageNum";
-//TODO: config directory problem
+    //TODO: config directory problem
     /**
      * broker config is in resource directory and producer config is in conf directory
      */
@@ -49,4 +52,6 @@ public class ConfigConstant {
 
     public static final String READ_CACHE_CLEAN_UP_INTERVAL = "readCache.cleanUpInterval";
     public static final String READ_CACHE_REMAINING_THRESHOLD = "readCache.remainingThreshold";
+    public static final String TOPIC_MAX_READ_BATCH_SIZE = "topic.maxReadBatchSize";
+    public static final String TOPIC_MAX_READ_CACHE_SIZE = "topic.maxReadCacheSize";
 }

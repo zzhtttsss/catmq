@@ -4,9 +4,9 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.zookeeper.CreateMode;
-import org.catmq.command.BooleanError;
 import org.catmq.constant.FileConstant;
 import org.catmq.constant.ZkConstant;
+import org.catmq.entity.BooleanError;
 import org.catmq.entity.JsonSerializable;
 import org.catmq.entity.StorerInfo;
 import org.catmq.entity.TopicDetail;
@@ -73,7 +73,7 @@ public class BrokerZkManager extends BaseZookeeper {
         try {
             if (this.client.checkExists().forPath(this.brokerPath) != null) {
                 log.info("Broker info has been registered and will be deleted.");
-                this.client.delete().forPath(this.brokerPath);
+                this.client.delete().deletingChildrenIfNeeded().forPath(this.brokerPath);
                 log.info("Broker info has been deleted.");
             }
             this.client.create()
@@ -118,6 +118,9 @@ public class BrokerZkManager extends BaseZookeeper {
                 String fullPath = StringUtil.concatString(directory, path);
                 byte[] bytes = client.getData().forPath(fullPath);
                 StorerInfo info = JsonSerializable.fromBytes(bytes, StorerInfo.class);
+                if (info == null) {
+                    continue;
+                }
                 map.put(path, info.getMessageLogNum());
             }
             if (map.size() < num) {
@@ -139,8 +142,12 @@ public class BrokerZkManager extends BaseZookeeper {
 
     public BrokerZkManager(CuratorFramework client) {
         super(client);
-        this.brokerPath = StringUtil.concatString(ZkConstant.BROKER_ROOT_PATH,
-                FileConstant.LEFT_SLASH, BROKER.getBrokerInfo().getBrokerAddress());
+        this.brokerPath = Concat2String
+                .builder()
+                .concat(ZkConstant.BROKER_ROOT_PATH)
+                .concat(FileConstant.LEFT_SLASH)
+                .concat(BROKER.getBrokerInfo().getBrokerAddress())
+                .build();
     }
 
     public enum BrokerZkManagerEnum {

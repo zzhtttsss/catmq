@@ -33,6 +33,19 @@ public class RequestContext {
         return (T) this.value.get(key);
     }
 
+    public <T> T getVal(String key, Class<T> clazz) {
+        var value = this.value.get(key);
+        if (value == null) {
+            return null;
+        }
+        try {
+            return clazz.cast(value);
+        } catch (ClassCastException e) {
+            log.error("cast error, key: {}, value: {}, clazz: {}", key, value, clazz);
+            return null;
+        }
+    }
+
     /**
      * Wrap broker path on zk into ctx.
      *
@@ -85,6 +98,7 @@ public class RequestContext {
         this.withVal(ContextVariable.ACTION, action);
         return this;
     }
+
     public String getAction() {
         return this.getVal(ContextVariable.ACTION);
     }

@@ -1,6 +1,7 @@
 package org.catmq.broker.topic;
 
 import org.catmq.broker.common.Consumer;
+import org.catmq.broker.common.NumberedMessageBatch;
 
 import java.util.List;
 
@@ -28,5 +29,12 @@ public interface Dispatcher {
     List<Consumer> getConsumers();
 
     boolean isActiveConsumer(Consumer consumer);
+
+    /**
+     * Send consume message to consumer queue.
+     *
+     * @param entryBatch
+     */
+    void sendMessage4Consuming(NumberedMessageBatch entryBatch);
 
 }

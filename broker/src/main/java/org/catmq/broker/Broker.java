@@ -3,10 +3,7 @@ package org.catmq.broker;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.curator.framework.CuratorFramework;
-import org.catmq.broker.manager.BrokerZkManager;
-import org.catmq.broker.manager.ClientManager;
-import org.catmq.broker.manager.StorerManager;
-import org.catmq.broker.manager.TopicManager;
+import org.catmq.broker.manager.*;
 import org.catmq.broker.service.HandleDelayedMessageService;
 import org.catmq.broker.service.ScheduleDelayedMessageService;
 import org.catmq.collection.TimerTaskList;
@@ -31,6 +28,8 @@ public class Broker {
     private BrokerInfo brokerInfo;
 
     private GrpcConnectManager grpcConnectManager;
+
+    private ReadCacheManager readCacheManager;
 
     private ClientManager clientManager;
 
@@ -63,6 +62,7 @@ public class Broker {
         this.brokerInfo = new BrokerInfo(BROKER_CONFIG);
         this.client = ZkUtil.createClient(brokerInfo.getZkAddress());
         this.brokerInfo.setBrokerId(ZkIdGenerator.ZkIdGeneratorEnum.INSTANCE.getInstance().nextId(client));
+        this.readCacheManager = ReadCacheManager.ReadCacheManagerEnum.INSTANCE.getInstance();
         this.grpcConnectManager = new GrpcConnectManager(100);
         this.clientManager = ClientManager.ClientManagerEnum.INSTANCE.getInstance();
         this.brokerZkManager = BrokerZkManager.BrokerZkManagerEnum.INSTANCE.getInstance();

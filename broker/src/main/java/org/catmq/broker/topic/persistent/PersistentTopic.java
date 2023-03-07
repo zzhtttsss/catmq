@@ -1,9 +1,12 @@
 package org.catmq.broker.topic.persistent;
 
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.catmq.broker.common.Consumer;
+import org.catmq.broker.common.NumberedMessageBatch;
 import org.catmq.broker.manager.BrokerZkManager;
 import org.catmq.broker.manager.ClientManager;
+import org.catmq.broker.manager.TopicManager;
 import org.catmq.broker.topic.BaseTopic;
 import org.catmq.broker.topic.Subscription;
 import org.catmq.broker.topic.Topic;
@@ -17,7 +20,6 @@ import org.catmq.protocol.service.SendMessage2BrokerResponse;
 import org.catmq.protocol.service.SendMessage2StorerResponse;
 import org.catmq.zk.ZkIdGenerator;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -35,7 +37,10 @@ public class PersistentTopic extends BaseTopic implements Topic {
      */
     private final ConcurrentHashMap<String, PersistentSubscription> subscriptions;
 
+
     private final ClientManager clientManager;
+
+    private final TopicManager topicManager;
 
     private Long lastAppendSegmentId;
 
@@ -46,6 +51,7 @@ public class PersistentTopic extends BaseTopic implements Topic {
     /**
      * The address of storer which are responsible for storing messages of the current segment.
      */
+    @Getter
     private String[] currentStorerAddresses;
 
     /**
@@ -64,7 +70,7 @@ public class PersistentTopic extends BaseTopic implements Topic {
 
     @Override
     public CompletableFuture<SendMessage2BrokerResponse> putMessage(List<OriginMessage> messages) {
-        List<NumberedMessage> numberedMessages;
+        NumberedMessageBatch numberedMessages;
         switch (getTopicDetail().getMode()) {
             // For normal topic, SendMessage2BrokerRequest will be handled randomly by thread-pool,
             // it means there are concurrency, so we need to allocate entry id thread safely.For
@@ -81,17 +87,24 @@ public class PersistentTopic extends BaseTopic implements Topic {
             }
 
         }
-        log.warn("putMessage: {}", numberedMessages.size());
-        long segmentId = numberedMessages.get(0).getSegmentId();
-        long firstEntryId = numberedMessages.get(0).getEntryId();
-        long lastEntryId = numberedMessages.get(numberedMessages.size() - 1).getEntryId();
         return BROKER.getStorerManager()
                 .sendMessage2Storer(numberedMessages, super.getTopicDetail().getMode(), currentStorerAddresses)
-                .thenApply(responses -> conv2SendMessage2BrokerResponse(responses, segmentId, firstEntryId, lastEntryId));
+                .thenApply(responses -> {
+                    var response = conv2SendMessage2BrokerResponse(responses);
+                    if (response.getStatus().getCode() == Code.OK) {
+                        // If the message is successfully stored, update the number of segment.
+                        long segmentId = numberedMessages.getSegmentId();
+                        long num = numberedMessages.getBatch().size();
+                        topicManager.addSegmentNumber(segmentId, num);
+                        topicManager.addSegmentId(topicName, segmentId);
+                        BROKER.getReadCacheManager().putBatch(topicName, numberedMessages);
+                    }
+                    return response;
+                });
     }
 
-    private List<NumberedMessage> allocateEntryId(List<OriginMessage> messages) {
-        List<NumberedMessage> numberedMessages = doAllocateEntryId(messages);
+    private NumberedMessageBatch allocateEntryId(List<OriginMessage> messages) {
+        NumberedMessageBatch numberedMessages = doAllocateEntryId(messages);
         if (numberedMessages == null) {
             switch2NextSegment();
             numberedMessages = doAllocateEntryId(messages);
@@ -117,14 +130,14 @@ public class PersistentTopic extends BaseTopic implements Topic {
      * @param messages batch of OriginMessage
      * @return batch of NumberedMessage
      */
-    private List<NumberedMessage> allocateEntryIdThreadSafely(List<OriginMessage> messages) {
+    private NumberedMessageBatch allocateEntryIdThreadSafely(List<OriginMessage> messages) {
         // If other thread is switching, start waiting.
         while (isSwitching.getReference()) {
 
         }
         // If current segment has enough space, allocate entry id and segment id directly.
         int stamp = isSwitching.getStamp();
-        List<NumberedMessage> numberedMessages = doAllocateEntryId(messages);
+        NumberedMessageBatch numberedMessages = doAllocateEntryId(messages);
         // If current segment doesn't have enough space, try to cas to do switching.
         if (numberedMessages == null) {
             if (isSwitching.compareAndSet(false, true, stamp, stamp + 1)) {
@@ -154,7 +167,7 @@ public class PersistentTopic extends BaseTopic implements Topic {
     }
 
 
-    private List<NumberedMessage> doAllocateEntryId(List<OriginMessage> messages) {
+    private NumberedMessageBatch doAllocateEntryId(List<OriginMessage> messages) {
         // If current segment doesn't have enough space, return null.
         if (maxSegmentMessageNum < lastAppendEntryId.get() + messages.size()) {
             log.info("Segment is full,segment id: {} last entry id: {}", lastAppendSegmentId, lastAppendEntryId.get());
@@ -170,20 +183,22 @@ public class PersistentTopic extends BaseTopic implements Topic {
         if (threadSafe) {
             runningCount.decrementAndGet();
         }
-        List<NumberedMessage> numberedMessages = new ArrayList<>(messages.size());
+        NumberedMessageBatch numberedMessages = new NumberedMessageBatch(segmentId);
         for (OriginMessage om : messages) {
-            numberedMessages.add(NumberedMessage.newBuilder()
+            numberedMessages.addMessage(NumberedMessage.newBuilder()
                     .setBody(om.getBody())
                     .setEntryId(firstEntryId)
                     .setSegmentId(segmentId)
                     .build());
+            // Call addSegmentEntrySize here make sure these entries is successfully stored.
+            // TODO: entryId may be not sequential because of the failure of some entries.
+            // topicManager.addSegmentEntrySize(segmentId, firstEntryId);
             firstEntryId++;
         }
         return numberedMessages;
     }
 
-    private SendMessage2BrokerResponse conv2SendMessage2BrokerResponse(List<SendMessage2StorerResponse> responses,
-                                                                       long segmentId, long firstEntryId, long lastEntryId) {
+    private SendMessage2BrokerResponse conv2SendMessage2BrokerResponse(List<SendMessage2StorerResponse> responses) {
         SendMessage2BrokerResponse.Builder builder = SendMessage2BrokerResponse.newBuilder();
         // TODO: handle response
         for (SendMessage2StorerResponse response : responses) {
@@ -191,10 +206,7 @@ public class PersistentTopic extends BaseTopic implements Topic {
                 throw new RuntimeException("fail to send message to storer");
             }
         }
-        builder.setSegmentId(segmentId)
-                .setFirstEntryId(firstEntryId)
-                .setLastEntryId(lastEntryId)
-                .setStatus(Status.newBuilder().setCode(Code.OK).build())
+        builder.setStatus(Status.newBuilder().setCode(Code.OK).build())
                 .setRes("success")
                 .setAck(true);
         return builder.build();
@@ -202,6 +214,7 @@ public class PersistentTopic extends BaseTopic implements Topic {
 
     private void switch2NextSegment() {
         lastAppendSegmentId = ZkIdGenerator.ZkIdGeneratorEnum.INSTANCE.getInstance().nextId(BROKER.getClient());
+        topicManager.addSegmentId(topicName, lastAppendSegmentId);
         lastAppendEntryId.set(0);
         this.currentStorerAddresses = brokerZkManager.selectStorer(1).orElseThrow();
         this.maxSegmentMessageNum = BROKER_CONFIG.getMaxSegmentMessageNum();
@@ -212,7 +225,7 @@ public class PersistentTopic extends BaseTopic implements Topic {
 
     @Override
     public void subscribe(String subscriptionName, long consumerId) {
-        log.info("[{}][{}] Created new subscription for {}", topicName, subscriptionName, consumerId);
+        log.info("[{}][{}] Created new subscription for {}", consumerId, subscriptionName, topicName);
         PersistentSubscription subscription = subscriptions.computeIfAbsent(subscriptionName,
                 name -> new PersistentSubscription(this, subscriptionName));
         Consumer consumer = clientManager.getConsumer(consumerId);
@@ -251,6 +264,7 @@ public class PersistentTopic extends BaseTopic implements Topic {
         this.brokerZkManager = BROKER.getBrokerZkManager();
         this.subscriptions = new ConcurrentHashMap<>();
         this.clientManager = BROKER.getClientManager();
+        this.topicManager = BROKER.getTopicManager();
         this.maxSegmentMessageNum = BROKER_CONFIG.getMaxSegmentMessageNum();
         this.lastAppendSegmentId = segmentId;
         this.lastAppendEntryId = new AtomicLong(0);
