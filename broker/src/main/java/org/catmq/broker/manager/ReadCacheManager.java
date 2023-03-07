@@ -67,7 +67,7 @@ public class ReadCacheManager {
             //TODO use async ?
             try {
                 GetMessageFromStorerResponse response = BROKER.getStorerManager()
-                        .getMessageFromStorer(topicName, segmentId, entryId, addresses).get();
+                        .getMessageFromStorer(segmentId, entryId, addresses).get();
                 return Optional.of(NumberedMessageBatch.of(response.getMessageList()));
             } catch (InterruptedException | ExecutionException e) {
                 return Optional.empty();

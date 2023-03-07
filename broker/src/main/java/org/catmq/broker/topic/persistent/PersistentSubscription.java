@@ -58,16 +58,9 @@ public class PersistentSubscription implements Subscription {
         }
         // 1. poll message from cache in broker
         readCacheManager.getEntryBatch(topicName, lastConsumeSegmentId.get(), lastConsumeEntryId.get())
-                .ifPresent(entryBatch -> {
-                    int size = entryBatch.getBatch().size();
-                    if (size > 0) {
-                        lastConsumeSegmentId.set(entryBatch.getSegmentId());
-                        lastConsumeEntryId.set(entryBatch.getBatch().get(size - 1).getEntryId() + 1);
-                        dispatcher.sendMessage4Consuming(entryBatch);
-                    }
-                });
-        // 2. poll message from cache in storer
-        readCacheManager.getEntryBatchFromStorer(topicName, lastConsumeSegmentId.get(), lastConsumeEntryId.get())
+                // 2. poll message from cache in storer
+                .or(() -> readCacheManager
+                        .getEntryBatchFromStorer(topicName, lastConsumeSegmentId.get(), lastConsumeEntryId.get()))
                 .ifPresent(entryBatch -> {
                     int size = entryBatch.getBatch().size();
                     if (size > 0) {

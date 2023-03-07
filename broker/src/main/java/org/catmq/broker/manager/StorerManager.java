@@ -66,12 +66,13 @@ public class StorerManager {
         return toCompletable(listenableFuture);
     }
 
-    public CompletableFuture<GetMessageFromStorerResponse> getMessageFromStorer(String topicName, long segmentId,
-                                                                                long entryId, String[] storerAddresses) {
+    public CompletableFuture<GetMessageFromStorerResponse> getMessageFromStorer(long segmentId,
+                                                                                long entryId,
+                                                                                String[] storerAddresses) {
         CompletableFuture<GetMessageFromStorerResponse> res = null;
         for (String address : storerAddresses) {
             try {
-                res = doGetMessageFromStorer(topicName, segmentId, entryId, address);
+                res = doGetMessageFromStorer(segmentId, entryId, address);
                 break;
             } catch (StatusRuntimeException e) {
                 log.warn("Get message from storer[{}] error.", address, e);
@@ -96,7 +97,7 @@ public class StorerManager {
         return futureStub.sendMessage2Storer(request);
     }
 
-    private CompletableFuture<GetMessageFromStorerResponse> doGetMessageFromStorer(String topicName, long segmentId,
+    private CompletableFuture<GetMessageFromStorerResponse> doGetMessageFromStorer(long segmentId,
                                                                                    long entryId,
                                                                                    String storerAddress) throws StatusRuntimeException {
         ManagedChannel channel = BROKER.getGrpcConnectManager().get(storerAddress);
@@ -105,7 +106,6 @@ public class StorerManager {
         Channel headChannel = ClientInterceptors.intercept(channel, MetadataUtils.newAttachHeadersInterceptor(metadata));
         StorerServiceGrpc.StorerServiceFutureStub futureStub = StorerServiceGrpc.newFutureStub(headChannel);
         GetMessageFromStorerRequest request = GetMessageFromStorerRequest.newBuilder()
-                .setTopic(topicName)
                 .setSegmentId(segmentId)
                 .setEntryId(entryId)
                 .build();

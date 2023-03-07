@@ -63,7 +63,7 @@ public class HandleDelayedMessageService extends ServiceThread {
 
     private CompletableFuture<HandleResult> handleExpireDelayedMessage(DelayedMessageIndex delayedMessageIndex) {
         return storerManager
-                .getMessageFromStorer("", delayedMessageIndex.getSegmentId(), delayedMessageIndex.getEntryId(), new String[]{"127.0.0.1:4321"})
+                .getMessageFromStorer(delayedMessageIndex.getSegmentId(), delayedMessageIndex.getEntryId(), new String[]{"127.0.0.1:4321"})
                 .thenCompose(getMessageFromStorerResponse -> sendMessage2RealTopic(delayedMessageIndex, getMessageFromStorerResponse))
                 .thenApply(sendMessage2BrokerResponse -> {
                     if (sendMessage2BrokerResponse.getStatus().getCode() != Code.OK) {
